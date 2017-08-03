@@ -1,0 +1,20 @@
+[package]
+name = "k"
+version = "0.0.1"
+authors = ["Takashi Ogura <t.ogura@gmail.com>"]
+description = "k is for kinematics"
+license = "Apache-2.0"
+keywords = ["kinematics", "robotics", "ik"]
+categories = ["algorithms"]
+repository = "https://github.com/OTL/k"
+documentation = "http://docs.rs/k"
+
+[dependencies]
+nalgebra = "0.11.0"
+alga = "0.5.1"
+urdf-rs = "0.1.5"
+log = "0.3"
+
+[dev-dependencies]
+kiss3d = "0.8.0"
+glfw = "0.8.0" # required by kiss3d

@@ -1,38 +1,3 @@
-# `k`: Kinematics library for rust-lang
-
-`k` has below functionalities.
-
-1. Forward kinematics
-1. Inverse kinematics
-1. URDF Loader
-
-`k` uses [nalgebra](http://nalgebra.org) as math library.
-
-See [Document](http://docs.rs/k) and examples/ for more details.
-
-## IK example with GUI
-
-```bash
-cargo run --release --example interactive_ik
-```
-
-![ik_sample](img/screenshot.png)
-
-
-Push below keys to move the end of the manipulator.
-
-- `f`: forward
-- `b`: backward
-- `p`: up
-- `n`: down
-- `l`: left
-- `r`: right
-- `z`: reset the manipulator state.
-
-## Create link tree from urdf and solve IK
-
-
-```rust
 extern crate k;
 
 use k::InverseKinematicsSolver;
@@ -62,4 +27,3 @@ fn main() {
     println!("solved target pos = {}",
              arms[0].calc_end_transform().translation);
 }
-```
