@@ -269,4 +269,9 @@ fn test_tree() {
 fn test_tree_from_file() {
     let tree = create_tree_from_file::<f32, _>("urdf/sample.urdf").unwrap();
     assert_eq!(tree.map(&|ref_joint| ref_joint.clone()).len(), 13);
+    let names = tree.get_joint_names();
+    assert!(names.len() == 13);
+    println!("{}", names[0]);
+    assert!(names[0] == "root");
+    assert!(names[1] == "l_shoulder_yaw");
 }

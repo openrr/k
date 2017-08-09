@@ -105,6 +105,15 @@ impl<T: Real> LinkTree<T> {
             let _ = lj.borrow_mut().data.set_joint_angle(*angle);
         }
     }
+
+    pub fn get_joint_names(&self) -> Vec<String> {
+        map_descendants(&self.root_link,
+                        &|ljn| ljn.borrow().data.get_joint_name().to_string())
+    }
+    pub fn dof(&self) -> usize {
+        self.map(&|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
+            .len()
+    }
 }
 
 /// Create `Vec<RefKinematicChain>` from LinkTree to use IK
