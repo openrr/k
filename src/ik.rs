@@ -68,6 +68,15 @@ pub struct JacobianIKSolver<T: Real> {
     pub num_max_try: i32,
 }
 
+
+impl<T> Default for JacobianIKSolverBuilder<T>
+    where T: Real
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> JacobianIKSolver<T>
     where T: Real
 {

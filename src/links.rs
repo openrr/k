@@ -136,6 +136,7 @@ impl<T> VecKinematicChain<T>
     }
 }
 
+
 impl<T> KinematicChain<T> for VecKinematicChain<T>
     where T: Real
 {
@@ -280,7 +281,7 @@ impl<T> Joint<T>
                                       UnitQuaternion::from_axis_angle(&axis, self.angle))
             }
             JointType::Linear { axis } => {
-                Isometry3::from_parts(Translation3::from_vector(&axis.unwrap() * self.angle),
+                Isometry3::from_parts(Translation3::from_vector(axis.unwrap() * self.angle),
                                       UnitQuaternion::identity())
             }
         }
@@ -307,6 +308,14 @@ pub struct LinkBuilder<T: Real> {
     name: String,
     joint: Joint<T>,
     transform: Isometry3<T>,
+}
+
+impl<T> Default for LinkBuilder<T>
+    where T: Real
+{
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T> LinkBuilder<T>

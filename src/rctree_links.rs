@@ -97,7 +97,7 @@ impl<T: Real> LinkTree<T> {
         map_descendants(&self.root_link, func)
     }
 
-    pub fn set_joint_angles(&mut self, angles_vec: &Vec<T>) {
+    pub fn set_joint_angles(&mut self, angles_vec: &[T]) {
         // TODO: check the length
         for (lj, angle) in self.map(&|ljn_ref| ljn_ref.clone())
                 .iter()
@@ -116,7 +116,7 @@ impl<T: Real> LinkTree<T> {
     }
 }
 
-/// Create `Vec<RefKinematicChain>` from LinkTree to use IK
+/// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
 pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RefKinematicChain<T>>
     where T: Real
 {
