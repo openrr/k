@@ -96,23 +96,48 @@ impl<T: Real> LinkTree<T> {
     {
         map_descendants(&self.root_link, func)
     }
+    pub fn filter_map<F, K>(&self, func: &F) -> Vec<K>
+        where F: Fn(&RefLinkNode<T>) -> Option<K>
+    {
+        filter_map_descendants(&self.root_link, func)
+    }
+
+    pub fn map_for_with_joint_angles<F, K>(&self, func: &F) -> Vec<K>
+        where F: Fn(&RefLinkNode<T>) -> K
+    {
+        filter_map_descendants(&self.root_link,
+                               &|ljn| if ljn.borrow().data.has_joint_angle() {
+                                    Some(func(ljn))
+                                } else {
+                                    None
+                                })
+    }
+
+    pub fn get_joint_angles(&self) -> Vec<T> {
+        self.filter_map(&|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
+    }
 
     pub fn set_joint_angles(&mut self, angles_vec: &[T]) {
         // TODO: check the length
-        for (lj, angle) in self.map(&|ljn_ref| ljn_ref.clone())
+        for (lj, angle) in self.map_for_with_joint_angles(&|ljn_ref| ljn_ref.clone())
                 .iter()
                 .zip(angles_vec.iter()) {
             let _ = lj.borrow_mut().data.set_joint_angle(*angle);
         }
     }
 
+    /// skip fixed joint
     pub fn get_joint_names(&self) -> Vec<String> {
-        map_descendants(&self.root_link,
-                        &|ljn| ljn.borrow().data.get_joint_name().to_string())
+        self.map_for_with_joint_angles(&|ljn| ljn.borrow().data.get_joint_name().to_string())
     }
+
+    /// include fixed joint
+    pub fn get_all_joint_names(&self) -> Vec<String> {
+        self.map(&|ljn| ljn.borrow().data.get_joint_name().to_string())
+    }
+
     pub fn dof(&self) -> usize {
-        self.map(&|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
-            .len()
+        self.map_for_with_joint_angles(&|_| 0).len()
     }
 }
 

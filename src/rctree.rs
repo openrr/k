@@ -51,6 +51,28 @@ fn map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &mut Vec<
     }
 }
 
+// todo: move vec to iter?
+pub fn filter_map_descendants<T, F, K>(root: &RefNode<T>, func: &F) -> Vec<K>
+    where F: Fn(&RefNode<T>) -> Option<K>
+{
+    let mut ret = Vec::new();
+    filter_map_descendants_internal(root, func, &mut ret);
+    ret
+}
+
+// can be removed..
+fn filter_map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &mut Vec<K>)
+    where F: Fn(&RefNode<T>) -> Option<K>
+{
+    let re_opt = func(root);
+    if let Some(re) = re_opt {
+        ret.push(re);
+    }
+    for c in &root.borrow().children {
+        filter_map_descendants_internal(c, func, ret);
+    }
+}
+
 pub fn map_ancestors<T, F, K>(end: &RefNode<T>, func: &F) -> Vec<K>
     where F: Fn(&RefNode<T>) -> K
 {
