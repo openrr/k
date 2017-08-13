@@ -200,27 +200,37 @@ pub fn create_kinematic_chains_with_dof_limit<T>(tree: &LinkTree<T>,
                 .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
                 .count();
             let mut root = ljn_ref.clone();
+            // use only movable joint as end effector
+            while !root.borrow().data.has_joint_angle() {
+                match get_parent_rc(&root) {
+                    Some(p) => {
+                        root = p;
+                    }
+                    None => {
+                        break;
+                    }
+                }
+            }
             if dof > dof_limit {
                 let mut remove_dof = dof - dof_limit;
                 while remove_dof > 0 {
-                    let root_c = root.clone();
-                    let parent_opt = &root_c.borrow().parent;
-                    assert!(parent_opt.is_some());
-                    match *parent_opt {
-                        Some(ref parent_weak) => {
-                            let parent_rc = parent_weak.upgrade().unwrap();
-                            root = parent_rc.clone();
+                    match get_parent_rc(&root) {
+                        Some(parent_rc) => {
+                            root = parent_rc;
                             if root.borrow().data.has_joint_angle() {
                                 remove_dof -= 1;
                             }
                         }
-                        None => {}
+                        None => {
+                            break;
+                        }
                     }
                 }
             }
             if !name_hash.contains(&root.borrow().data.name) {
                 let kc = RefKinematicChain::new(&root.borrow().data.name, &root);
                 name_hash.insert(root.borrow().data.name.clone());
+                assert!(kc.get_joint_angles().len() <= dof_limit);
                 if kc.get_joint_angles().len() >= 6 {
                     Some(kc)
                 } else {

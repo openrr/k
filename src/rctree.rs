@@ -32,6 +32,13 @@ pub fn create_ref_node<T>(data: T) -> RcNode<T> {
     Rc::new(RefCell::new(Node::new(data)))
 }
 
+pub fn get_parent_rc<T>(node: &RcNode<T>) -> Option<RcNode<T>> {
+    match node.borrow().parent {
+        Some(ref parent_weak) => parent_weak.upgrade(),
+        None => None,
+    }
+}
+
 // todo: move vec to iter?
 pub fn map_descendants<T, F, K>(root: &RcNode<T>, func: &F) -> Vec<K>
     where F: Fn(&RcNode<T>) -> K
