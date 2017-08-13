@@ -156,7 +156,7 @@ pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
     let root_name = get_root_link_name(robot);
     let mut ref_nodes = Vec::new();
     let mut child_ref_map = HashMap::new();
-    let mut parent_ref_map = HashMap::<&String, Vec<RefLinkNode<T>>>::new();
+    let mut parent_ref_map = HashMap::<&String, Vec<RcLinkNode<T>>>::new();
 
     let root_node = create_ref_node(LinkBuilder::<T>::new()
                                         .joint("root", JointType::Fixed)
@@ -208,7 +208,7 @@ pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
 ///
 /// ```
 /// let tree = k::urdf::create_tree_from_file::<f32, _>("urdf/sample.urdf").unwrap();
-/// assert_eq!(tree.map(&|ref_joint| ref_joint.clone()).len(), 13);
+/// assert_eq!(tree.dof(), 12);
 /// ```
 pub fn create_tree_from_file<T, P>(path: P) -> Result<LinkTree<T>, urdf_rs::UrdfError>
     where T: Real,
@@ -262,14 +262,14 @@ fn test_tree() {
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
     let tree = create_tree::<f32>(&robo);
-    assert_eq!(tree.map(&|ref_joint| ref_joint.clone()).len(), 13);
+    assert_eq!(tree.map_link(&|_| {}).len(), 13);
 }
 
 #[test]
 fn test_tree_from_file() {
     let tree = create_tree_from_file::<f32, _>("urdf/sample.urdf").unwrap();
-    assert_eq!(tree.map(&|ref_joint| ref_joint.clone()).len(), 13);
-    let names = tree.get_joint_names();
+    assert_eq!(tree.dof(), 12);
+    let names = tree.get_all_joint_names();
     assert!(names.len() == 13);
     println!("{}", names[0]);
     assert!(names[0] == "root");

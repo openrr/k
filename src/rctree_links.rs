@@ -4,21 +4,23 @@ use na::Isometry3;
 use alga::general::Real;
 use links::*;
 use rctree::*;
+use std::collections::HashSet;
+use std::slice::{Iter, IterMut};
 
-pub type RefLinkNode<T> = RefNode<Link<T>>;
+pub type RcLinkNode<T> = RcNode<Link<T>>;
 pub type LinkNode<T> = Node<Link<T>>;
 
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 pub struct RefKinematicChain<T: Real> {
     pub name: String,
-    pub joint_with_links: Vec<RefLinkNode<T>>,
+    pub joint_with_links: Vec<RcLinkNode<T>>,
     pub transform: Isometry3<T>,
 }
 
 impl<T> RefKinematicChain<T>
     where T: Real
 {
-    pub fn new(name: &str, end: &RefLinkNode<T>) -> Self {
+    pub fn new(name: &str, end: &RcLinkNode<T>) -> Self {
         let mut links = map_ancestors(end, &|ljn| ljn.clone());
         links.reverse();
         RefKinematicChain {
@@ -63,81 +65,112 @@ impl<T> KinematicChain<T> for RefKinematicChain<T>
 /// Kinematic Tree using `Rc<RefCell<Link<T>>>`
 pub struct LinkTree<T: Real> {
     pub name: String,
-    pub root_link: RefLinkNode<T>,
+    pub root_link: RcLinkNode<T>,
+    expanded_robot_link_vec: Vec<RcLinkNode<T>>,
 }
 
 impl<T: Real> LinkTree<T> {
-    pub fn new(name: &str, root_link: RefLinkNode<T>) -> Self {
+    pub fn new(name: &str, root_link: RcLinkNode<T>) -> Self {
         LinkTree {
             name: name.to_string(),
+            expanded_robot_link_vec: map_descendants(&root_link, &|ln| ln.clone()),
             root_link: root_link,
         }
     }
+    pub fn set_root_transform(&mut self, transform: Isometry3<T>) {
+        self.root_link.borrow_mut().data.transform = transform;
+    }
     pub fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
-        self.map(&|ljn| {
-            let parent_transform = match ljn.borrow().parent {
-                Some(ref parent) => {
-                    let rc_parent = parent.upgrade().unwrap().clone();
-                    let parent_obj = rc_parent.borrow();
-                    match parent_obj.data.world_transform_cache {
-                        Some(trans) => trans,
-                        None => Isometry3::identity(),
+        self.iter()
+            .map(|ljn| {
+                let parent_transform = match ljn.borrow().parent {
+                    Some(ref parent) => {
+                        let rc_parent = parent.upgrade().unwrap().clone();
+                        let parent_obj = rc_parent.borrow();
+                        match parent_obj.data.world_transform_cache {
+                            Some(trans) => trans,
+                            None => Isometry3::identity(),
+                        }
                     }
-                }
-                None => Isometry3::identity(),
-            };
-            let trans = parent_transform * ljn.borrow().data.calc_transform();
-            ljn.borrow_mut().data.world_transform_cache = Some(trans);
-            trans
-        })
-    }
-    pub fn map<F, K>(&self, func: &F) -> Vec<K>
-        where F: Fn(&RefLinkNode<T>) -> K
-    {
-        map_descendants(&self.root_link, func)
-    }
-    pub fn filter_map<F, K>(&self, func: &F) -> Vec<K>
-        where F: Fn(&RefLinkNode<T>) -> Option<K>
-    {
-        filter_map_descendants(&self.root_link, func)
+                    None => Isometry3::identity(),
+                };
+                let trans = parent_transform * ljn.borrow().data.calc_transform();
+                ljn.borrow_mut().data.world_transform_cache = Some(trans);
+                trans
+            })
+            .collect()
     }
 
-    pub fn map_for_with_joint_angles<F, K>(&self, func: &F) -> Vec<K>
-        where F: Fn(&RefLinkNode<T>) -> K
-    {
-        filter_map_descendants(&self.root_link,
-                               &|ljn| if ljn.borrow().data.has_joint_angle() {
-                                    Some(func(ljn))
-                                } else {
-                                    None
-                                })
+    pub fn iter(&self) -> Iter<RcLinkNode<T>> {
+        self.expanded_robot_link_vec.iter()
+    }
+    pub fn iter_mut(&mut self) -> IterMut<RcLinkNode<T>> {
+        self.expanded_robot_link_vec.iter_mut()
     }
 
+    // iter_link
+    pub fn map_link<F, K>(&self, func: &F) -> Vec<K>
+        where F: Fn(&Link<T>) -> K
+    {
+        self.iter()
+            .map(|ljn_ref| func(&ljn_ref.borrow().data))
+            .collect()
+    }
+
+    pub fn filter_map_link<F, K>(&self, func: &F) -> Vec<K>
+        where F: Fn(&Link<T>) -> Option<K>
+    {
+        self.iter()
+            .filter_map(|ljn_ref| func(&ljn_ref.borrow().data))
+            .collect()
+    }
+
+    pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
+        Box::new(self.iter()
+                     .filter(|ljn| ljn.borrow().data.has_joint_angle()))
+    }
+
+    pub fn map_for_joints_link<F, K>(&self, func: &F) -> Vec<K>
+        where F: Fn(&Link<T>) -> K
+    {
+        self.iter_for_joints()
+            .map(|ljn_ref| func(&ljn_ref.borrow().data))
+            .collect()
+    }
+
+    /// get the angles of the joints
+    ///
+    /// `FixedJoint` is ignored. the length is the same with `dof()`
     pub fn get_joint_angles(&self) -> Vec<T> {
-        self.filter_map(&|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
+        self.filter_map_link(&|link| link.get_joint_angle())
     }
 
-    pub fn set_joint_angles(&mut self, angles_vec: &[T]) {
-        // TODO: check the length
-        for (lj, angle) in self.map_for_with_joint_angles(&|ljn_ref| ljn_ref.clone())
-                .iter()
-                .zip(angles_vec.iter()) {
-            let _ = lj.borrow_mut().data.set_joint_angle(*angle);
+    /// set the angles of the joints
+    ///
+    /// `FixedJoints` are ignored. the input number must be equal with `dof()`
+    pub fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
+        if angles_vec.len() != self.dof() {
+            return Err(JointError::SizeMisMatch);
         }
+        for (lj, angle) in self.iter_for_joints().zip(angles_vec.iter()) {
+            lj.borrow_mut().data.set_joint_angle(*angle)?;
+        }
+        Ok(())
     }
 
     /// skip fixed joint
     pub fn get_joint_names(&self) -> Vec<String> {
-        self.map_for_with_joint_angles(&|ljn| ljn.borrow().data.get_joint_name().to_string())
+        self.map_for_joints_link(&|link| link.get_joint_name().to_string())
     }
 
     /// include fixed joint
     pub fn get_all_joint_names(&self) -> Vec<String> {
-        self.map(&|ljn| ljn.borrow().data.get_joint_name().to_string())
+        self.map_link(&|link| link.get_joint_name().to_string())
     }
 
+    /// get the degree of freedom
     pub fn dof(&self) -> usize {
-        self.map_for_with_joint_angles(&|_| 0).len()
+        self.iter_for_joints().count()
     }
 }
 
@@ -145,23 +178,58 @@ impl<T: Real> LinkTree<T> {
 pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RefKinematicChain<T>>
     where T: Real
 {
-    tree.map(&|ljn_ref| if ljn_ref.borrow().children.is_empty() {
-                  Some(ljn_ref.clone())
-              } else {
-                  None
-              })
-        .iter()
-        .filter_map(|ljn_ref_opt| match *ljn_ref_opt {
-                        Some(ref ljn_ref) => {
-            let kc = RefKinematicChain::new(&ljn_ref.borrow().data.name, ljn_ref);
-            if kc.get_joint_angles().len() >= 6 {
-                Some(kc)
+    create_kinematic_chains_with_dof_limit(tree, usize::max_value())
+}
+
+/// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
+pub fn create_kinematic_chains_with_dof_limit<T>(tree: &LinkTree<T>,
+                                                 dof_limit: usize)
+                                                 -> Vec<RefKinematicChain<T>>
+    where T: Real
+{
+    let mut name_hash = HashSet::new();
+    tree.iter()
+        .filter_map(|ljn_ref| if ljn_ref.borrow().children.is_empty() {
+                        Some(ljn_ref.clone())
+                    } else {
+                        None
+                    })
+        .filter_map(|ljn_ref| {
+            let dof = map_ancestors(&ljn_ref, &|ljn_ref| ljn_ref.clone())
+                .iter()
+                .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
+                .count();
+            let mut root = ljn_ref.clone();
+            if dof > dof_limit {
+                let mut remove_dof = dof - dof_limit;
+                while remove_dof > 0 {
+                    let root_c = root.clone();
+                    let parent_opt = &root_c.borrow().parent;
+                    assert!(parent_opt.is_some());
+                    match *parent_opt {
+                        Some(ref parent_weak) => {
+                            let parent_rc = parent_weak.upgrade().unwrap();
+                            root = parent_rc.clone();
+                            if root.borrow().data.has_joint_angle() {
+                                remove_dof -= 1;
+                            }
+                        }
+                        None => {}
+                    }
+                }
+            }
+            if !name_hash.contains(&root.borrow().data.name) {
+                let kc = RefKinematicChain::new(&root.borrow().data.name, &root);
+                name_hash.insert(root.borrow().data.name.clone());
+                if kc.get_joint_angles().len() >= 6 {
+                    Some(kc)
+                } else {
+                    None
+                }
             } else {
                 None
             }
-        }
-                        None => None,
-                    })
+        })
         .collect::<Vec<_>>()
 }
 
@@ -215,7 +283,7 @@ fn it_works() {
     let angles = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_angle());
     println!("angles = {:?}", angles);
 
-    let get_z = |ljn: &RefLinkNode<f32>| match ljn.borrow().parent {
+    let get_z = |ljn: &RcLinkNode<f32>| match ljn.borrow().parent {
         Some(ref parent) => {
             let rc_parent = parent.upgrade().unwrap().clone();
             let parent_obj = rc_parent.borrow();

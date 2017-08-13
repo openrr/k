@@ -1,13 +1,13 @@
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
-pub type RefNode<T> = Rc<RefCell<Node<T>>>;
+pub type RcNode<T> = Rc<RefCell<Node<T>>>;
 type WeakNode<T> = Weak<RefCell<Node<T>>>;
 
 #[derive(Debug, Clone)]
 pub struct Node<T> {
     pub parent: Option<WeakNode<T>>,
-    pub children: Vec<RefNode<T>>,
+    pub children: Vec<RcNode<T>>,
     pub data: T,
 }
 
@@ -22,19 +22,19 @@ impl<T> Node<T> {
 }
 
 /// set parent and child relations at same time
-pub fn set_parent_child<T>(parent: &RefNode<T>, child: &RefNode<T>) {
+pub fn set_parent_child<T>(parent: &RcNode<T>, child: &RcNode<T>) {
     child.borrow_mut().parent = Some(Rc::downgrade(parent));
     parent.borrow_mut().children.push(child.clone());
 }
 
 /// Wrap data: T with RC<RefCell<Node<T>>
-pub fn create_ref_node<T>(data: T) -> RefNode<T> {
+pub fn create_ref_node<T>(data: T) -> RcNode<T> {
     Rc::new(RefCell::new(Node::new(data)))
 }
 
 // todo: move vec to iter?
-pub fn map_descendants<T, F, K>(root: &RefNode<T>, func: &F) -> Vec<K>
-    where F: Fn(&RefNode<T>) -> K
+pub fn map_descendants<T, F, K>(root: &RcNode<T>, func: &F) -> Vec<K>
+    where F: Fn(&RcNode<T>) -> K
 {
     let mut ret = Vec::new();
     map_descendants_internal(root, func, &mut ret);
@@ -42,8 +42,8 @@ pub fn map_descendants<T, F, K>(root: &RefNode<T>, func: &F) -> Vec<K>
 }
 
 // can be removed..
-fn map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &mut Vec<K>)
-    where F: Fn(&RefNode<T>) -> K
+fn map_descendants_internal<T, F, K>(root: &RcNode<T>, func: &F, ret: &mut Vec<K>)
+    where F: Fn(&RcNode<T>) -> K
 {
     ret.push(func(root));
     for c in &root.borrow().children {
@@ -52,8 +52,8 @@ fn map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &mut Vec<
 }
 
 // todo: move vec to iter?
-pub fn filter_map_descendants<T, F, K>(root: &RefNode<T>, func: &F) -> Vec<K>
-    where F: Fn(&RefNode<T>) -> Option<K>
+pub fn filter_map_descendants<T, F, K>(root: &RcNode<T>, func: &F) -> Vec<K>
+    where F: Fn(&RcNode<T>) -> Option<K>
 {
     let mut ret = Vec::new();
     filter_map_descendants_internal(root, func, &mut ret);
@@ -61,8 +61,8 @@ pub fn filter_map_descendants<T, F, K>(root: &RefNode<T>, func: &F) -> Vec<K>
 }
 
 // can be removed..
-fn filter_map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &mut Vec<K>)
-    where F: Fn(&RefNode<T>) -> Option<K>
+fn filter_map_descendants_internal<T, F, K>(root: &RcNode<T>, func: &F, ret: &mut Vec<K>)
+    where F: Fn(&RcNode<T>) -> Option<K>
 {
     let re_opt = func(root);
     if let Some(re) = re_opt {
@@ -73,21 +73,42 @@ fn filter_map_descendants_internal<T, F, K>(root: &RefNode<T>, func: &F, ret: &m
     }
 }
 
-pub fn map_ancestors<T, F, K>(end: &RefNode<T>, func: &F) -> Vec<K>
-    where F: Fn(&RefNode<T>) -> K
+pub fn map_ancestors<T, F, K>(end: &RcNode<T>, func: &F) -> Vec<K>
+    where F: Fn(&RcNode<T>) -> K
 {
     let mut ret = Vec::new();
     map_ancestors_internal(end, func, &mut ret);
     ret
 }
 
-fn map_ancestors_internal<T, F, K>(link: &RefNode<T>, func: &F, ret: &mut Vec<K>)
-    where F: Fn(&RefNode<T>) -> K
+fn map_ancestors_internal<T, F, K>(link: &RcNode<T>, func: &F, ret: &mut Vec<K>)
+    where F: Fn(&RcNode<T>) -> K
 {
     ret.push(func(link));
     match link.borrow().parent {
         None => {}
-        Some(ref parent) => map_ancestors_internal(&Weak::upgrade(parent).unwrap(), func, ret),
+        Some(ref parent) => map_ancestors_internal(&parent.upgrade().unwrap(), func, ret),
+    };
+}
+
+pub fn filter_map_ancestors<T, F, K>(end: &RcNode<T>, func: &F) -> Vec<K>
+    where F: Fn(&RcNode<T>) -> Option<K>
+{
+    let mut ret = Vec::new();
+    filter_map_ancestors_internal(end, func, &mut ret);
+    ret
+}
+
+fn filter_map_ancestors_internal<T, F, K>(link: &RcNode<T>, func: &F, ret: &mut Vec<K>)
+    where F: Fn(&RcNode<T>) -> Option<K>
+{
+    let re_opt = func(link);
+    if let Some(re) = re_opt {
+        ret.push(re);
+    }
+    match link.borrow().parent {
+        None => {}
+        Some(ref parent) => filter_map_ancestors_internal(&parent.upgrade().unwrap(), func, ret),
     };
 }
 
