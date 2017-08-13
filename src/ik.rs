@@ -17,6 +17,7 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
                  rpy[2])
 }
 
+/// The reason of the fail of inverse kinematics
 #[derive(Debug)]
 pub enum IKError {
     NotConverged,
@@ -52,7 +53,6 @@ impl Error for IKError {
         }
     }
 }
-
 
 pub trait InverseKinematicsSolver<T: Real> {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>

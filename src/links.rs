@@ -16,6 +16,7 @@ pub enum JointType<T: Real> {
     Linear { axis: Unit<Vector3<T>> },
 }
 
+/// The reason of joint error: `OutOfLimit`, `SizeMisMatch`
 #[derive(Debug, Clone)]
 pub enum JointError {
     OutOfLimit,
