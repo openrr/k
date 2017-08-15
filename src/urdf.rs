@@ -78,7 +78,8 @@ fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
                        JointType::Linear { axis: axis_from(joint.axis.xyz) }
                    }
                    _ => JointType::Fixed,
-               })
+               },
+               Some(Range::new(na::convert(joint.limit.lower), na::convert(joint.limit.upper))))
         .name(&joint.child.link)
         .rotation(quaternion_from(joint.origin.rpy))
         .translation(translation_from(joint.origin.xyz))
@@ -159,7 +160,7 @@ pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
     let mut parent_ref_map = HashMap::<&String, Vec<RcLinkNode<T>>>::new();
 
     let root_node = create_ref_node(LinkBuilder::<T>::new()
-                                        .joint("root", JointType::Fixed)
+                                        .joint("root", JointType::Fixed, None)
                                         .name(&root_name)
                                         .finalize());
     for j in &robot.joints {

@@ -228,6 +228,12 @@ pub struct Range<T: Real> {
 impl<T> Range<T>
     where T: Real
 {
+    pub fn new(min: T, max: T) -> Self {
+        Range {
+            min: min,
+            max: max,
+        }
+    }
     pub fn is_valid(&self, val: T) -> bool {
         val < self.max && val > self.min
     }
@@ -333,8 +339,9 @@ impl<T> LinkBuilder<T>
         self.name = name.to_string();
         self
     }
-    pub fn joint(mut self, name: &str, joint_type: JointType<T>) -> LinkBuilder<T> {
+    pub fn joint(mut self, name: &str, joint_type: JointType<T>, limits: Option<Range<T>>) -> LinkBuilder<T> {
         self.joint = Joint::new(name, joint_type);
+        self.joint.set_limits(limits);
         self
     }
     pub fn transform(mut self, transform: Isometry3<T>) -> LinkBuilder<T> {

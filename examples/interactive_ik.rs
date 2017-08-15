@@ -16,42 +16,49 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
     let l0 = LinkBuilder::new()
         .name("shoulder_link1")
         .joint("shoulder_pitch",
-               JointType::Rotational { axis: Vector3::y_axis() })
+               JointType::Rotational { axis: Vector3::y_axis() },
+               None)
         .finalize();
     let l1 = LinkBuilder::new()
         .name("shoulder_link2")
         .joint("shoulder_roll",
-               JointType::Rotational { axis: Vector3::x_axis() })
+               JointType::Rotational { axis: Vector3::x_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize();
     let l2 = LinkBuilder::new()
         .name("shoulder_link3")
         .joint("shoulder_yaw",
-               JointType::Rotational { axis: Vector3::z_axis() })
+               JointType::Rotational { axis: Vector3::z_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.0, -0.30))
         .finalize();
     let l3 = LinkBuilder::new()
         .name("elbow_link1")
         .joint("elbow_pitch",
-               JointType::Rotational { axis: Vector3::y_axis() })
+               JointType::Rotational { axis: Vector3::y_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize();
     let l4 = LinkBuilder::new()
         .name("wrist_link1")
         .joint("wrist_yaw",
-               JointType::Rotational { axis: Vector3::z_axis() })
+               JointType::Rotational { axis: Vector3::z_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize();
     let l5 = LinkBuilder::new()
         .name("wrist_link2")
         .joint("wrist_pitch",
-               JointType::Rotational { axis: Vector3::y_axis() })
+               JointType::Rotational { axis: Vector3::y_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize();
     let l6 = LinkBuilder::new()
         .name("wrist_link3")
         .joint("wrist_roll",
-               JointType::Rotational { axis: Vector3::x_axis() })
+               JointType::Rotational { axis: Vector3::x_axis() },
+               None)
         .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize();
     VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5, l6])
