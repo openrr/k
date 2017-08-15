@@ -67,6 +67,13 @@ fn translation_from<T>(array3: [f64; 3]) -> na::Translation3<T>
 fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
     where T: Real
 {
+
+    let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
+        None
+    } else {
+        Some(Range::new(na::convert(joint.limit.lower),
+                        na::convert(joint.limit.upper)))
+    };
     LinkBuilder::<T>::new()
         .joint(&joint.name,
                match joint.joint_type {
@@ -79,7 +86,7 @@ fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
                    }
                    _ => JointType::Fixed,
                },
-               Some(Range::new(na::convert(joint.limit.lower), na::convert(joint.limit.upper))))
+               limit)
         .name(&joint.child.link)
         .rotation(quaternion_from(joint.origin.rpy))
         .translation(translation_from(joint.origin.xyz))
