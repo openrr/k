@@ -47,7 +47,7 @@ fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
                                                   na::convert(array3[2])))
 }
 
-fn quaternion_from<T>(array3: [f64; 3]) -> na::UnitQuaternion<T>
+pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
     where T: Real
 {
     na::UnitQuaternion::from_euler_angles(na::convert(array3[0]),
@@ -55,7 +55,7 @@ fn quaternion_from<T>(array3: [f64; 3]) -> na::UnitQuaternion<T>
                                           na::convert(array3[2]))
 }
 
-fn translation_from<T>(array3: [f64; 3]) -> na::Translation3<T>
+pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
     where T: Real
 {
     na::Translation3::new(na::convert(array3[0]),
@@ -88,8 +88,8 @@ fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
                },
                limit)
         .name(&joint.child.link)
-        .rotation(quaternion_from(joint.origin.rpy))
-        .translation(translation_from(joint.origin.xyz))
+        .rotation(quaternion_from(&joint.origin.rpy))
+        .translation(translation_from(&joint.origin.xyz))
         .finalize()
 }
 
