@@ -11,3 +11,8 @@ matrix:
   fast_finish: true
   allow_failures:
     - rust: nightly
+addons:
+  apt:
+    packages:
+      - xorg-dev
+      - libglu1-mesa-dev
