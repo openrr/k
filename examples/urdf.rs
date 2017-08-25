@@ -17,13 +17,13 @@ fn main() {
     target.translation.vector[2] += 0.2;
     let solver = k::JacobianIKSolverBuilder::new().finalize();
     // solve and move the manipulator angles
-    solver.solve(&mut arms[0], &target).unwrap_or_else(|err| {
-        println!("Err: {}", err);
-        0.0f32
-    });
+    solver
+        .solve(&mut arms[0], &target)
+        .unwrap_or_else(|err| {
+                            println!("Err: {}", err);
+                            0.0f32
+                        });
     println!("solved angles={:?}", arms[0].get_joint_angles());
-    println!(
-        "solved target pos = {}",
-        arms[0].calc_end_transform().translation
-    );
+    println!("solved target pos = {}",
+             arms[0].calc_end_transform().translation);
 }

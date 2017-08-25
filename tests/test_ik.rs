@@ -1,4 +1,3 @@
-extern crate alga;
 extern crate nalgebra as na;
 extern crate k;
 
@@ -12,55 +11,43 @@ mod tests {
     pub fn create_joint_with_link_array6(name: &str) -> k::VecKinematicChain<f32> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
-            .joint(
-                "shoulder_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("shoulder_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .finalize();
         let l1 = k::LinkBuilder::new()
             .name("shoulder_link2")
-            .joint(
-                "shoulder_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
-                None,
-            )
+            .joint("shoulder_roll",
+                   k::JointType::Rotational { axis: Vector3::x_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.1, 0.0))
             .finalize();
         let l2 = k::LinkBuilder::new()
             .name("shoulder_link3")
-            .joint(
-                "shoulder_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
-                None,
-            )
+            .joint("shoulder_yaw",
+                   k::JointType::Rotational { axis: Vector3::z_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.30))
             .finalize();
         let l3 = k::LinkBuilder::new()
             .name("elbow_link1")
-            .joint(
-                "elbow_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("elbow_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         let l4 = k::LinkBuilder::new()
             .name("wrist_link1")
-            .joint(
-                "wrist_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
-                None,
-            )
+            .joint("wrist_yaw",
+                   k::JointType::Rotational { axis: Vector3::z_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         let l5 = k::LinkBuilder::new()
             .name("wrist_link2")
-            .joint(
-                "wrist_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("wrist_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         k::VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5])
@@ -70,64 +57,50 @@ mod tests {
     pub fn create_joint_with_link_array7(name: &str) -> k::VecKinematicChain<f32> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
-            .joint(
-                "shoulder_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("shoulder_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .finalize();
         let l1 = k::LinkBuilder::new()
             .name("shoulder_link2")
-            .joint(
-                "shoulder_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
-                None,
-            )
+            .joint("shoulder_roll",
+                   k::JointType::Rotational { axis: Vector3::x_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.1, 0.0))
             .finalize();
         let l2 = k::LinkBuilder::new()
             .name("shoulder_link3")
-            .joint(
-                "shoulder_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
-                None,
-            )
+            .joint("shoulder_yaw",
+                   k::JointType::Rotational { axis: Vector3::z_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.30))
             .finalize();
         let l3 = k::LinkBuilder::new()
             .name("elbow_link1")
-            .joint(
-                "elbow_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("elbow_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         let l4 = k::LinkBuilder::new()
             .name("wrist_link1")
-            .joint(
-                "wrist_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
-                None,
-            )
+            .joint("wrist_yaw",
+                   k::JointType::Rotational { axis: Vector3::z_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         let l5 = k::LinkBuilder::new()
             .name("wrist_link2")
-            .joint(
-                "wrist_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
-                None,
-            )
+            .joint("wrist_pitch",
+                   k::JointType::Rotational { axis: Vector3::y_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
         let l6 = k::LinkBuilder::new()
             .name("wrist_link3")
-            .joint(
-                "wrist_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
-                None,
-            )
+            .joint("wrist_roll",
+                   k::JointType::Rotational { axis: Vector3::x_axis() },
+                   None)
             .translation(Translation3::new(0.0, 0.0, -0.10))
             .finalize();
         k::VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5, l6])

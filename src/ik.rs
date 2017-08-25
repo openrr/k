@@ -1,7 +1,6 @@
 extern crate nalgebra as na;
 
-use alga::general::Real;
-use na::{Isometry3, Vector6, DMatrix};
+use na::{Isometry3, Vector6, DMatrix, Real};
 use std::error::Error;
 use std::fmt;
 use links::*;
@@ -9,14 +8,12 @@ use math::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);
-    Vector6::new(
-        pose.translation.vector[0],
-        pose.translation.vector[1],
-        pose.translation.vector[2],
-        rpy[0],
-        rpy[1],
-        rpy[2],
-    )
+    Vector6::new(pose.translation.vector[0],
+                 pose.translation.vector[1],
+                 pose.translation.vector[2],
+                 rpy[0],
+                 rpy[1],
+                 rpy[2])
 }
 
 /// The reason of the fail of inverse kinematics
@@ -58,8 +55,7 @@ impl Error for IKError {
 
 pub trait InverseKinematicsSolver<T: Real> {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: KinematicChain<T>;
+        where K: KinematicChain<T>;
 }
 
 
@@ -73,8 +69,7 @@ pub struct JacobianIKSolver<T: Real> {
 
 
 impl<T> Default for JacobianIKSolverBuilder<T>
-where
-    T: Real,
+    where T: Real
 {
     fn default() -> Self {
         Self::new()
@@ -82,14 +77,12 @@ where
 }
 
 impl<T> JacobianIKSolver<T>
-where
-    T: Real,
+    where T: Real
 {
-    pub fn new(
-        jacobian_move_epsilon: T,
-        allowable_target_distance: T,
-        num_max_try: i32,
-    ) -> JacobianIKSolver<T> {
+    pub fn new(jacobian_move_epsilon: T,
+               allowable_target_distance: T,
+               num_max_try: i32)
+               -> JacobianIKSolver<T> {
         JacobianIKSolver {
             jacobian_move_epsilon: jacobian_move_epsilon,
             allowable_target_distance: allowable_target_distance,
@@ -97,8 +90,7 @@ where
         }
     }
     fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: KinematicChain<T>,
+        where K: KinematicChain<T>
     {
         let orig_angles = arm.get_joint_angles();
         let dof = orig_angles.len();
@@ -114,10 +106,12 @@ where
         }
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
         let j_inv = if dof > 6 {
+            let jacobi_ref = &jacobi;
             // use pseudo inverse
-            try!(try_pseudo_inverse(&jacobi).ok_or(
-                IKError::InverseMatrixError,
-            ))
+            match (jacobi_ref * jacobi_ref.transpose()).try_inverse() {
+                Some(mat) => jacobi_ref.transpose() * mat,
+                None => return Err(IKError::InverseMatrixError),
+            }
         } else {
             try!(jacobi.try_inverse().ok_or(IKError::InverseMatrixError))
         };
@@ -133,12 +127,10 @@ where
 }
 
 impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
-where
-    T: Real,
+    where T: Real
 {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: KinematicChain<T>,
+        where K: KinematicChain<T>
     {
         let orig_angles = arm.get_joint_angles();
         if orig_angles.len() < 6 {
@@ -163,8 +155,7 @@ where
 /// without any parameters.
 ///
 pub struct JacobianIKSolverBuilder<T>
-where
-    T: Real,
+    where T: Real
 {
     pub jacobian_move_epsilon: T,
     pub allowable_target_distance: T,
@@ -172,8 +163,7 @@ where
 }
 
 impl<T> JacobianIKSolverBuilder<T>
-where
-    T: Real,
+    where T: Real
 {
     pub fn new() -> Self {
         JacobianIKSolverBuilder {

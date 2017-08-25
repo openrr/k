@@ -112,7 +112,6 @@
 //! ```
 //! let _ = k::urdf::create_tree_from_file::<f32, _>("urdf/sample.urdf").unwrap();
 //! ```
-extern crate alga;
 extern crate nalgebra as na;
 #[macro_use]
 extern crate log;

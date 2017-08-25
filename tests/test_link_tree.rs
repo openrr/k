@@ -1,4 +1,3 @@
-extern crate alga;
 extern crate nalgebra as na;
 extern crate k;
 
