@@ -37,14 +37,15 @@ pub fn to_euler_angles<T: Real>(q: &UnitQuaternion<T>) -> Vector3<T> {
 }
 
 /// Try to solve pseudo inverse
-pub fn try_pseudo_inverse<N, R, C, S>
-    (matrix: &Matrix<N, R, C, S>)
-     -> Option<Matrix<N, C, R, <S::Alloc as Allocator<N, C, R>>::Buffer>>
-    where N: Real,
-          R: Dim,
-          C: Dim,
-          S: Storage<N, R, C>,
-          S::Alloc: Allocator<N, C, R> + Allocator<N, R, R>
+pub fn try_pseudo_inverse<N, R, C, S>(
+    matrix: &Matrix<N, R, C, S>,
+) -> Option<Matrix<N, C, R, <S::Alloc as Allocator<N, C, R>>::Buffer>>
+where
+    N: Real,
+    R: Dim,
+    C: Dim,
+    S: Storage<N, R, C>,
+    S::Alloc: Allocator<N, C, R> + Allocator<N, R, R>,
 {
     match (matrix * matrix.transpose()).try_inverse() {
         Some(mat) => Some(matrix.transpose() * mat),

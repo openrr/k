@@ -40,62 +40,77 @@ use alga::general::Real;
 use std::collections::HashMap;
 
 fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
-    where T: Real
+where
+    T: Real,
 {
-    na::Unit::<_>::new_normalize(na::Vector3::new(na::convert(array3[0]),
-                                                  na::convert(array3[1]),
-                                                  na::convert(array3[2])))
+    na::Unit::<_>::new_normalize(na::Vector3::new(
+        na::convert(array3[0]),
+        na::convert(array3[1]),
+        na::convert(array3[2]),
+    ))
 }
 
 pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
-    where T: Real
+where
+    T: Real,
 {
-    na::UnitQuaternion::from_euler_angles(na::convert(array3[0]),
-                                          na::convert(array3[1]),
-                                          na::convert(array3[2]))
+    na::UnitQuaternion::from_euler_angles(
+        na::convert(array3[0]),
+        na::convert(array3[1]),
+        na::convert(array3[2]),
+    )
 }
 
 pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
-    where T: Real
+where
+    T: Real,
 {
-    na::Translation3::new(na::convert(array3[0]),
-                          na::convert(array3[1]),
-                          na::convert(array3[2]))
+    na::Translation3::new(
+        na::convert(array3[0]),
+        na::convert(array3[1]),
+        na::convert(array3[2]),
+    )
 }
 
 
 fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
-    where T: Real
+where
+    T: Real,
 {
 
     let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
         None
     } else {
-        Some(Range::new(na::convert(joint.limit.lower),
-                        na::convert(joint.limit.upper)))
+        Some(Range::new(
+            na::convert(joint.limit.lower),
+            na::convert(joint.limit.upper),
+        ))
     };
     LinkBuilder::<T>::new()
-        .joint(&joint.name,
-               match joint.joint_type {
-                   urdf_rs::JointType::Revolute |
-                   urdf_rs::JointType::Continuous => {
-                       JointType::Rotational { axis: axis_from(joint.axis.xyz) }
-                   }
-                   urdf_rs::JointType::Prismatic => {
-                       JointType::Linear { axis: axis_from(joint.axis.xyz) }
-                   }
-                   _ => JointType::Fixed,
-               },
-               limit)
+        .joint(
+            &joint.name,
+            match joint.joint_type {
+                urdf_rs::JointType::Revolute |
+                urdf_rs::JointType::Continuous => {
+                    JointType::Rotational { axis: axis_from(joint.axis.xyz) }
+                }
+                urdf_rs::JointType::Prismatic => {
+                    JointType::Linear { axis: axis_from(joint.axis.xyz) }
+                }
+                _ => JointType::Fixed,
+            },
+            limit,
+        )
         .name(&joint.child.link)
         .rotation(quaternion_from(&joint.origin.rpy))
         .translation(translation_from(&joint.origin.xyz))
         .finalize()
 }
 
-fn get_joint_until_root<'a, 'b>(end_name: &'a str,
-                                parent_joint_map: &'b HashMap<&str, &urdf_rs::Joint>)
-                                -> Vec<&'b urdf_rs::Joint> {
+fn get_joint_until_root<'a, 'b>(
+    end_name: &'a str,
+    parent_joint_map: &'b HashMap<&str, &urdf_rs::Joint>,
+) -> Vec<&'b urdf_rs::Joint> {
     let mut ret = Vec::new();
     let mut parent_link_name = end_name;
     while let Some(joint) = parent_joint_map.get(&parent_link_name) {
@@ -122,7 +137,8 @@ fn get_root_link_name(robot: &urdf_rs::Robot) -> String {
 
 /// Create `LinkStar` from `urdf_rs::Robot`
 pub fn create_star<T>(robot: &urdf_rs::Robot) -> LinkStar<T>
-    where T: Real
+where
+    T: Real,
 {
     // find end links
     let mut link_map = HashMap::new();
@@ -142,42 +158,46 @@ pub fn create_star<T>(robot: &urdf_rs::Robot) -> LinkStar<T>
         link_map.remove(&joint.parent.link);
     }
     // link_map contains end links only here
-    LinkStar::new(&robot.name,
-                  link_map
-                      .keys()
-                      .map(|end_name| {
-                               get_joint_until_root(end_name, &child_joint_map)
-                                   .iter()
-                                   .map(|urdf_joint| {
-                                            create_joint_with_link_from_urdf_joint(urdf_joint)
-                                        })
-                                   .collect()
-                           })
-                      .map(|link_vec| VecKinematicChain::new("", link_vec))
-                      .collect())
+    LinkStar::new(
+        &robot.name,
+        link_map
+            .keys()
+            .map(|end_name| {
+                get_joint_until_root(end_name, &child_joint_map)
+                    .iter()
+                    .map(|urdf_joint| {
+                        create_joint_with_link_from_urdf_joint(urdf_joint)
+                    })
+                    .collect()
+            })
+            .map(|link_vec| VecKinematicChain::new("", link_vec))
+            .collect(),
+    )
 }
 
 /// Create `LinkTree` from `urdf_rs::Robot`
 pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
-    where T: Real
+where
+    T: Real,
 {
     let root_name = get_root_link_name(robot);
     let mut ref_nodes = Vec::new();
     let mut child_ref_map = HashMap::new();
     let mut parent_ref_map = HashMap::<&String, Vec<RcLinkNode<T>>>::new();
 
-    let root_node = create_ref_node(LinkBuilder::<T>::new()
-                                        .joint("root", JointType::Fixed, None)
-                                        .name(&root_name)
-                                        .finalize());
+    let root_node = create_ref_node(
+        LinkBuilder::<T>::new()
+            .joint("root", JointType::Fixed, None)
+            .name(&root_name)
+            .finalize(),
+    );
     for j in &robot.joints {
         let node = create_ref_node(create_joint_with_link_from_urdf_joint(j));
         child_ref_map.insert(&j.child.link, node.clone());
         if parent_ref_map.get(&j.parent.link).is_some() {
-            parent_ref_map
-                .get_mut(&j.parent.link)
-                .unwrap()
-                .push(node.clone());
+            parent_ref_map.get_mut(&j.parent.link).unwrap().push(
+                node.clone(),
+            );
         } else {
             parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
         }
@@ -188,21 +208,23 @@ pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
         if let Some(parent_node) = child_ref_map.get(&l.name) {
             if let Some(child_nodes) = parent_ref_map.get(&l.name) {
                 for child_node in child_nodes.iter() {
-                    info!("set paremt = {}, child = {}",
-                          parent_node.borrow().data.get_joint_name(),
-                          child_node.borrow().data.get_joint_name());
+                    info!(
+                        "set paremt = {}, child = {}",
+                        parent_node.borrow().data.get_joint_name(),
+                        child_node.borrow().data.get_joint_name()
+                    );
                     set_parent_child(parent_node, child_node);
                 }
             }
         }
     }
     // set root as parent of root joint nodes
-    let root_joint_nodes = ref_nodes
-        .iter()
-        .filter_map(|ref_node| match ref_node.borrow().parent {
-                        None => Some(ref_node),
-                        Some(_) => None,
-                    });
+    let root_joint_nodes = ref_nodes.iter().filter_map(
+        |ref_node| match ref_node.borrow().parent {
+            None => Some(ref_node),
+            Some(_) => None,
+        },
+    );
     for rjn in root_joint_nodes {
         set_parent_child(&root_node, rjn);
     }
@@ -219,8 +241,9 @@ pub fn create_tree<T>(robot: &urdf_rs::Robot) -> LinkTree<T>
 /// assert_eq!(tree.dof(), 12);
 /// ```
 pub fn create_tree_from_file<T, P>(path: P) -> Result<LinkTree<T>, urdf_rs::UrdfError>
-    where T: Real,
-          P: AsRef<Path>
+where
+    T: Real,
+    P: AsRef<Path>,
 {
     Ok(create_tree(&urdf_rs::read_file(path)?))
 }
@@ -237,8 +260,9 @@ pub fn create_tree_from_file<T, P>(path: P) -> Result<LinkTree<T>, urdf_rs::Urdf
 /// assert_eq!(rf.frames[1].len(), 6);
 /// ```
 pub fn create_star_from_file<T, P>(path: P) -> Result<LinkStar<T>, urdf_rs::UrdfError>
-    where T: Real,
-          P: AsRef<Path>
+where
+    T: Real,
+    P: AsRef<Path>,
 {
     Ok(create_star(&urdf_rs::read_file(path)?))
 }
@@ -270,7 +294,7 @@ fn test_tree() {
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
     let tree = create_tree::<f32>(&robo);
-    assert_eq!(tree.map_link(&|_| {}).len(), 13);
+    assert_eq!(tree.iter_link().map(|_| {}).count(), 13);
 }
 
 #[test]
