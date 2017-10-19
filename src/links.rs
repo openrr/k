@@ -166,9 +166,9 @@ where
         for (i, lj) in joints_with_angle.iter_mut().enumerate() {
             try!(lj.set_joint_angle(angles[i]));
         }
-
         Ok(())
     }
+
     fn get_joint_angles(&self) -> Vec<T> {
         self.joint_with_links
             .iter()

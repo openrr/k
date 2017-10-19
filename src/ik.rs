@@ -66,6 +66,7 @@ pub trait InverseKinematicsSolver<T: Real> {
 #[derive(Debug)]
 pub struct JacobianIKSolver<T: Real> {
     pub jacobian_move_epsilon: T,
+    pub move_epsilon: T,
     pub allowable_target_distance: T,
     pub num_max_try: i32,
 }
@@ -86,11 +87,13 @@ where
 {
     pub fn new(
         jacobian_move_epsilon: T,
+        move_epsilon: T,
         allowable_target_distance: T,
         num_max_try: i32,
     ) -> JacobianIKSolver<T> {
         JacobianIKSolver {
             jacobian_move_epsilon: jacobian_move_epsilon,
+            move_epsilon: move_epsilon,
             allowable_target_distance: allowable_target_distance,
             num_max_try: num_max_try,
         }
@@ -122,7 +125,7 @@ where
         } else {
             try!(jacobi.try_inverse().ok_or(IKError::InverseMatrixError))
         };
-        let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.jacobian_move_epsilon;
+        let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
         let mut angles_vec = Vec::new();
         for i in 0..dof {
             angles_vec.push(orig_angles[i] + new_angles_diff[i]);
@@ -168,6 +171,7 @@ where
     T: Real,
 {
     pub jacobian_move_epsilon: T,
+    pub move_epsilon: T,
     pub allowable_target_distance: T,
     pub num_max_try: i32,
 }
@@ -179,12 +183,17 @@ where
     pub fn new() -> Self {
         JacobianIKSolverBuilder {
             jacobian_move_epsilon: na::convert(0.001),
+            move_epsilon: na::convert(0.001),
             allowable_target_distance: na::convert(0.001),
             num_max_try: 100,
         }
     }
     pub fn jacobian_move_epsilon(&mut self, jacobian_epsilon: T) -> &mut Self {
         self.jacobian_move_epsilon = jacobian_epsilon;
+        self
+    }
+    pub fn move_epsilon(&mut self, epsilon: T) -> &mut Self {
+        self.move_epsilon = epsilon;
         self
     }
     pub fn allowable_target_distance(&mut self, allowable_diff: T) -> &mut Self {
@@ -198,6 +207,7 @@ where
     pub fn finalize(&self) -> JacobianIKSolver<T> {
         JacobianIKSolver {
             jacobian_move_epsilon: self.jacobian_move_epsilon,
+            move_epsilon: self.move_epsilon,
             allowable_target_distance: self.allowable_target_distance,
             num_max_try: self.num_max_try,
         }
