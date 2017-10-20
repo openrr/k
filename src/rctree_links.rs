@@ -45,6 +45,12 @@ where
             trans * ljn_ref.borrow().data.calc_transform()
         })
     }
+}
+
+impl<T> JointContainer<T> for RefKinematicChain<T>
+where
+    T: Real,
+{
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         // TODO: is it possible to cache the joint_with_angle to speed up?
         let mut joints_with_angle = self.joint_with_links
@@ -155,29 +161,6 @@ impl<T: Real> LinkTree<T> {
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
     }
-
-    /// get the angles of the joints
-    ///
-    /// `FixedJoint` is ignored. the length is the same with `dof()`
-    pub fn get_joint_angles(&self) -> Vec<T> {
-        self.iter_link()
-            .filter_map(|link| link.get_joint_angle())
-            .collect()
-    }
-
-    /// set the angles of the joints
-    ///
-    /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    pub fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
-        if angles_vec.len() != self.dof() {
-            return Err(JointError::SizeMisMatch);
-        }
-        for (lj, angle) in self.iter_for_joints().zip(angles_vec.iter()) {
-            lj.borrow_mut().data.set_joint_angle(*angle)?;
-        }
-        Ok(())
-    }
-
     /// skip fixed joint
     pub fn get_joint_names(&self) -> Vec<String> {
         self.iter_for_joints_link()
@@ -195,6 +178,34 @@ impl<T: Real> LinkTree<T> {
     /// get the degree of freedom
     pub fn dof(&self) -> usize {
         self.iter_for_joints().count()
+    }
+}
+
+
+impl<T> JointContainer<T> for LinkTree<T>
+where
+    T: Real,
+{
+    /// get the angles of the joints
+    ///
+    /// `FixedJoint` is ignored. the length is the same with `dof()`
+    fn get_joint_angles(&self) -> Vec<T> {
+        self.iter_link()
+            .filter_map(|link| link.get_joint_angle())
+            .collect()
+    }
+
+    /// set the angles of the joints
+    ///
+    /// `FixedJoints` are ignored. the input number must be equal with `dof()`
+    fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
+        if angles_vec.len() != self.dof() {
+            return Err(JointError::SizeMisMatch);
+        }
+        for (lj, angle) in self.iter_for_joints().zip(angles_vec.iter()) {
+            lj.borrow_mut().data.set_joint_angle(*angle)?;
+        }
+        Ok(())
     }
 }
 

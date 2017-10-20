@@ -7,6 +7,7 @@ mod tests {
     use na::{Vector3, Translation3};
     use k::InverseKinematicsSolver;
     use k::KinematicChain;
+    use k::JointContainer;
 
     pub fn create_joint_with_link_array6(name: &str) -> k::VecKinematicChain<f32> {
         let l0 = k::LinkBuilder::new()

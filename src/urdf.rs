@@ -7,6 +7,7 @@
 //!
 //! ```
 //! use k::InverseKinematicsSolver;
+//! use k::JointContainer;
 //! use k::KinematicChain;
 //! let robot = k::urdf::create_tree_from_file("urdf/sample.urdf").unwrap();
 //! let mut arms = k::create_kinematic_chains(&robot);

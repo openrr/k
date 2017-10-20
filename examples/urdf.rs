@@ -1,6 +1,7 @@
 extern crate k;
 
 use k::InverseKinematicsSolver;
+use k::JointContainer;
 use k::KinematicChain;
 
 fn main() {

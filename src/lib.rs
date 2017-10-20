@@ -42,8 +42,8 @@
 //! extern crate nalgebra;
 //!
 //! use k::{VecKinematicChain, LinkBuilder, JointType,
-//!                   KinematicChain, JacobianIKSolverBuilder,
-//!                   InverseKinematicsSolver};
+//!        JointContainer,KinematicChain, JacobianIKSolverBuilder,
+//!        InverseKinematicsSolver};
 //! use nalgebra::{Vector3, Translation3};
 //!
 //! fn main() {

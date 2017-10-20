@@ -118,7 +118,12 @@ where
             },
         )
     }
+}
 
+impl<T> JointContainer<T> for VecKinematicChain<T>
+where
+    T: Real,
+{
     /// if failed, joints angles are non determined,
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         // TODO: is it possible to cache the joint_with_angle to speed up?
