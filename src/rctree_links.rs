@@ -17,7 +17,7 @@ pub type LinkNode<T> = Node<Link<T>>;
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 pub struct RefKinematicChain<T: Real> {
     pub name: String,
-    pub joint_with_links: Vec<RcLinkNode<T>>,
+    pub links: Vec<RcLinkNode<T>>,
     pub transform: Isometry3<T>,
 }
 
@@ -30,7 +30,7 @@ where
         links.reverse();
         RefKinematicChain {
             name: name.to_string(),
-            joint_with_links: links,
+            links: links,
             transform: Isometry3::identity(),
         }
     }
@@ -41,8 +41,7 @@ where
     T: Real,
 {
     fn calc_end_transform(&self) -> Isometry3<T> {
-        self.joint_with_links.iter().fold(self.transform, |trans,
-         ljn_ref| {
+        self.links.iter().fold(self.transform, |trans, ljn_ref| {
             trans * ljn_ref.borrow().data.calc_transform()
         })
     }
@@ -54,26 +53,31 @@ where
 {
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         // TODO: is it possible to cache the joint_with_angle to speed up?
-        let mut joints_with_angle = self.joint_with_links
+        let mut links_with_angle = self.links
             .iter_mut()
             .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
             .collect::<Vec<_>>();
-        if joints_with_angle.len() != angles.len() {
+        if links_with_angle.len() != angles.len() {
+            println!("angles={:?}", angles);
             return Err(JointError::SizeMisMatch);
         }
-        for (i, ljn_ref) in joints_with_angle.iter_mut().enumerate() {
+        for (i, ljn_ref) in links_with_angle.iter_mut().enumerate() {
             try!(ljn_ref.borrow_mut().data.set_joint_angle(angles[i]));
         }
         Ok(())
     }
     fn get_joint_angles(&self) -> Vec<T> {
-        self.joint_with_links
+        self.links
             .iter()
             .filter_map(|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
             .collect()
     }
     fn get_joint_limits(&self) -> Vec<Option<Range<T>>> {
-        self.joint_with_links
+        let links_with_angle = self.links
+            .iter()
+            .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
+            .collect::<Vec<_>>();
+        links_with_angle
             .iter()
             .map(|ljn_ref| ljn_ref.borrow().data.joint.limits.clone())
             .collect()
