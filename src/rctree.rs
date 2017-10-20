@@ -60,30 +60,6 @@ where
     }
 }
 
-// todo: move vec to iter?
-pub fn filter_map_descendants<T, F, K>(root: &RcNode<T>, func: &F) -> Vec<K>
-where
-    F: Fn(&RcNode<T>) -> Option<K>,
-{
-    let mut ret = Vec::new();
-    filter_map_descendants_internal(root, func, &mut ret);
-    ret
-}
-
-// can be removed..
-fn filter_map_descendants_internal<T, F, K>(root: &RcNode<T>, func: &F, ret: &mut Vec<K>)
-where
-    F: Fn(&RcNode<T>) -> Option<K>,
-{
-    let re_opt = func(root);
-    if let Some(re) = re_opt {
-        ret.push(re);
-    }
-    for c in &root.borrow().children {
-        filter_map_descendants_internal(c, func, ret);
-    }
-}
-
 pub fn map_ancestors<T, F, K>(end: &RcNode<T>, func: &F) -> Vec<K>
 where
     F: Fn(&RcNode<T>) -> K,
@@ -101,29 +77,6 @@ where
     match link.borrow().parent {
         None => {}
         Some(ref parent) => map_ancestors_internal(&parent.upgrade().unwrap(), func, ret),
-    };
-}
-
-pub fn filter_map_ancestors<T, F, K>(end: &RcNode<T>, func: &F) -> Vec<K>
-where
-    F: Fn(&RcNode<T>) -> Option<K>,
-{
-    let mut ret = Vec::new();
-    filter_map_ancestors_internal(end, func, &mut ret);
-    ret
-}
-
-fn filter_map_ancestors_internal<T, F, K>(link: &RcNode<T>, func: &F, ret: &mut Vec<K>)
-where
-    F: Fn(&RcNode<T>) -> Option<K>,
-{
-    let re_opt = func(link);
-    if let Some(re) = re_opt {
-        ret.push(re);
-    }
-    match link.borrow().parent {
-        None => {}
-        Some(ref parent) => filter_map_ancestors_internal(&parent.upgrade().unwrap(), func, ret),
     };
 }
 

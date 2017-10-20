@@ -30,13 +30,16 @@
 extern crate nalgebra as na;
 extern crate urdf_rs;
 
-use links::*;
+use std::collections::HashMap;
+use std::path::Path;
+
 use na::Real;
+
+use links::*;
+use vec_links::*;
 use rctree::*;
 use rctree_links::*;
 use joints::*;
-use std::collections::HashMap;
-use std::path::Path;
 
 fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
 where

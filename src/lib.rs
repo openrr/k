@@ -121,9 +121,11 @@ mod traits;
 mod links;
 mod ik;
 mod joints;
-pub mod math;
-pub mod rctree;
+mod rctree;
 mod rctree_links;
+mod vec_links;
+
+pub mod math;
 pub mod urdf;
 
 pub use self::joints::*;
@@ -132,3 +134,4 @@ pub use self::traits::*;
 pub use self::links::*;
 pub use self::ik::*;
 pub use self::rctree_links::*;
+pub use self::vec_links::*;
