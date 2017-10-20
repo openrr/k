@@ -116,6 +116,8 @@ extern crate nalgebra as na;
 #[macro_use]
 extern crate log;
 
+mod errors;
+mod traits;
 mod links;
 mod ik;
 pub mod math;
@@ -123,6 +125,8 @@ pub mod rctree;
 mod rctree_links;
 pub mod urdf;
 
+pub use self::errors::*;
+pub use self::traits::*;
 pub use self::links::*;
 pub use self::ik::*;
 pub use self::rctree_links::*;

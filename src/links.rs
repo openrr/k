@@ -1,8 +1,8 @@
 extern crate nalgebra as na;
 
+use traits::*;
+use errors::*;
 use na::{Isometry3, Vector3, Unit, UnitQuaternion, Translation3, Real};
-use std::error::Error;
-use std::fmt;
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
@@ -14,33 +14,6 @@ pub enum JointType<T: Real> {
     /// Linear joint. angle is length
     Linear { axis: Unit<Vector3<T>> },
 }
-
-/// The reason of joint error: `OutOfLimit`, `SizeMisMatch`
-#[derive(Debug, Clone)]
-pub enum JointError {
-    OutOfLimit,
-    SizeMisMatch,
-}
-
-impl fmt::Display for JointError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            JointError::OutOfLimit => write!(f, "limit over"),
-            JointError::SizeMisMatch => write!(f, "size is invalid"),
-        }
-    }
-}
-
-impl Error for JointError {
-    fn description(&self) -> &str {
-        match *self {
-            JointError::OutOfLimit => "limit over",
-            JointError::SizeMisMatch => "size is invalid",
-        }
-    }
-}
-
-
 
 /// Robot representation with set of `VecKinematicChain`s
 ///
@@ -84,14 +57,7 @@ where
     }
 }
 
-pub trait KinematicChain<T>
-where
-    T: Real,
-{
-    fn calc_end_transform(&self) -> Isometry3<T>;
-    fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
-    fn get_joint_angles(&self) -> Vec<T>;
-}
+
 
 /// Set of Joint and Link
 ///

@@ -3,8 +3,9 @@ extern crate nalgebra as na;
 use na::{Isometry3, Vector6, DMatrix, Real};
 use std::error::Error;
 use std::fmt;
-use links::*;
+use errors::*;
 use math::*;
+use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);

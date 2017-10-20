@@ -1,6 +1,8 @@
 extern crate nalgebra as na;
 
 use na::{Isometry3, Real};
+use errors::*;
+use traits::*;
 use links::*;
 use rctree::*;
 use std::collections::HashSet;
