@@ -2,6 +2,7 @@ extern crate nalgebra as na;
 
 use na::{Isometry3, Real};
 use errors::*;
+use joints::*;
 use traits::*;
 use links::*;
 use rctree::*;
@@ -69,6 +70,12 @@ where
         self.joint_with_links
             .iter()
             .filter_map(|ljn_ref| ljn_ref.borrow().data.get_joint_angle())
+            .collect()
+    }
+    fn get_joint_limits(&self) -> Vec<Option<Range<T>>> {
+        self.joint_with_links
+            .iter()
+            .map(|ljn_ref| ljn_ref.borrow().data.joint.limits.clone())
             .collect()
     }
 }
@@ -206,6 +213,12 @@ where
             lj.borrow_mut().data.set_joint_angle(*angle)?;
         }
         Ok(())
+    }
+
+    fn get_joint_limits(&self) -> Vec<Option<Range<T>>> {
+        self.iter_for_joints_link()
+            .map(|link| link.joint.limits.clone())
+            .collect()
     }
 }
 

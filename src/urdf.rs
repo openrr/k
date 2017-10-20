@@ -34,6 +34,7 @@ use links::*;
 use na::Real;
 use rctree::*;
 use rctree_links::*;
+use joints::*;
 use std::collections::HashMap;
 use std::path::Path;
 

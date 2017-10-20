@@ -120,11 +120,13 @@ mod errors;
 mod traits;
 mod links;
 mod ik;
+mod joints;
 pub mod math;
 pub mod rctree;
 mod rctree_links;
 pub mod urdf;
 
+pub use self::joints::*;
 pub use self::errors::*;
 pub use self::traits::*;
 pub use self::links::*;
