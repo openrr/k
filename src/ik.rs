@@ -1,8 +1,6 @@
 extern crate nalgebra as na;
 
 use na::{Isometry3, Vector6, DMatrix, Real};
-use std::error::Error;
-use std::fmt;
 use errors::*;
 use math::*;
 use traits::*;
@@ -17,43 +15,6 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
         rpy[1],
         rpy[2],
     )
-}
-
-/// The reason of the fail of inverse kinematics
-#[derive(Debug)]
-pub enum IKError {
-    NotConverged,
-    InverseMatrixError,
-    PreconditionError,
-    JointOutOfLimit(JointError),
-}
-
-impl From<JointError> for IKError {
-    fn from(err: JointError) -> IKError {
-        IKError::JointOutOfLimit(err)
-    }
-}
-
-impl fmt::Display for IKError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            IKError::NotConverged => write!(f, "ik solve not converted"),
-            IKError::InverseMatrixError => write!(f, "ik failed to solve inverse matrix"),
-            IKError::PreconditionError => write!(f, "ik precondition not match"),
-            IKError::JointOutOfLimit(ref err) => write!(f, "ik error : {}", err),
-        }
-    }
-}
-
-impl Error for IKError {
-    fn description(&self) -> &str {
-        match *self {
-            IKError::NotConverged => "not converged",
-            IKError::InverseMatrixError => "inverse matrix error",
-            IKError::PreconditionError => "precondition not match",
-            IKError::JointOutOfLimit(ref err) => err.description(),
-        }
-    }
 }
 
 pub trait InverseKinematicsSolver<T: Real> {
