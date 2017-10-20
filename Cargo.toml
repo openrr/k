@@ -1,6 +1,6 @@
 [package]
 name = "k"
-version = "0.0.8"
+version = "0.1.0"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
 description = "k is for kinematics"
 license = "Apache-2.0"
@@ -17,4 +17,4 @@ log = "0.3"
 
 [dev-dependencies]
 kiss3d = "0.11.0"
-glfw = "0.15.0"
+glfw = { version = "0.15.0", default-features = false }
