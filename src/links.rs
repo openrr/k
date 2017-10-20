@@ -55,7 +55,8 @@ pub struct LinkStar<T: Real> {
 }
 
 impl<T> LinkStar<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new(name: &str, frames: Vec<VecKinematicChain<T>>) -> LinkStar<T> {
         LinkStar {
@@ -68,11 +69,11 @@ impl<T> LinkStar<T>
         self.frames
             .iter()
             .map(|lf| {
-                     lf.calc_link_transforms()
-                         .iter()
-                         .map(|&tf| self.transform * tf)
-                         .collect()
-                 })
+                lf.calc_link_transforms()
+                    .iter()
+                    .map(|&tf| self.transform * tf)
+                    .collect()
+            })
             .collect()
     }
     pub fn set_transform(&mut self, transform: Isometry3<T>) {
@@ -84,7 +85,8 @@ impl<T> LinkStar<T>
 }
 
 pub trait KinematicChain<T>
-    where T: Real
+where
+    T: Real,
 {
     fn calc_end_transform(&self) -> Isometry3<T>;
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
@@ -109,7 +111,8 @@ pub struct VecKinematicChain<T: Real> {
 }
 
 impl<T> VecKinematicChain<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new(name: &str, joint_with_links: Vec<Link<T>>) -> VecKinematicChain<T> {
         VecKinematicChain {
@@ -138,12 +141,16 @@ impl<T> VecKinematicChain<T>
 
 
 impl<T> KinematicChain<T> for VecKinematicChain<T>
-    where T: Real
+where
+    T: Real,
 {
     fn calc_end_transform(&self) -> Isometry3<T> {
-        self.joint_with_links
-            .iter()
-            .fold(self.transform, |trans, lj| trans * lj.calc_transform())
+        self.joint_with_links.iter().fold(
+            self.transform,
+            |trans, lj| {
+                trans * lj.calc_transform()
+            },
+        )
     }
 
     /// if failed, joints angles are non determined,
@@ -184,7 +191,8 @@ pub struct Link<T: Real> {
 }
 
 impl<T> Link<T>
-    where T: Real
+where
+    T: Real,
 {
     /// Construct a Link from name and joint instance
     ///
@@ -225,7 +233,8 @@ pub struct Range<T: Real> {
 }
 
 impl<T> Range<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new(min: T, max: T) -> Self {
         Range { min: min, max: max }
@@ -245,7 +254,8 @@ pub struct Joint<T: Real> {
 }
 
 impl<T> Joint<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new(name: &str, joint_type: JointType<T>) -> Joint<T> {
         Joint {
@@ -280,12 +290,16 @@ impl<T> Joint<T>
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => {
-                Isometry3::from_parts(Translation3::new(T::zero(), T::zero(), T::zero()),
-                                      UnitQuaternion::from_axis_angle(&axis, self.angle))
+                Isometry3::from_parts(
+                    Translation3::new(T::zero(), T::zero(), T::zero()),
+                    UnitQuaternion::from_axis_angle(&axis, self.angle),
+                )
             }
             JointType::Linear { axis } => {
-                Isometry3::from_parts(Translation3::from_vector(axis.unwrap() * self.angle),
-                                      UnitQuaternion::identity())
+                Isometry3::from_parts(
+                    Translation3::from_vector(axis.unwrap() * self.angle),
+                    UnitQuaternion::identity(),
+                )
             }
         }
     }
@@ -314,7 +328,8 @@ pub struct LinkBuilder<T: Real> {
 }
 
 impl<T> Default for LinkBuilder<T>
-    where T: Real
+where
+    T: Real,
 {
     fn default() -> Self {
         Self::new()
@@ -322,7 +337,8 @@ impl<T> Default for LinkBuilder<T>
 }
 
 impl<T> LinkBuilder<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new() -> LinkBuilder<T> {
         LinkBuilder {
@@ -335,11 +351,12 @@ impl<T> LinkBuilder<T>
         self.name = name.to_string();
         self
     }
-    pub fn joint(mut self,
-                 name: &str,
-                 joint_type: JointType<T>,
-                 limits: Option<Range<T>>)
-                 -> LinkBuilder<T> {
+    pub fn joint(
+        mut self,
+        name: &str,
+        joint_type: JointType<T>,
+        limits: Option<Range<T>>,
+    ) -> LinkBuilder<T> {
         self.joint = Joint::new(name, joint_type);
         self.joint.set_limits(limits);
         self

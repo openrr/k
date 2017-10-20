@@ -19,7 +19,8 @@ pub struct RefKinematicChain<T: Real> {
 }
 
 impl<T> RefKinematicChain<T>
-    where T: Real
+where
+    T: Real,
 {
     pub fn new(name: &str, end: &RcLinkNode<T>) -> Self {
         let mut links = map_ancestors(end, &|ljn| ljn.clone());
@@ -33,13 +34,14 @@ impl<T> RefKinematicChain<T>
 }
 
 impl<T> KinematicChain<T> for RefKinematicChain<T>
-    where T: Real
+where
+    T: Real,
 {
     fn calc_end_transform(&self) -> Isometry3<T> {
-        self.joint_with_links
-            .iter()
-            .fold(self.transform,
-                  |trans, ljn_ref| trans * ljn_ref.borrow().data.calc_transform())
+        self.joint_with_links.iter().fold(self.transform, |trans,
+         ljn_ref| {
+            trans * ljn_ref.borrow().data.calc_transform()
+        })
     }
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         // TODO: is it possible to cache the joint_with_angle to speed up?
@@ -71,9 +73,9 @@ impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
     type Item = Ref<'a, T>;
 
     fn next(&mut self) -> Option<Ref<'a, T>> {
-        self.iter
-            .next()
-            .map(|rc| Ref::map(rc.borrow(), |node| &node.data))
+        self.iter.next().map(|rc| {
+            Ref::map(rc.borrow(), |node| &node.data)
+        })
     }
 }
 
@@ -85,9 +87,9 @@ impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
     type Item = RefMut<'a, T>;
 
     fn next(&mut self) -> Option<RefMut<'a, T>> {
-        self.iter
-            .next()
-            .map(|rc| RefMut::map(rc.borrow_mut(), |node| &mut node.data))
+        self.iter.next().map(|rc| {
+            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
+        })
     }
 }
 
@@ -144,8 +146,9 @@ impl<T: Real> LinkTree<T> {
     }
 
     pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
-        Box::new(self.iter()
-                     .filter(|ljn| ljn.borrow().data.has_joint_angle()))
+        Box::new(self.iter().filter(
+            |ljn| ljn.borrow().data.has_joint_angle(),
+        ))
     }
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
@@ -195,24 +198,27 @@ impl<T: Real> LinkTree<T> {
 
 /// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
 pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RefKinematicChain<T>>
-    where T: Real
+where
+    T: Real,
 {
     create_kinematic_chains_with_dof_limit(tree, usize::max_value())
 }
 
 /// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
-pub fn create_kinematic_chains_with_dof_limit<T>(tree: &LinkTree<T>,
-                                                 dof_limit: usize)
-                                                 -> Vec<RefKinematicChain<T>>
-    where T: Real
+pub fn create_kinematic_chains_with_dof_limit<T>(
+    tree: &LinkTree<T>,
+    dof_limit: usize,
+) -> Vec<RefKinematicChain<T>>
+where
+    T: Real,
 {
     let mut name_hash = HashSet::new();
     tree.iter()
         .filter_map(|ljn_ref| if ljn_ref.borrow().children.is_empty() {
-                        Some(ljn_ref.clone())
-                    } else {
-                        None
-                    })
+            Some(ljn_ref.clone())
+        } else {
+            None
+        })
         .filter_map(|ljn_ref| {
             let dof = map_ancestors(&ljn_ref, &|ljn_ref| ljn_ref.clone())
                 .iter()
@@ -267,44 +273,56 @@ fn it_works() {
     let l0 = LinkBuilder::new()
         .name("link1")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
-        .joint("j0",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j0",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
     let l1 = LinkBuilder::new()
         .name("link1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint("j1",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j1",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
     let l2 = LinkBuilder::new()
         .name("link1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint("j2",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j2",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
     let l3 = LinkBuilder::new()
         .name("link3")
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
-        .joint("j3",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j3",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
     let l4 = LinkBuilder::new()
         .name("link4")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint("j4",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j4",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
     let l5 = LinkBuilder::new()
         .name("link5")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint("j5",
-               JointType::Rotational { axis: na::Vector3::y_axis() },
-               None)
+        .joint(
+            "j5",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
         .finalize();
 
     let ljn0 = create_ref_node(l0);
@@ -333,14 +351,7 @@ fn it_works() {
                 .vector
                 .z
         }
-        None => {
-            ljn.borrow()
-                .data
-                .calc_transform()
-                .translation
-                .vector
-                .z
-        }
+        None => ljn.borrow().data.calc_transform().translation.vector.z,
     };
 
     let poses = map_descendants(&ljn0, &get_z);
