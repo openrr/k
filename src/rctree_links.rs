@@ -47,6 +47,27 @@ where
     }
 }
 
+impl<T> LinkContainer<T> for RefKinematicChain<T>
+where
+    T: Real,
+{
+    fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
+        self.links
+            .iter()
+            .scan(self.transform, |base, ljn| {
+                *base *= ljn.borrow().data.calc_transform();
+                Some(*base)
+            })
+            .collect()
+    }
+    fn get_link_names(&self) -> Vec<String> {
+        self.links
+            .iter()
+            .map(|ljn| ljn.borrow().data.name.to_owned())
+            .collect()
+    }
+}
+
 impl<T> JointContainer<T> for RefKinematicChain<T>
 where
     T: Real,
@@ -80,6 +101,17 @@ where
         links_with_angle
             .iter()
             .map(|ljn_ref| ljn_ref.borrow().data.joint.limits.clone())
+            .collect()
+    }
+    /// skip fixed joint
+    fn get_joint_names(&self) -> Vec<String> {
+        let links_with_angle = self.links
+            .iter()
+            .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
+            .collect::<Vec<_>>();
+        links_with_angle
+            .iter()
+            .map(|ljn_ref| ljn_ref.borrow().data.joint.name.to_string())
             .collect()
     }
 }
@@ -130,27 +162,6 @@ impl<T: Real> LinkTree<T> {
     pub fn set_root_transform(&mut self, transform: Isometry3<T>) {
         self.root_link.borrow_mut().data.transform = transform;
     }
-    pub fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
-        self.iter()
-            .map(|ljn| {
-                let parent_transform = match ljn.borrow().parent {
-                    Some(ref parent) => {
-                        let rc_parent = parent.upgrade().unwrap().clone();
-                        let parent_obj = rc_parent.borrow();
-                        match parent_obj.data.world_transform_cache {
-                            Some(trans) => trans,
-                            None => Isometry3::identity(),
-                        }
-                    }
-                    None => Isometry3::identity(),
-                };
-                let trans = parent_transform * ljn.borrow().data.calc_transform();
-                ljn.borrow_mut().data.world_transform_cache = Some(trans);
-                trans
-            })
-            .collect()
-    }
-
     pub fn iter(&self) -> Iter<RcLinkNode<T>> {
         self.expanded_robot_link_vec.iter()
     }
@@ -172,13 +183,6 @@ impl<T: Real> LinkTree<T> {
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
     }
-    /// skip fixed joint
-    pub fn get_joint_names(&self) -> Vec<String> {
-        self.iter_for_joints_link()
-            .map(|link| link.get_joint_name().to_string())
-            .collect()
-    }
-
     /// include fixed joint
     pub fn get_all_joint_names(&self) -> Vec<String> {
         self.iter_link()
@@ -223,6 +227,40 @@ where
         self.iter_for_joints_link()
             .map(|link| link.joint.limits.clone())
             .collect()
+    }
+    fn get_joint_names(&self) -> Vec<String> {
+        self.iter_for_joints_link()
+            .map(|link| link.joint.name.clone())
+            .collect()
+    }
+}
+
+impl<T> LinkContainer<T> for LinkTree<T>
+where
+    T: Real,
+{
+    fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
+        self.iter()
+            .map(|ljn| {
+                let parent_transform = match ljn.borrow().parent {
+                    Some(ref parent) => {
+                        let rc_parent = parent.upgrade().unwrap().clone();
+                        let parent_obj = rc_parent.borrow();
+                        match parent_obj.data.world_transform_cache {
+                            Some(trans) => trans,
+                            None => Isometry3::identity(),
+                        }
+                    }
+                    None => Isometry3::identity(),
+                };
+                let trans = parent_transform * ljn.borrow().data.calc_transform();
+                ljn.borrow_mut().data.world_transform_cache = Some(trans);
+                trans
+            })
+            .collect()
+    }
+    fn get_link_names(&self) -> Vec<String> {
+        self.iter_link().map(|link| link.name.to_owned()).collect()
     }
 }
 

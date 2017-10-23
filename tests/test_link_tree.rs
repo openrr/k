@@ -4,6 +4,8 @@ extern crate k;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use k::JointContainer;
+
     #[test]
     pub fn test_tree() {
         let tree = k::urdf::create_tree_from_file::<f32, _>("urdf/sample.urdf").unwrap();

@@ -9,6 +9,15 @@ where
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
     fn get_joint_angles(&self) -> Vec<T>;
     fn get_joint_limits(&self) -> Vec<Option<Range<T>>>;
+    fn get_joint_names(&self) -> Vec<String>;
+}
+
+pub trait LinkContainer<T>
+where
+    T: Real,
+{
+    fn calc_link_transforms(&self) -> Vec<Isometry3<T>>;
+    fn get_link_names(&self) -> Vec<String>;
 }
 
 pub trait KinematicChain<T>: JointContainer<T>

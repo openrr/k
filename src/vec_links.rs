@@ -28,17 +28,6 @@ where
             transform: Isometry3::identity(),
         }
     }
-    pub fn calc_link_transforms(&self) -> Vec<Vec<Isometry3<T>>> {
-        self.frames
-            .iter()
-            .map(|lf| {
-                lf.calc_link_transforms()
-                    .iter()
-                    .map(|&tf| self.transform * tf)
-                    .collect()
-            })
-            .collect()
-    }
     pub fn set_transform(&mut self, transform: Isometry3<T>) {
         self.transform = transform;
     }
@@ -47,7 +36,38 @@ where
     }
 }
 
-
+impl<T> LinkContainer<T> for LinkStar<T>
+where
+    T: Real,
+{
+    fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
+        let transforms = self.frames
+            .iter()
+            .map(|lf| {
+                lf.calc_link_transforms()
+                    .iter()
+                    .map(|&tf| self.transform * tf)
+                    .collect()
+            })
+            .collect::<Vec<Vec<_>>>();
+        let mut ret = Vec::new();
+        for mut v in transforms {
+            ret.append(&mut v);
+        }
+        ret
+    }
+    fn get_link_names(&self) -> Vec<String> {
+        let names = self.frames
+            .iter()
+            .map(|lf| lf.get_link_names())
+            .collect::<Vec<_>>();
+        let mut ret = Vec::new();
+        for mut v in names {
+            ret.append(&mut v);
+        }
+        ret
+    }
+}
 
 /// Set of Joint and Link
 ///
@@ -77,16 +97,6 @@ where
             transform: Isometry3::identity(),
         }
     }
-    /// returns transforms of links
-    pub fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
-        self.joint_with_links
-            .iter()
-            .scan(self.transform, |base, lj| {
-                *base *= lj.calc_transform();
-                Some(*base)
-            })
-            .collect()
-    }
     pub fn len(&self) -> usize {
         self.joint_with_links.len()
     }
@@ -95,6 +105,27 @@ where
     }
 }
 
+impl<T> LinkContainer<T> for VecKinematicChain<T>
+where
+    T: Real,
+{
+    /// returns transforms of links
+    fn calc_link_transforms(&self) -> Vec<Isometry3<T>> {
+        self.joint_with_links
+            .iter()
+            .scan(self.transform, |base, lj| {
+                *base *= lj.calc_transform();
+                Some(*base)
+            })
+            .collect()
+    }
+    fn get_link_names(&self) -> Vec<String> {
+        self.joint_with_links
+            .iter()
+            .map(|lj| lj.name.to_owned())
+            .collect()
+    }
+}
 
 impl<T> KinematicChain<T> for VecKinematicChain<T>
 where
@@ -140,6 +171,14 @@ where
         self.joint_with_links
             .iter()
             .map(|joint_with_link| joint_with_link.joint.limits.clone())
+            .collect()
+    }
+    fn get_joint_names(&self) -> Vec<String> {
+        self.joint_with_links
+            .iter()
+            .map(|joint_with_link| {
+                joint_with_link.get_joint_name().to_string()
+            })
             .collect()
     }
 }
