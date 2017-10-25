@@ -27,7 +27,7 @@ where
         Range { min: min, max: max }
     }
     pub fn is_valid(&self, val: T) -> bool {
-        val < self.max && val > self.min
+        val <= self.max && val >= self.min
     }
 }
 
