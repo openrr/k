@@ -34,12 +34,28 @@ pub struct RefKinematicChain<T: Real> {
     pub name: String,
     pub links: Vec<RcLinkNode<T>>,
     pub transform: Isometry3<T>,
+    end_link_name: Option<String>,
 }
 
 impl<T> RefKinematicChain<T>
 where
     T: Real,
 {
+    pub fn set_end_link_name(&mut self, name: &str) -> Result<(), String> {
+        if self.links
+            .iter()
+            .find(|&ljn| ljn.borrow().data.name == name)
+            .is_none()
+        {
+            Err(format!("{} not found", name).to_owned())
+        } else {
+            self.end_link_name = Some(name.to_owned());
+            Ok(())
+        }
+    }
+    pub fn get_end_link_name<'a>(&'a self) -> &'a Option<String> {
+        &self.end_link_name
+    }
     pub fn new(name: &str, end: &RcLinkNode<T>) -> Self {
         let mut links = map_ancestors(end, &|ljn| ljn.clone());
         links.reverse();
@@ -47,6 +63,7 @@ where
             name: name.to_string(),
             links: links,
             transform: Isometry3::identity(),
+            end_link_name: None,
         }
     }
 }
@@ -56,9 +73,16 @@ where
     T: Real,
 {
     fn calc_end_transform(&self) -> Isometry3<T> {
-        self.links.iter().fold(self.transform, |trans, ljn_ref| {
-            trans * ljn_ref.borrow().data.calc_transform()
-        })
+        let mut end_transform = self.transform.clone();
+        for ljn_ref in &self.links {
+            end_transform *= ljn_ref.borrow().data.calc_transform();
+            if let Some(ref end_name) = self.end_link_name {
+                if end_name == &ljn_ref.borrow().data.name {
+                    return end_transform;
+                }
+            }
+        }
+        end_transform
     }
 }
 
@@ -359,7 +383,7 @@ where
 #[test]
 fn it_works() {
     let l0 = LinkBuilder::new()
-        .name("link1")
+        .name("link0")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint(
             "j0",
@@ -381,7 +405,7 @@ fn it_works() {
         )
         .finalize();
     let l2 = LinkBuilder::new()
-        .name("link1")
+        .name("link2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j2",
@@ -438,6 +462,7 @@ fn it_works() {
     set_parent_child(&ljn4, &ljn5);
     let names = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_name().to_string());
     println!("{:?}", ljn0);
+    assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
     let angles = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_angle());
     println!("angles = {:?}", angles);
@@ -464,8 +489,17 @@ fn it_works() {
     let poses = map_descendants(&ljn0, &get_z);
     println!("poses = {:?}", poses);
 
-    let arm = RefKinematicChain::new("chain1", &ljn3);
+    let mut arm = RefKinematicChain::new("chain1", &ljn3);
     assert_eq!(arm.get_joint_angles().len(), 4);
     println!("{:?}", arm.get_joint_angles());
-    println!("{:?}", arm.calc_end_transform());
+    let real_end = arm.calc_end_transform();
+    assert!(arm.get_end_link_name().is_none());
+    arm.set_end_link_name("link3").unwrap();
+    assert!(arm.set_end_link_name("linkhoge").is_err());
+    assert!(arm.get_end_link_name().clone().unwrap() == "link3");
+    // not changed if set same end link name
+    assert_eq!(real_end, arm.calc_end_transform());
+    arm.set_end_link_name("link2").unwrap();
+    assert!(arm.get_end_link_name().clone().unwrap() == "link2");
+    assert!(real_end != arm.calc_end_transform());
 }
