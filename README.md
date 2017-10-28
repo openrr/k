@@ -1,4 +1,4 @@
-# `k`: Kinematics library for rust-lang
+# `k`: Kinematics library for rust-lang [![Build Status](https://travis-ci.org/OTL/k.svg?branch=master)](https://travis-ci.org/OTL/k) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k)
 
 `k` has below functionalities.
 
