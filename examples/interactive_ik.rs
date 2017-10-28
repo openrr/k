@@ -1,14 +1,29 @@
+/*
+   Copyright 2017 Takashi Ogura
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
 extern crate glfw;
+extern crate k;
 extern crate kiss3d;
 extern crate nalgebra as na;
-extern crate k;
 
-use glfw::{Action, WindowEvent, Key};
+use glfw::{Action, Key, WindowEvent};
 use kiss3d::camera::ArcBall;
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
-use na::{Isometry3, Vector3, Translation3, UnitQuaternion, Point3};
+use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 use k::*;
 
 fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
@@ -16,7 +31,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("shoulder_link1")
         .joint(
             "shoulder_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -24,7 +41,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("shoulder_link2")
         .joint(
             "shoulder_roll",
-            JointType::Rotational { axis: Vector3::x_axis() },
+            JointType::Rotational {
+                axis: Vector3::x_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.1, 0.0))
@@ -33,7 +52,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("shoulder_link3")
         .joint(
             "shoulder_yaw",
-            JointType::Rotational { axis: Vector3::z_axis() },
+            JointType::Rotational {
+                axis: Vector3::z_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.30))
@@ -42,7 +63,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("elbow_link1")
         .joint(
             "elbow_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -51,7 +74,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("wrist_link1")
         .joint(
             "wrist_yaw",
-            JointType::Rotational { axis: Vector3::z_axis() },
+            JointType::Rotational {
+                axis: Vector3::z_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -60,7 +85,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("wrist_link2")
         .joint(
             "wrist_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -69,7 +96,9 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         .name("wrist_link3")
         .joint(
             "wrist_roll",
-            JointType::Rotational { axis: Vector3::x_axis() },
+            JointType::Rotational {
+                axis: Vector3::x_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.10))
@@ -133,8 +162,8 @@ fn main() {
         Translation3::new(0.0, 0.0, 0.0),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
-    arm.transform = base_rot *
-        Isometry3::from_parts(
+    arm.transform = base_rot
+        * Isometry3::from_parts(
             Translation3::new(0.0, 0.0, 0.6),
             UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
         );
@@ -170,7 +199,6 @@ fn main() {
                     event.inhibited = true // override the default keyboard handler
                 }
                 _ => {}
-
             }
         }
         solver.solve(&mut arm, &target).unwrap_or_else(|err| {
@@ -183,5 +211,4 @@ fn main() {
             cubes[i + 1].set_local_transformation(trans.clone());
         }
     }
-
 }

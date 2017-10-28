@@ -1,4 +1,19 @@
-use na::{Isometry3, Vector3, Unit, UnitQuaternion, Translation3, Real};
+/*
+   Copyright 2017 Takashi Ogura
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
 use errors::*;
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
@@ -76,18 +91,14 @@ where
     pub fn calc_transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
-            JointType::Rotational { axis } => {
-                Isometry3::from_parts(
-                    Translation3::new(T::zero(), T::zero(), T::zero()),
-                    UnitQuaternion::from_axis_angle(&axis, self.angle),
-                )
-            }
-            JointType::Linear { axis } => {
-                Isometry3::from_parts(
-                    Translation3::from_vector(axis.unwrap() * self.angle),
-                    UnitQuaternion::identity(),
-                )
-            }
+            JointType::Rotational { axis } => Isometry3::from_parts(
+                Translation3::new(T::zero(), T::zero(), T::zero()),
+                UnitQuaternion::from_axis_angle(&axis, self.angle),
+            ),
+            JointType::Linear { axis } => Isometry3::from_parts(
+                Translation3::from_vector(axis.unwrap() * self.angle),
+                UnitQuaternion::identity(),
+            ),
         }
     }
 }

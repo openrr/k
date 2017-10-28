@@ -1,3 +1,18 @@
+/*
+   Copyright 2017 Takashi Ogura
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
 //! # Load [URDF](http://wiki.ros.org/urdf) format and create `k::JointWithLinTree`
 //!
 //! `k::urdf` uses [urdf-rs](http://github.com/OTL/urdf-rs) to load urdf model.
@@ -79,7 +94,6 @@ fn create_joint_with_link_from_urdf_joint<T>(joint: &urdf_rs::Joint) -> Link<T>
 where
     T: Real,
 {
-
     let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
         None
     } else {
@@ -92,13 +106,14 @@ where
         .joint(
             &joint.name,
             match joint.joint_type {
-                urdf_rs::JointType::Revolute |
-                urdf_rs::JointType::Continuous => {
-                    JointType::Rotational { axis: axis_from(joint.axis.xyz) }
+                urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
+                    JointType::Rotational {
+                        axis: axis_from(joint.axis.xyz),
+                    }
                 }
-                urdf_rs::JointType::Prismatic => {
-                    JointType::Linear { axis: axis_from(joint.axis.xyz) }
-                }
+                urdf_rs::JointType::Prismatic => JointType::Linear {
+                    axis: axis_from(joint.axis.xyz),
+                },
                 _ => JointType::Fixed,
             },
             limit,
@@ -197,9 +212,10 @@ where
         let node = create_ref_node(create_joint_with_link_from_urdf_joint(j));
         child_ref_map.insert(&j.child.link, node.clone());
         if parent_ref_map.get(&j.parent.link).is_some() {
-            parent_ref_map.get_mut(&j.parent.link).unwrap().push(
-                node.clone(),
-            );
+            parent_ref_map
+                .get_mut(&j.parent.link)
+                .unwrap()
+                .push(node.clone());
         } else {
             parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
         }
@@ -221,12 +237,12 @@ where
         }
     }
     // set root as parent of root joint nodes
-    let root_joint_nodes = ref_nodes.iter().filter_map(
-        |ref_node| match ref_node.borrow().parent {
+    let root_joint_nodes = ref_nodes
+        .iter()
+        .filter_map(|ref_node| match ref_node.borrow().parent {
             None => Some(ref_node),
             Some(_) => None,
-        },
-    );
+        });
     for rjn in root_joint_nodes {
         set_parent_child(&root_node, rjn);
     }

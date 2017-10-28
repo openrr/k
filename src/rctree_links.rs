@@ -1,3 +1,18 @@
+/*
+   Copyright 2017 Takashi Ogura
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
 extern crate nalgebra as na;
 
 use na::{Isometry3, Real};
@@ -9,7 +24,7 @@ use rctree::*;
 use std::collections::HashSet;
 use std::slice::{Iter, IterMut};
 use std::rc::Rc;
-use std::cell::{Ref, RefMut, RefCell};
+use std::cell::{Ref, RefCell, RefMut};
 
 pub type RcLinkNode<T> = RcNode<Link<T>>;
 pub type LinkNode<T> = Node<Link<T>>;
@@ -124,9 +139,9 @@ impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
     type Item = Ref<'a, T>;
 
     fn next(&mut self) -> Option<Ref<'a, T>> {
-        self.iter.next().map(|rc| {
-            Ref::map(rc.borrow(), |node| &node.data)
-        })
+        self.iter
+            .next()
+            .map(|rc| Ref::map(rc.borrow(), |node| &node.data))
     }
 }
 
@@ -138,9 +153,9 @@ impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
     type Item = RefMut<'a, T>;
 
     fn next(&mut self) -> Option<RefMut<'a, T>> {
-        self.iter.next().map(|rc| {
-            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
-        })
+        self.iter
+            .next()
+            .map(|rc| RefMut::map(rc.borrow_mut(), |node| &mut node.data))
     }
 }
 
@@ -169,16 +184,21 @@ impl<T: Real> LinkTree<T> {
         self.expanded_robot_link_vec.iter_mut()
     }
     pub fn iter_link<'a>(&'a self) -> NodeIter<'a, Link<T>> {
-        NodeIter { iter: self.expanded_robot_link_vec.iter() }
+        NodeIter {
+            iter: self.expanded_robot_link_vec.iter(),
+        }
     }
     pub fn iter_link_mut<'a>(&'a self) -> NodeIterMut<'a, Link<T>> {
-        NodeIterMut { iter: self.expanded_robot_link_vec.iter() }
+        NodeIterMut {
+            iter: self.expanded_robot_link_vec.iter(),
+        }
     }
 
     pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
-        Box::new(self.iter().filter(
-            |ljn| ljn.borrow().data.has_joint_angle(),
-        ))
+        Box::new(
+            self.iter()
+                .filter(|ljn| ljn.borrow().data.has_joint_angle()),
+        )
     }
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
@@ -343,7 +363,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint(
             "j0",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -352,7 +374,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j1",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -361,7 +385,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j2",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -370,7 +396,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint(
             "j3",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -379,7 +407,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j4",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -388,7 +418,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j5",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
