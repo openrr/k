@@ -56,7 +56,8 @@ use rctree::*;
 use rctree_links::*;
 use joints::*;
 
-fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
+/// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
+pub fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
 where
     T: Real,
 {
@@ -67,7 +68,8 @@ where
     ))
 }
 
-fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
+/// Returns nalgebra::UnitQuaternion from f64 array
+pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
 where
     T: Real,
 {
@@ -78,7 +80,8 @@ where
     )
 }
 
-fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
+/// Returns nalgebra::Translation3 from f64 array
+pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
 where
     T: Real,
 {
