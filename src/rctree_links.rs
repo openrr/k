@@ -30,14 +30,14 @@ pub type RcLinkNode<T> = RcNode<Link<T>>;
 pub type LinkNode<T> = Node<Link<T>>;
 
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
-pub struct RefKinematicChain<T: Real> {
+pub struct RcKinematicChain<T: Real> {
     pub name: String,
     pub links: Vec<RcLinkNode<T>>,
     pub transform: Isometry3<T>,
     end_link_name: Option<String>,
 }
 
-impl<T> RefKinematicChain<T>
+impl<T> RcKinematicChain<T>
 where
     T: Real,
 {
@@ -59,7 +59,7 @@ where
     pub fn new(name: &str, end: &RcLinkNode<T>) -> Self {
         let mut links = map_ancestors(end, &|ljn| ljn.clone());
         links.reverse();
-        RefKinematicChain {
+        RcKinematicChain {
             name: name.to_string(),
             links: links,
             transform: Isometry3::identity(),
@@ -68,7 +68,7 @@ where
     }
 }
 
-impl<T> KinematicChain<T> for RefKinematicChain<T>
+impl<T> KinematicChain<T> for RcKinematicChain<T>
 where
     T: Real,
 {
@@ -86,7 +86,7 @@ where
     }
 }
 
-impl<T> LinkContainer<T> for RefKinematicChain<T>
+impl<T> LinkContainer<T> for RcKinematicChain<T>
 where
     T: Real,
 {
@@ -107,7 +107,7 @@ where
     }
 }
 
-impl<T> JointContainer<T> for RefKinematicChain<T>
+impl<T> JointContainer<T> for RcKinematicChain<T>
 where
     T: Real,
 {
@@ -308,19 +308,19 @@ where
     }
 }
 
-/// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
-pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RefKinematicChain<T>>
+/// Create `Vec<RcKinematicChain>` from `LinkTree` to use IK
+pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RcKinematicChain<T>>
 where
     T: Real,
 {
     create_kinematic_chains_with_dof_limit(tree, usize::max_value())
 }
 
-/// Create `Vec<RefKinematicChain>` from `LinkTree` to use IK
+/// Create `Vec<RcKinematicChain>` from `LinkTree` to use IK
 pub fn create_kinematic_chains_with_dof_limit<T>(
     tree: &LinkTree<T>,
     dof_limit: usize,
-) -> Vec<RefKinematicChain<T>>
+) -> Vec<RcKinematicChain<T>>
 where
     T: Real,
 {
@@ -365,7 +365,7 @@ where
                 }
             }
             if !name_hash.contains(&root.borrow().data.name) {
-                let kc = RefKinematicChain::new(&root.borrow().data.name, &root);
+                let kc = RcKinematicChain::new(&root.borrow().data.name, &root);
                 name_hash.insert(root.borrow().data.name.clone());
                 assert!(kc.get_joint_angles().len() <= dof_limit);
                 if kc.get_joint_angles().len() >= 6 {
@@ -489,7 +489,7 @@ fn it_works() {
     let poses = map_descendants(&ljn0, &get_z);
     println!("poses = {:?}", poses);
 
-    let mut arm = RefKinematicChain::new("chain1", &ljn3);
+    let mut arm = RcKinematicChain::new("chain1", &ljn3);
     assert_eq!(arm.get_joint_angles().len(), 4);
     println!("{:?}", arm.get_joint_angles());
     let real_end = arm.calc_end_transform();
