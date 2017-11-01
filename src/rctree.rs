@@ -20,6 +20,7 @@ pub type RcNode<T> = Rc<RefCell<Node<T>>>;
 type WeakNode<T> = Weak<RefCell<Node<T>>>;
 
 #[derive(Debug, Clone)]
+/// Generic Node for tree struct
 pub struct Node<T> {
     pub parent: Option<WeakNode<T>>,
     pub children: Vec<RcNode<T>>,
@@ -36,7 +37,7 @@ impl<T> Node<T> {
     }
 }
 
-/// set parent and child relations at same time
+/// Set parent and child relations at same time
 pub fn set_parent_child<T>(parent: &RcNode<T>, child: &RcNode<T>) {
     child.borrow_mut().parent = Some(Rc::downgrade(parent));
     parent.borrow_mut().children.push(child.clone());

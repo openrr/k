@@ -191,6 +191,11 @@ pub struct LinkTree<T: Real> {
 }
 
 impl<T: Real> LinkTree<T> {
+    /// Create LinkTree from root link
+    ///
+    /// # Arguments
+    ///
+    /// * `root_link` - root node of the links
     pub fn new(name: &str, root_link: RcLinkNode<T>) -> Self {
         LinkTree {
             name: name.to_string(),
@@ -198,43 +203,49 @@ impl<T: Real> LinkTree<T> {
             root_link: root_link,
         }
     }
+    /// Set the transform of the root link
     pub fn set_root_transform(&mut self, transform: Isometry3<T>) {
         self.root_link.borrow_mut().data.transform = transform;
     }
+    /// iter for all link nodes
     pub fn iter(&self) -> Iter<RcLinkNode<T>> {
         self.expanded_robot_link_vec.iter()
     }
+    /// iter for all link nodes as mut
     pub fn iter_mut(&mut self) -> IterMut<RcLinkNode<T>> {
         self.expanded_robot_link_vec.iter_mut()
     }
+    /// iter for all links, not as node
     pub fn iter_link<'a>(&'a self) -> NodeIter<'a, Link<T>> {
         NodeIter {
             iter: self.expanded_robot_link_vec.iter(),
         }
     }
+    /// iter for all links as mut, not as node
     pub fn iter_link_mut<'a>(&'a self) -> NodeIterMut<'a, Link<T>> {
         NodeIterMut {
             iter: self.expanded_robot_link_vec.iter(),
         }
     }
-
+    /// iter for the links with the joint which is not fixed
     pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
         Box::new(
             self.iter()
                 .filter(|ljn| ljn.borrow().data.has_joint_angle()),
         )
     }
+    /// iter for the links with the joint which is not fixed
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
     }
-    /// include fixed joint
+    /// Get all joint names, include fixed joint
     pub fn get_all_joint_names(&self) -> Vec<String> {
         self.iter_link()
             .map(|link| link.get_joint_name().to_string())
             .collect()
     }
 
-    /// get the degree of freedom
+    /// Get the degree of freedom
     pub fn dof(&self) -> usize {
         self.iter_for_joints().count()
     }
@@ -245,7 +256,7 @@ impl<T> JointContainer<T> for LinkTree<T>
 where
     T: Real,
 {
-    /// get the angles of the joints
+    /// Get the angles of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     fn get_joint_angles(&self) -> Vec<T> {
@@ -254,7 +265,7 @@ where
             .collect()
     }
 
-    /// set the angles of the joints
+    /// Set the angles of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
     fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {

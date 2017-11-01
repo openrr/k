@@ -22,9 +22,18 @@ pub trait JointContainer<T>
 where
     T: Real,
 {
+    /// Set the angles of the joints
+    ///
+    /// If the angle are out of the limit, it returns error.
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
+
+    /// Get the angles of the joints
     fn get_joint_angles(&self) -> Vec<T>;
+
+    /// Get the limits of the joints, if it exists.
     fn get_joint_limits(&self) -> Vec<Option<Range<T>>>;
+
+    /// Get the all names of the joints
     fn get_joint_names(&self) -> Vec<String>;
 }
 
@@ -33,7 +42,10 @@ pub trait LinkContainer<T>
 where
     T: Real,
 {
+    /// Calculate the transforms of all of the links
     fn calc_link_transforms(&self) -> Vec<Isometry3<T>>;
+
+    /// Get the names of the links
     fn get_link_names(&self) -> Vec<String>;
 }
 
@@ -42,5 +54,6 @@ pub trait KinematicChain<T>: JointContainer<T>
 where
     T: Real,
 {
+    /// Calculate and return the transform of the end of the links
     fn calc_end_transform(&self) -> Isometry3<T>;
 }

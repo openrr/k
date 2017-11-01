@@ -41,6 +41,9 @@ where
     pub fn new(min: T, max: T) -> Self {
         Range { min: min, max: max }
     }
+    /// Check if the value is in the range
+    ///
+    /// true means it is OK.
     pub fn is_valid(&self, val: T) -> bool {
         val <= self.max && val >= self.min
     }
@@ -49,9 +52,13 @@ where
 /// Joint with type
 #[derive(Debug, Clone)]
 pub struct Joint<T: Real> {
+    /// Name of this joint
     pub name: String,
+    /// Type of this joint
     pub joint_type: JointType<T>,
+    /// Angle(position) of this joint
     pub angle: T,
+    /// Limits of this joint
     pub limits: Option<Range<T>>,
 }
 
@@ -59,6 +66,7 @@ impl<T> Joint<T>
 where
     T: Real,
 {
+    /// Create new Joint with name and type
     pub fn new(name: &str, joint_type: JointType<T>) -> Joint<T> {
         Joint {
             name: name.to_string(),
@@ -67,9 +75,13 @@ where
             limits: None,
         }
     }
+    /// Set the limits of this joint
     pub fn set_limits(&mut self, limits: Option<Range<T>>) {
         self.limits = limits;
     }
+    /// Set the angle of the joint
+    ///
+    /// It returns Err if it is out of the limits, or this is fixed joint.
     pub fn set_angle(&mut self, angle: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimit);
@@ -82,12 +94,14 @@ where
         self.angle = angle;
         Ok(())
     }
+    /// Returns the angle (position)
     pub fn get_angle(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
             _ => Some(self.angle),
         }
     }
+    /// Calculate and returns the transform of the end of this joint
     pub fn calc_transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),

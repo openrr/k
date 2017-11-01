@@ -47,18 +47,25 @@ where
             world_transform_cache: None,
         }
     }
+    /// Return the name of the joint
     pub fn get_joint_name(&self) -> &str {
         &self.joint.name
     }
+    /// Updates and returns the transform of the end of the joint
     pub fn calc_transform(&self) -> Isometry3<T> {
         self.transform * self.joint.calc_transform()
     }
+    /// Set the angle of the joint
+    ///
+    /// If angle is out of limit, it returns Err.
     pub fn set_joint_angle(&mut self, angle: T) -> Result<(), JointError> {
         self.joint.set_angle(angle)
     }
+    /// Get the angle of the joint. If it is fixed, it returns None.
     pub fn get_joint_angle(&self) -> Option<T> {
         self.joint.get_angle()
     }
+    /// Returns if it has a joint angle. similar to `is_not_fixed()`
     pub fn has_joint_angle(&self) -> bool {
         match self.joint.joint_type {
             JointType::Fixed => false,

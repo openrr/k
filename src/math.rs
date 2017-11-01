@@ -18,7 +18,7 @@ extern crate nalgebra as na;
 use na::{Real, UnitQuaternion, Vector3};
 
 
-/// create rpy angles from quaternion
+/// Create rpy angles from quaternion
 pub fn to_euler_angles<T: Real>(q: &UnitQuaternion<T>) -> Vector3<T> {
     let x = q[0];
     let y = q[1];

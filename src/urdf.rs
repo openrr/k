@@ -67,7 +67,7 @@ where
     ))
 }
 
-pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
+fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
 where
     T: Real,
 {
@@ -78,7 +78,7 @@ where
     )
 }
 
-pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
+fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
 where
     T: Real,
 {

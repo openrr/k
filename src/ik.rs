@@ -34,6 +34,7 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
 
 /// IK solver
 pub trait InverseKinematicsSolver<T: Real> {
+    /// Move the end transform of the `arm` to `target_pose`
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
         K: KinematicChain<T>;
@@ -43,9 +44,13 @@ pub trait InverseKinematicsSolver<T: Real> {
 /// Inverse Kinematics Solver using Jacobian matrix
 #[derive(Debug)]
 pub struct JacobianIKSolver<T: Real> {
+    /// Calculate jacobian matrix with this length in each joint
     pub jacobian_move_epsilon: T,
+    /// Move by this length in one loop
     pub move_epsilon: T,
+    /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
+    /// How many times the joints are tried to be moved
     pub num_max_try: i32,
 }
 
