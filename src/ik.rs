@@ -32,6 +32,7 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     )
 }
 
+/// IK solver
 pub trait InverseKinematicsSolver<T: Real> {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where

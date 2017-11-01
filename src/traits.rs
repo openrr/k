@@ -17,6 +17,7 @@ use errors::*;
 use joints::*;
 use na::{Isometry3, Real};
 
+/// Container of links with joints
 pub trait JointContainer<T>
 where
     T: Real,
@@ -27,6 +28,7 @@ where
     fn get_joint_names(&self) -> Vec<String>;
 }
 
+/// Container of links which has a transformation
 pub trait LinkContainer<T>
 where
     T: Real,
@@ -35,6 +37,7 @@ where
     fn get_link_names(&self) -> Vec<String>;
 }
 
+/// JointContainer which has an end transform
 pub trait KinematicChain<T>: JointContainer<T>
 where
     T: Real,
