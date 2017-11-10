@@ -105,14 +105,18 @@ where
     pub fn calc_transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
-            JointType::Rotational { axis } => Isometry3::from_parts(
-                Translation3::new(T::zero(), T::zero(), T::zero()),
-                UnitQuaternion::from_axis_angle(&axis, self.angle),
-            ),
-            JointType::Linear { axis } => Isometry3::from_parts(
-                Translation3::from_vector(axis.unwrap() * self.angle),
-                UnitQuaternion::identity(),
-            ),
+            JointType::Rotational { axis } => {
+                Isometry3::from_parts(
+                    Translation3::new(T::zero(), T::zero(), T::zero()),
+                    UnitQuaternion::from_axis_angle(&axis, self.angle),
+                )
+            }
+            JointType::Linear { axis } => {
+                Isometry3::from_parts(
+                    Translation3::from_vector(axis.unwrap() * self.angle),
+                    UnitQuaternion::identity(),
+                )
+            }
         }
     }
 }
