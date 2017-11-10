@@ -16,15 +16,16 @@
 extern crate nalgebra as na;
 
 use na::{Isometry3, Real};
+use std::collections::HashSet;
+use std::slice::{Iter, IterMut};
+use std::rc::Rc;
+use std::cell::{Ref, RefCell, RefMut};
+
 use errors::*;
 use joints::*;
 use traits::*;
 use links::*;
 use rctree::*;
-use std::collections::HashSet;
-use std::slice::{Iter, IterMut};
-use std::rc::Rc;
-use std::cell::{Ref, RefCell, RefMut};
 
 pub type RcLinkNode<T> = RcNode<Link<T>>;
 pub type LinkNode<T> = Node<Link<T>>;
@@ -163,9 +164,9 @@ impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
     type Item = Ref<'a, T>;
 
     fn next(&mut self) -> Option<Ref<'a, T>> {
-        self.iter
-            .next()
-            .map(|rc| Ref::map(rc.borrow(), |node| &node.data))
+        self.iter.next().map(|rc| {
+            Ref::map(rc.borrow(), |node| &node.data)
+        })
     }
 }
 
@@ -177,9 +178,9 @@ impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
     type Item = RefMut<'a, T>;
 
     fn next(&mut self) -> Option<RefMut<'a, T>> {
-        self.iter
-            .next()
-            .map(|rc| RefMut::map(rc.borrow_mut(), |node| &mut node.data))
+        self.iter.next().map(|rc| {
+            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
+        })
     }
 }
 
@@ -217,22 +218,17 @@ impl<T: Real> LinkTree<T> {
     }
     /// iter for all links, not as node
     pub fn iter_link<'a>(&'a self) -> NodeIter<'a, Link<T>> {
-        NodeIter {
-            iter: self.expanded_robot_link_vec.iter(),
-        }
+        NodeIter { iter: self.expanded_robot_link_vec.iter() }
     }
     /// iter for all links as mut, not as node
     pub fn iter_link_mut<'a>(&'a self) -> NodeIterMut<'a, Link<T>> {
-        NodeIterMut {
-            iter: self.expanded_robot_link_vec.iter(),
-        }
+        NodeIterMut { iter: self.expanded_robot_link_vec.iter() }
     }
     /// iter for the links with the joint which is not fixed
     pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
-        Box::new(
-            self.iter()
-                .filter(|ljn| ljn.borrow().data.has_joint_angle()),
-        )
+        Box::new(self.iter().filter(
+            |ljn| ljn.borrow().data.has_joint_angle(),
+        ))
     }
     /// iter for the links with the joint which is not fixed
     pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
@@ -327,6 +323,31 @@ where
     create_kinematic_chains_with_dof_limit(tree, usize::max_value())
 }
 
+impl<T> CreateChain<RcKinematicChain<T>, T> for LinkTree<T>
+where
+    T: Real,
+{
+    fn chain_from_end_link_name(&self, name: &str) -> Option<RcKinematicChain<T>> {
+        create_kinematic_chain_from_end_link_name(self, name)
+    }
+}
+
+/// Create RcKinematicChain from `LinkTree` and the name of the end link
+pub fn create_kinematic_chain_from_end_link_name<T>(
+    tree: &LinkTree<T>,
+    end_link_name: &str,
+) -> Option<RcKinematicChain<T>>
+where
+    T: Real,
+{
+    match tree.iter().find(|&ljn_ref| {
+        ljn_ref.borrow().data.name == end_link_name
+    }) {
+        Some(ljn) => Some(RcKinematicChain::new(end_link_name, ljn)),
+        None => None,
+    }
+}
+
 /// Create `Vec<RcKinematicChain>` from `LinkTree` to use IK
 pub fn create_kinematic_chains_with_dof_limit<T>(
     tree: &LinkTree<T>,
@@ -398,9 +419,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint(
             "j0",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -409,9 +428,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j1",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -420,9 +437,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j2",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -431,9 +446,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint(
             "j3",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -442,9 +455,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j4",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -453,9 +464,7 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j5",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
+            JointType::Rotational { axis: na::Vector3::y_axis() },
             None,
         )
         .finalize();
@@ -513,4 +522,13 @@ fn it_works() {
     arm.set_end_link_name("link2").unwrap();
     assert!(arm.get_end_link_name().clone().unwrap() == "link2");
     assert!(real_end != arm.calc_end_transform());
+
+    let tree = LinkTree::new("robo1", ljn0);
+    assert_eq!(tree.dof(), 6);
+
+    let none_chain = create_kinematic_chain_from_end_link_name(&tree, "link_nono");
+    assert!(none_chain.is_none());
+    let some_chain = create_kinematic_chain_from_end_link_name(&tree, "link3");
+    assert!(some_chain.is_some());
+    assert_eq!(some_chain.unwrap().get_joint_angles().len(), 4);
 }

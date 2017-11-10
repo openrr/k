@@ -47,7 +47,6 @@ extern crate urdf_rs;
 
 use std::collections::HashMap;
 use std::path::Path;
-
 use na::Real;
 
 use links::*;
@@ -109,10 +108,9 @@ where
         .joint(
             &joint.name,
             match joint.joint_type {
-                urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
-                    JointType::Rotational {
-                        axis: axis_from(joint.axis.xyz),
-                    }
+                urdf_rs::JointType::Revolute |
+                urdf_rs::JointType::Continuous => {
+                    JointType::Rotational { axis: axis_from(joint.axis.xyz) }
                 }
                 urdf_rs::JointType::Prismatic => JointType::Linear {
                     axis: axis_from(joint.axis.xyz),
@@ -215,10 +213,9 @@ where
         let node = create_ref_node(create_joint_with_link_from_urdf_joint(j));
         child_ref_map.insert(&j.child.link, node.clone());
         if parent_ref_map.get(&j.parent.link).is_some() {
-            parent_ref_map
-                .get_mut(&j.parent.link)
-                .unwrap()
-                .push(node.clone());
+            parent_ref_map.get_mut(&j.parent.link).unwrap().push(
+                node.clone(),
+            );
         } else {
             parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
         }
@@ -240,18 +237,42 @@ where
         }
     }
     // set root as parent of root joint nodes
-    let root_joint_nodes = ref_nodes
-        .iter()
-        .filter_map(|ref_node| match ref_node.borrow().parent {
+    let root_joint_nodes = ref_nodes.iter().filter_map(
+        |ref_node| match ref_node.borrow().parent {
             None => Some(ref_node),
             Some(_) => None,
-        });
+        },
+    );
     for rjn in root_joint_nodes {
         set_parent_child(&root_node, rjn);
     }
     // create root node..
     LinkTree::new(&robot.name, root_node)
 }
+
+/// Convert from URDF robot model
+pub trait FromUrdf {
+    fn from(robot: &urdf_rs::Robot) -> Self;
+}
+
+impl<T> FromUrdf for LinkTree<T>
+where
+    T: Real,
+{
+    fn from(robot: &urdf_rs::Robot) -> Self {
+        create_tree(robot)
+    }
+}
+
+impl<T> FromUrdf for LinkStar<T>
+where
+    T: Real,
+{
+    fn from(robot: &urdf_rs::Robot) -> Self {
+        create_star(robot)
+    }
+}
+
 
 /// Create `LinkTree` from URDF file
 ///

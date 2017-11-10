@@ -49,11 +49,20 @@ where
     fn get_link_names(&self) -> Vec<String>;
 }
 
-/// JointContainer which has an end transform
+/// `JointContainer` which has an end transform
 pub trait KinematicChain<T>: JointContainer<T>
 where
     T: Real,
 {
     /// Calculate and return the transform of the end of the links
     fn calc_end_transform(&self) -> Isometry3<T>;
+}
+
+/// Create KinematicChain
+pub trait CreateChain<K, T>
+where
+    K: KinematicChain<T>,
+    T: Real,
+{
+    fn chain_from_end_link_name(&self, name: &str) -> Option<K>;
 }
