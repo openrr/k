@@ -57,7 +57,7 @@ pub struct Joint<T: Real> {
     /// Type of this joint
     pub joint_type: JointType<T>,
     /// Angle(position) of this joint
-    pub angle: T,
+    angle: T,
     /// Limits of this joint
     pub limits: Option<Range<T>>,
 }
