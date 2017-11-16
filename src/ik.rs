@@ -54,16 +54,6 @@ pub struct JacobianIKSolver<T: Real> {
     pub num_max_try: i32,
 }
 
-
-impl<T> Default for JacobianIKSolverBuilder<T>
-where
-    T: Real,
-{
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl<T> JacobianIKSolver<T>
 where
     T: Real,
@@ -163,12 +153,17 @@ impl<T> JacobianIKSolverBuilder<T>
 where
     T: Real,
 {
+    const DEFAULT_JACOBIAN_MOVE_EPSILON: f64 = 0.0001;
+    const DEFAULT_MOVE_EPSILON: f64 = 0.0001;
+    const DEFAULT_ALLOWABLE_TARGET_DISTANCE: f64 = 0.001;
+    const DEAULT_NUM_MAX_TRY: i32 = 1000;
+
     pub fn new() -> Self {
         JacobianIKSolverBuilder {
-            jacobian_move_epsilon: na::convert(0.001),
-            move_epsilon: na::convert(0.001),
-            allowable_target_distance: na::convert(0.001),
-            num_max_try: 100,
+            jacobian_move_epsilon: na::convert(Self::DEFAULT_JACOBIAN_MOVE_EPSILON),
+            move_epsilon: na::convert(Self::DEFAULT_MOVE_EPSILON),
+            allowable_target_distance: na::convert(Self::DEFAULT_ALLOWABLE_TARGET_DISTANCE),
+            num_max_try: Self::DEAULT_NUM_MAX_TRY,
         }
     }
     pub fn jacobian_move_epsilon(&mut self, jacobian_epsilon: T) -> &mut Self {
@@ -194,5 +189,14 @@ where
             allowable_target_distance: self.allowable_target_distance,
             num_max_try: self.num_max_try,
         }
+    }
+}
+
+impl<T> Default for JacobianIKSolverBuilder<T>
+where
+    T: Real,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
