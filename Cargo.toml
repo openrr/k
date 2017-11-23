@@ -18,4 +18,4 @@ log = "0.3"
 [dev-dependencies]
 kiss3d = "0.11.0"
 glfw = { version = "0.15.0", default-features = false }
-rand = "*"
+rand = "0.3.18"
