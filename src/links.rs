@@ -18,6 +18,7 @@ extern crate nalgebra as na;
 use errors::*;
 use joints::*;
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
+use std::cell::RefCell;
 
 /// Joint and Link
 ///
@@ -29,7 +30,7 @@ pub struct Link<T: Real> {
     /// local transfrom of joint
     pub transform: Isometry3<T>,
     /// cache of world transform
-    pub world_transform_cache: Option<Isometry3<T>>,
+    pub world_transform_cache: RefCell<Option<Isometry3<T>>>,
 }
 
 impl<T> Link<T>
@@ -44,7 +45,7 @@ where
             name: name.to_string(),
             joint: joint,
             transform: Isometry3::identity(),
-            world_transform_cache: None,
+            world_transform_cache: RefCell::new(None),
         }
     }
     /// Return the name of the joint
@@ -147,7 +148,7 @@ where
             name: self.name,
             joint: self.joint,
             transform: self.transform,
-            world_transform_cache: None,
+            world_transform_cache: RefCell::new(None),
         }
     }
 }

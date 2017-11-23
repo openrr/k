@@ -15,11 +15,9 @@
  */
 extern crate nalgebra as na;
 
+use std::cell::{Ref, RefCell};
 use na::{Isometry3, Real};
-use std::collections::HashSet;
 use std::slice::{Iter, IterMut};
-use std::rc::Rc;
-use std::cell::{Ref, RefCell, RefMut};
 
 use errors::*;
 use joints::*;
@@ -27,18 +25,17 @@ use traits::*;
 use links::*;
 use rctree::*;
 
-pub type RcLinkNode<T> = RcNode<Link<T>>;
 pub type LinkNode<T> = Node<Link<T>>;
 
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
-pub struct RcKinematicChain<T: Real> {
+pub struct LinkChain<T: Real> {
     pub name: String,
-    pub links: Vec<RcLinkNode<T>>,
+    pub links: Vec<LinkNode<T>>,
     pub transform: Isometry3<T>,
     end_link_name: Option<String>,
 }
 
-impl<T> RcKinematicChain<T>
+impl<T> LinkChain<T>
 where
     T: Real,
 {
@@ -57,10 +54,12 @@ where
     pub fn get_end_link_name<'a>(&'a self) -> &'a Option<String> {
         &self.end_link_name
     }
-    pub fn new(name: &str, end: &RcLinkNode<T>) -> Self {
-        let mut links = map_ancestors(end, &|ljn| ljn.clone());
+    pub fn new(name: &str, end: &LinkNode<T>) -> Self {
+        let mut links = end.iter_ancestors()
+            .map(|ljn| ljn.clone())
+            .collect::<Vec<_>>();
         links.reverse();
-        RcKinematicChain {
+        LinkChain {
             name: name.to_string(),
             links: links,
             transform: Isometry3::identity(),
@@ -69,7 +68,7 @@ where
     }
 }
 
-impl<T> KinematicChain<T> for RcKinematicChain<T>
+impl<T> KinematicChain<T> for LinkChain<T>
 where
     T: Real,
 {
@@ -87,7 +86,7 @@ where
     }
 }
 
-impl<T> LinkContainer<T> for RcKinematicChain<T>
+impl<T> LinkContainer<T> for LinkChain<T>
 where
     T: Real,
 {
@@ -108,7 +107,7 @@ where
     }
 }
 
-impl<T> JointContainer<T> for RcKinematicChain<T>
+impl<T> JointContainer<T> for LinkChain<T>
 where
     T: Real,
 {
@@ -156,39 +155,13 @@ where
     }
 }
 
-pub struct NodeIter<'a, T: 'a> {
-    iter: Iter<'a, Rc<RefCell<Node<T>>>>,
-}
 
-impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
-    type Item = Ref<'a, T>;
-
-    fn next(&mut self) -> Option<Ref<'a, T>> {
-        self.iter.next().map(|rc| {
-            Ref::map(rc.borrow(), |node| &node.data)
-        })
-    }
-}
-
-pub struct NodeIterMut<'a, T: 'a> {
-    iter: Iter<'a, Rc<RefCell<Node<T>>>>,
-}
-
-impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
-    type Item = RefMut<'a, T>;
-
-    fn next(&mut self) -> Option<RefMut<'a, T>> {
-        self.iter.next().map(|rc| {
-            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
-        })
-    }
-}
 
 /// Kinematic Tree using `Rc<RefCell<Link<T>>>`
 pub struct LinkTree<T: Real> {
     pub name: String,
-    pub root_link: RcLinkNode<T>,
-    expanded_robot_link_vec: Vec<RcLinkNode<T>>,
+    pub root_link: LinkNode<T>,
+    expanded_robot_link_vec: Vec<LinkNode<T>>,
 }
 
 impl<T: Real> LinkTree<T> {
@@ -197,23 +170,19 @@ impl<T: Real> LinkTree<T> {
     /// # Arguments
     ///
     /// * `root_link` - root node of the links
-    pub fn new(name: &str, root_link: RcLinkNode<T>) -> Self {
+    pub fn new(name: &str, root_link: LinkNode<T>) -> Self {
         LinkTree {
             name: name.to_string(),
-            expanded_robot_link_vec: map_descendants(&root_link, &|ln| ln.clone()),
+            expanded_robot_link_vec: root_link.iter_descendants().map(|ln| ln.clone()).collect(),
             root_link: root_link,
         }
     }
-    /// Set the transform of the root link
-    pub fn set_root_transform(&mut self, transform: Isometry3<T>) {
-        self.root_link.borrow_mut().data.transform = transform;
-    }
     /// iter for all link nodes
-    pub fn iter(&self) -> Iter<RcLinkNode<T>> {
+    pub fn iter(&self) -> Iter<LinkNode<T>> {
         self.expanded_robot_link_vec.iter()
     }
     /// iter for all link nodes as mut
-    pub fn iter_mut(&mut self) -> IterMut<RcLinkNode<T>> {
+    pub fn iter_mut(&mut self) -> IterMut<LinkNode<T>> {
         self.expanded_robot_link_vec.iter_mut()
     }
     /// iter for all links, not as node
@@ -225,25 +194,19 @@ impl<T: Real> LinkTree<T> {
         NodeIterMut { iter: self.expanded_robot_link_vec.iter() }
     }
     /// iter for the links with the joint which is not fixed
-    pub fn iter_for_joints<'a>(&'a self) -> Box<Iterator<Item = &RcLinkNode<T>> + 'a> {
+    pub fn iter_joints<'a>(&'a self) -> Box<Iterator<Item = &LinkNode<T>> + 'a> {
         Box::new(self.iter().filter(
             |ljn| ljn.borrow().data.has_joint_angle(),
         ))
     }
     /// iter for the links with the joint which is not fixed
-    pub fn iter_for_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
+    pub fn iter_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
         Box::new(self.iter_link().filter(|link| link.has_joint_angle()))
-    }
-    /// Get all joint names, include fixed joint
-    pub fn get_all_joint_names(&self) -> Vec<String> {
-        self.iter_link()
-            .map(|link| link.get_joint_name().to_string())
-            .collect()
     }
 
     /// Get the degree of freedom
     pub fn dof(&self) -> usize {
-        self.iter_for_joints().count()
+        self.iter_joints().count()
     }
 }
 
@@ -268,20 +231,19 @@ where
         if angles_vec.len() != self.dof() {
             return Err(JointError::SizeMisMatch);
         }
-        for (lj, angle) in self.iter_for_joints().zip(angles_vec.iter()) {
+        for (lj, angle) in self.iter_joints().zip(angles_vec.iter()) {
             lj.borrow_mut().data.set_joint_angle(*angle)?;
         }
         Ok(())
     }
-
     fn get_joint_limits(&self) -> Vec<Option<Range<T>>> {
-        self.iter_for_joints_link()
-            .map(|link| link.joint.limits.clone())
+        self.iter_joints()
+            .map(|node| node.borrow().data.joint.limits.clone())
             .collect()
     }
     fn get_joint_names(&self) -> Vec<String> {
-        self.iter_for_joints_link()
-            .map(|link| link.joint.name.clone())
+        self.iter_joints()
+            .map(|node| node.borrow().data.joint.name.clone())
             .collect()
     }
 }
@@ -297,15 +259,16 @@ where
                     Some(ref parent) => {
                         let rc_parent = parent.upgrade().unwrap().clone();
                         let parent_obj = rc_parent.borrow();
-                        match parent_obj.data.world_transform_cache {
+                        let cache = parent_obj.data.world_transform_cache.borrow();
+                        match *cache {
                             Some(trans) => trans,
-                            None => Isometry3::identity(),
+                            None => panic!("cache must exist"),
                         }
                     }
                     None => Isometry3::identity(),
                 };
                 let trans = parent_transform * ljn.borrow().data.calc_transform();
-                ljn.borrow_mut().data.world_transform_cache = Some(trans);
+                ljn.borrow_mut().data.world_transform_cache = RefCell::new(Some(trans));
                 trans
             })
             .collect()
@@ -315,101 +278,16 @@ where
     }
 }
 
-/// Create `Vec<RcKinematicChain>` from `LinkTree` to use IK
-pub fn create_kinematic_chains<T>(tree: &LinkTree<T>) -> Vec<RcKinematicChain<T>>
+impl<T> ChainContainer<LinkChain<T>, T> for LinkTree<T>
 where
     T: Real,
 {
-    create_kinematic_chains_with_dof_limit(tree, usize::max_value())
-}
-
-impl<T> CreateChain<RcKinematicChain<T>, T> for LinkTree<T>
-where
-    T: Real,
-{
-    fn chain_from_end_link_name(&self, name: &str) -> Option<RcKinematicChain<T>> {
-        create_kinematic_chain_from_end_link_name(self, name)
+    /// Create LinkChain from `LinkTree` and the name of the end link
+    fn get_chain(&self, end_link_name: &str) -> Option<LinkChain<T>> {
+        self.iter()
+            .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
+            .map(|ljn| LinkChain::new(end_link_name, ljn))
     }
-}
-
-/// Create RcKinematicChain from `LinkTree` and the name of the end link
-pub fn create_kinematic_chain_from_end_link_name<T>(
-    tree: &LinkTree<T>,
-    end_link_name: &str,
-) -> Option<RcKinematicChain<T>>
-where
-    T: Real,
-{
-    match tree.iter().find(|&ljn_ref| {
-        ljn_ref.borrow().data.name == end_link_name
-    }) {
-        Some(ljn) => Some(RcKinematicChain::new(end_link_name, ljn)),
-        None => None,
-    }
-}
-
-/// Create `Vec<RcKinematicChain>` from `LinkTree` to use IK
-pub fn create_kinematic_chains_with_dof_limit<T>(
-    tree: &LinkTree<T>,
-    dof_limit: usize,
-) -> Vec<RcKinematicChain<T>>
-where
-    T: Real,
-{
-    let mut name_hash = HashSet::new();
-    tree.iter()
-        .filter_map(|ljn_ref| if ljn_ref.borrow().children.is_empty() {
-            Some(ljn_ref.clone())
-        } else {
-            None
-        })
-        .filter_map(|ljn_ref| {
-            let dof = map_ancestors(&ljn_ref, &|ljn_ref| ljn_ref.clone())
-                .iter()
-                .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
-                .count();
-            let mut root = ljn_ref.clone();
-            // use only movable joint as end effector
-            while !root.borrow().data.has_joint_angle() {
-                match get_parent_rc(&root) {
-                    Some(p) => {
-                        root = p;
-                    }
-                    None => {
-                        break;
-                    }
-                }
-            }
-            if dof > dof_limit {
-                let mut remove_dof = dof - dof_limit;
-                while remove_dof > 0 {
-                    match get_parent_rc(&root) {
-                        Some(parent_rc) => {
-                            root = parent_rc;
-                            if root.borrow().data.has_joint_angle() {
-                                remove_dof -= 1;
-                            }
-                        }
-                        None => {
-                            break;
-                        }
-                    }
-                }
-            }
-            if !name_hash.contains(&root.borrow().data.name) {
-                let kc = RcKinematicChain::new(&root.borrow().data.name, &root);
-                name_hash.insert(root.borrow().data.name.clone());
-                assert!(kc.get_joint_angles().len() <= dof_limit);
-                if kc.get_joint_angles().len() >= 6 {
-                    Some(kc)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>()
 }
 
 #[test]
@@ -469,47 +347,62 @@ fn it_works() {
         )
         .finalize();
 
-    let ljn0 = create_ref_node(l0);
-    let ljn1 = create_ref_node(l1);
-    let ljn2 = create_ref_node(l2);
-    let ljn3 = create_ref_node(l3);
-    let ljn4 = create_ref_node(l4);
-    let ljn5 = create_ref_node(l5);
-    set_parent_child(&ljn0, &ljn1);
-    set_parent_child(&ljn1, &ljn2);
-    set_parent_child(&ljn2, &ljn3);
-    set_parent_child(&ljn0, &ljn4);
-    set_parent_child(&ljn4, &ljn5);
-    let names = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_name().to_string());
+    let ljn0 = Node::new(l0);
+    let ljn1 = Node::new(l1);
+    let ljn2 = Node::new(l2);
+    let ljn3 = Node::new(l3);
+    let ljn4 = Node::new(l4);
+    let ljn5 = Node::new(l5);
+    ljn1.set_parent(&ljn0);
+    ljn2.set_parent(&ljn1);
+    ljn3.set_parent(&ljn2);
+    ljn4.set_parent(&ljn0);
+    ljn5.set_parent(&ljn4);
+
+    let names = ljn0.iter_descendants()
+        .map(|ljn| ljn.borrow().data.get_joint_name().to_string())
+        .collect::<Vec<_>>();
     println!("{:?}", ljn0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
-    let angles = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_angle());
+    let angles = ljn0.iter_descendants()
+        .map(|ljn| ljn.borrow().data.get_joint_angle())
+        .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    let get_z = |ljn: &RcLinkNode<f32>| match ljn.borrow().parent {
-        Some(ref parent) => {
-            let rc_parent = parent.upgrade().unwrap().clone();
-            let parent_obj = rc_parent.borrow();
-            (parent_obj.data.calc_transform() * ljn.borrow().data.calc_transform())
-                .translation
-                .vector
-                .z
+    fn get_z(ljn: &LinkNode<f32>) -> f32 {
+        match ljn.borrow().parent {
+            Some(ref parent) => {
+                let rc_parent = parent.upgrade().unwrap().clone();
+                let parent_obj = rc_parent.borrow();
+                (parent_obj.data.calc_transform() * ljn.borrow().data.calc_transform())
+                    .translation
+                    .vector
+                    .z
+            }
+            None => ljn.borrow().data.calc_transform().translation.vector.z,
         }
-        None => ljn.borrow().data.calc_transform().translation.vector.z,
-    };
+    }
 
-    let poses = map_descendants(&ljn0, &get_z);
+    let poses = ljn0.iter_descendants()
+        .map(|ljn| get_z(&ljn))
+        .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let _ = map_descendants(&ljn0, &|ljn| ljn.borrow_mut().data.set_joint_angle(-0.5));
-    let angles = map_descendants(&ljn0, &|ljn| ljn.borrow().data.get_joint_angle());
+    let _ = ljn0.iter_ancestors()
+        .map(|ljn| ljn.borrow_mut().data.set_joint_angle(-0.5))
+        .collect::<Vec<_>>();
+    let angles = ljn0.iter_descendants()
+        .map(|ljn| ljn.borrow().data.get_joint_angle())
+        .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    let poses = map_descendants(&ljn0, &get_z);
+    let poses = ljn0.iter_descendants()
+        .map(|ljn| get_z(&ljn))
+        .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let mut arm = RcKinematicChain::new("chain1", &ljn3);
+    let mut arm = LinkChain::new("chain1", &ljn3);
     assert_eq!(arm.get_joint_angles().len(), 4);
     println!("{:?}", arm.get_joint_angles());
     let real_end = arm.calc_end_transform();
@@ -526,9 +419,10 @@ fn it_works() {
     let tree = LinkTree::new("robo1", ljn0);
     assert_eq!(tree.dof(), 6);
 
-    let none_chain = create_kinematic_chain_from_end_link_name(&tree, "link_nono");
+    let none_chain = tree.get_chain("link_nono");
     assert!(none_chain.is_none());
-    let some_chain = create_kinematic_chain_from_end_link_name(&tree, "link3");
+
+    let some_chain = tree.get_chain("link3");
     assert!(some_chain.is_some());
     assert_eq!(some_chain.unwrap().get_joint_angles().len(), 4);
 }

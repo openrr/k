@@ -9,7 +9,7 @@ mod tests {
     use k::KinematicChain;
     use k::JointContainer;
 
-    pub fn create_joint_with_link_array6(name: &str) -> k::VecKinematicChain<f32> {
+    pub fn create_joint_with_link_array6() -> k::LinkChain<f64> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
             .joint(
@@ -63,11 +63,22 @@ mod tests {
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize();
-        k::VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5])
+        let n0 = k::Node::new(l0);
+        let n1 = k::Node::new(l1);
+        let n2 = k::Node::new(l2);
+        let n3 = k::Node::new(l3);
+        let n4 = k::Node::new(l4);
+        let n5 = k::Node::new(l5);
+        n1.set_parent(&n0);
+        n2.set_parent(&n1);
+        n3.set_parent(&n2);
+        n4.set_parent(&n3);
+        n5.set_parent(&n4);
+        k::LinkChain::new("arm6", &n5)
     }
 
 
-    pub fn create_joint_with_link_array7(name: &str) -> k::VecKinematicChain<f32> {
+    pub fn create_joint_with_link_array7() -> k::LinkChain<f32> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
             .joint(
@@ -130,12 +141,26 @@ mod tests {
             )
             .translation(Translation3::new(0.0, 0.0, -0.10))
             .finalize();
-        k::VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5, l6])
+
+        let n0 = k::Node::new(l0);
+        let n1 = k::Node::new(l1);
+        let n2 = k::Node::new(l2);
+        let n3 = k::Node::new(l3);
+        let n4 = k::Node::new(l4);
+        let n5 = k::Node::new(l5);
+        let n6 = k::Node::new(l6);
+        n1.set_parent(&n0);
+        n2.set_parent(&n1);
+        n3.set_parent(&n2);
+        n4.set_parent(&n3);
+        n5.set_parent(&n4);
+        n6.set_parent(&n5);
+        k::LinkChain::new("arm", &n6)
     }
 
     #[test]
     pub fn ik_fk7() {
-        let mut arm = create_joint_with_link_array7("arm7");
+        let mut arm = create_joint_with_link_array7();
         let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
         arm.set_joint_angles(&angles).unwrap();
         let init_pose = arm.calc_end_transform();
@@ -149,7 +174,7 @@ mod tests {
 
     #[test]
     pub fn ik_fk6() {
-        let mut arm = create_joint_with_link_array6("arm6");
+        let mut arm = create_joint_with_link_array6();
         let angles = vec![0.8, 0.2, 0.0, -1.2, 0.0, 0.1];
         arm.set_joint_angles(&angles).unwrap();
         let init_pose = arm.calc_end_transform();

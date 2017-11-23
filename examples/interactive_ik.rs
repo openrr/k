@@ -26,7 +26,7 @@ use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 use k::*;
 
-fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
+fn create_joint_with_link_array(name: &str) -> LinkChain<f32> {
     let l0 = LinkBuilder::new()
         .name("shoulder_link1")
         .joint(
@@ -89,7 +89,20 @@ fn create_joint_with_link_array(name: &str) -> VecKinematicChain<f32> {
         )
         .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize();
-    VecKinematicChain::new(name, vec![l0, l1, l2, l3, l4, l5, l6])
+    let n0 = k::Node::new(l0);
+    let n1 = k::Node::new(l1);
+    let n2 = k::Node::new(l2);
+    let n3 = k::Node::new(l3);
+    let n4 = k::Node::new(l4);
+    let n5 = k::Node::new(l5);
+    let n6 = k::Node::new(l6);
+    n1.set_parent(&n0);
+    n2.set_parent(&n1);
+    n3.set_parent(&n2);
+    n4.set_parent(&n3);
+    n5.set_parent(&n4);
+    n6.set_parent(&n5);
+    k::LinkChain::new(name, &n6)
 }
 
 fn create_ground(window: &mut Window) -> Vec<SceneNode> {

@@ -13,116 +13,166 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use std::cell::RefCell;
 use std::rc::{Rc, Weak};
+use std::slice::Iter;
+use std::cell::{Ref, RefCell, RefMut};
 
-pub type RcNode<T> = Rc<RefCell<Node<T>>>;
-type WeakNode<T> = Weak<RefCell<Node<T>>>;
+
+pub type RcNode<T> = Rc<RefCell<NodeImpl<T>>>;
+type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 
 #[derive(Debug, Clone)]
 /// Generic Node for tree struct
-pub struct Node<T> {
+pub struct NodeImpl<T> {
     pub parent: Option<WeakNode<T>>,
-    pub children: Vec<RcNode<T>>,
+    pub children: Vec<Node<T>>,
     pub data: T,
 }
 
+#[derive(Debug)]
+pub struct Node<T>(Rc<RefCell<NodeImpl<T>>>);
+
 impl<T> Node<T> {
-    pub fn new(obj: T) -> Node<T> {
-        Node {
+    pub fn new(obj: T) -> Self {
+        Node::<T>(Rc::new(RefCell::new(NodeImpl {
             parent: None,
             children: Vec::new(),
             data: obj,
+        })))
+    }
+    pub fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T>> {
+        self.0.borrow()
+    }
+    pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T>> {
+        self.0.borrow_mut()
+    }
+
+    /// iter from the end to root, it contains nodes[id] itsself
+    pub fn iter_ancestors(&self) -> Ancestors<T> {
+        Ancestors { parent: Some(self.clone()) }
+    }
+    pub fn iter_descendants(&self) -> Descendants<T> {
+        Descendants { stack: vec![self.clone()] }
+    }
+
+    /// Set parent and child relations at same time
+    pub fn set_parent(&self, parent: &Node<T>) {
+        self.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
+        parent.borrow_mut().children.push(self.clone());
+    }
+}
+
+impl<T> ::std::clone::Clone for Node<T> {
+    fn clone(&self) -> Self {
+        Node::<T>(self.0.clone())
+    }
+}
+
+pub struct NodeIter<'a, T: 'a> {
+    pub iter: Iter<'a, Node<T>>,
+}
+
+impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
+    type Item = Ref<'a, T>;
+
+    fn next(&mut self) -> Option<Ref<'a, T>> {
+        self.iter.next().map(|rc| {
+            Ref::map(rc.borrow(), |node| &node.data)
+        })
+    }
+}
+
+pub struct NodeIterMut<'a, T: 'a> {
+    pub iter: Iter<'a, Node<T>>,
+}
+
+impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
+    type Item = RefMut<'a, T>;
+
+    fn next(&mut self) -> Option<RefMut<'a, T>> {
+        self.iter.next().map(|rc| {
+            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
+        })
+    }
+}
+
+pub struct Ancestors<T> {
+    parent: Option<Node<T>>,
+}
+
+impl<T> Iterator for Ancestors<T> {
+    type Item = Node<T>;
+
+    fn next(&mut self) -> Option<Node<T>> {
+        if self.parent.is_none() {
+            return None;
         }
+        let next = self.parent.clone().unwrap();
+        match next.borrow().parent {
+            None => self.parent = None,
+            Some(ref parent) => {
+                self.parent = Some(Node(parent.upgrade().expect("failed to get parent")))
+            }
+        }
+        Some(next)
     }
 }
 
-/// Set parent and child relations at same time
-pub fn set_parent_child<T>(parent: &RcNode<T>, child: &RcNode<T>) {
-    child.borrow_mut().parent = Some(Rc::downgrade(parent));
-    parent.borrow_mut().children.push(child.clone());
+pub struct Descendants<T> {
+    stack: Vec<Node<T>>,
 }
 
-/// Wrap data: T with RC<RefCell<Node<T>>
-pub fn create_ref_node<T>(data: T) -> RcNode<T> {
-    Rc::new(RefCell::new(Node::new(data)))
-}
+impl<T> Iterator for Descendants<T> {
+    type Item = Node<T>;
 
-pub fn get_parent_rc<T>(node: &RcNode<T>) -> Option<RcNode<T>> {
-    match node.borrow().parent {
-        Some(ref parent_weak) => parent_weak.upgrade(),
-        None => None,
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = match self.stack.pop() {
+            Some(node) => node,
+            None => {
+                return None;
+            }
+        };
+        self.stack.extend(node.borrow().children.clone());
+        Some(node)
     }
 }
 
-// todo: move vec to iter?
-pub fn map_descendants<T, F, K>(root: &RcNode<T>, func: &F) -> Vec<K>
-where
-    F: Fn(&RcNode<T>) -> K,
-{
-    let mut ret = Vec::new();
-    map_descendants_internal(root, func, &mut ret);
-    ret
-}
-
-// can be removed..
-fn map_descendants_internal<T, F, K>(root: &RcNode<T>, func: &F, ret: &mut Vec<K>)
-where
-    F: Fn(&RcNode<T>) -> K,
-{
-    ret.push(func(root));
-    for c in &root.borrow().children {
-        map_descendants_internal(c, func, ret);
-    }
-}
-
-pub fn map_ancestors<T, F, K>(end: &RcNode<T>, func: &F) -> Vec<K>
-where
-    F: Fn(&RcNode<T>) -> K,
-{
-    let mut ret = Vec::new();
-    map_ancestors_internal(end, func, &mut ret);
-    ret
-}
-
-fn map_ancestors_internal<T, F, K>(link: &RcNode<T>, func: &F, ret: &mut Vec<K>)
-where
-    F: Fn(&RcNode<T>) -> K,
-{
-    ret.push(func(link));
-    match link.borrow().parent {
-        None => {}
-        Some(ref parent) => map_ancestors_internal(&parent.upgrade().unwrap(), func, ret),
-    };
-}
 
 #[test]
 fn test() {
-    let n0 = create_ref_node(0);
-    let n1 = create_ref_node(1);
-    let n2 = create_ref_node(2);
-    let n3 = create_ref_node(3);
-    let n4 = create_ref_node(4);
-    let n5 = create_ref_node(5);
-    let n6 = create_ref_node(6);
-    let n7 = create_ref_node(7);
-    set_parent_child(&n0, &n1);
-    set_parent_child(&n1, &n2);
-    set_parent_child(&n2, &n3);
-    set_parent_child(&n3, &n4);
-    set_parent_child(&n4, &n5);
-    set_parent_child(&n2, &n6);
-    set_parent_child(&n6, &n7);
+    let n0 = Node::new(0);
+    let n1 = Node::new(1);
+    let n2 = Node::new(2);
+    let n3 = Node::new(3);
+    let n4 = Node::new(4);
+    let n5 = Node::new(5);
+    let n6 = Node::new(6);
+    let n7 = Node::new(7);
+    n1.set_parent(&n0);
+    n2.set_parent(&n1);
+    n3.set_parent(&n2);
+    n4.set_parent(&n3);
+    n5.set_parent(&n4);
+    n6.set_parent(&n2);
+    n7.set_parent(&n6);
+    // 0 1 2 3 4 5
+    //       6 7
     assert_eq!(
-        map_descendants(&n0, &|ref_node| ref_node.borrow().data),
-        vec![0, 1, 2, 3, 4, 5, 6, 7]
+        n0.iter_descendants()
+            .map(|ref_node| ref_node.borrow().data)
+            .collect::<Vec<_>>(),
+        vec![0, 1, 2, 6, 7, 3, 4, 5]
     );
     assert_eq!(
-        map_descendants(&n6, &|ref_node| ref_node.borrow().data),
+        n6.iter_descendants()
+            .map(|ref_node| ref_node.borrow().data)
+            .collect::<Vec<_>>(),
         vec![6, 7]
     );
     assert_eq!(
-        map_ancestors(&n7, &|ref_node| ref_node.borrow().data),
+        n7.iter_ancestors()
+            .map(|ref_node| ref_node.borrow().data)
+            .collect::<Vec<_>>(),
         vec![7, 6, 2, 1, 0]
     );
 }
