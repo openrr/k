@@ -122,7 +122,7 @@ where
             return Err(JointError::SizeMisMatch);
         }
         for (i, ljn_ref) in links_with_angle.iter_mut().enumerate() {
-            try!(ljn_ref.borrow_mut().data.set_joint_angle(angles[i]));
+            ljn_ref.borrow_mut().data.set_joint_angle(angles[i])?;
         }
         Ok(())
     }

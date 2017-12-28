@@ -83,7 +83,7 @@ where
         for i in 0..dof {
             let mut small_diff_angles_i = orig_angles.clone();
             small_diff_angles_i[i] += self.jacobian_move_epsilon;
-            try!(arm.set_joint_angles(&small_diff_angles_i));
+            arm.set_joint_angles(&small_diff_angles_i)?;
             let small_diff_pose6 = calc_vector6_pose(&arm.calc_end_transform());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
@@ -96,14 +96,14 @@ where
                 None => return Err(IKError::InverseMatrixError),
             }
         } else {
-            try!(jacobi.try_inverse().ok_or(IKError::InverseMatrixError))
+            jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?;
         };
         let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
         let mut angles_vec = Vec::new();
         for i in 0..dof {
             angles_vec.push(orig_angles[i] + new_angles_diff[i]);
         }
-        try!(arm.set_joint_angles(&angles_vec));
+        arm.set_joint_angles(&angles_vec)?;
         let new_pose6 = calc_vector6_pose(&arm.calc_end_transform());
         Ok((target_pose6 - new_pose6).norm())
     }
@@ -123,12 +123,12 @@ where
             return Err(IKError::PreconditionError);
         }
         for _ in 0..self.num_max_try {
-            let target_distance = try!(self.solve_one_loop(arm, target_pose));
+            let target_distance = self.solve_one_loop(arm, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }
         }
-        try!(arm.set_joint_angles(&orig_angles));
+        arm.set_joint_angles(&orig_angles)?;
         Err(IKError::NotConverged)
     }
 }
