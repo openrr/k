@@ -96,7 +96,7 @@ where
                 None => return Err(IKError::InverseMatrixError),
             }
         } else {
-            jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?;
+            jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?
         };
         let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
         let mut angles_vec = Vec::new();
