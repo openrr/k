@@ -50,7 +50,7 @@ where
             Ok(())
         }
     }
-    pub fn get_end_link_name<'a>(&'a self) -> &'a Option<String> {
+    pub fn end_link_name<'a>(&'a self) -> &'a Option<String> {
         &self.end_link_name
     }
     pub fn new(name: &str, end: &LinkNode<T>) -> Self {
@@ -98,7 +98,7 @@ where
             })
             .collect()
     }
-    fn get_link_names(&self) -> Vec<String> {
+    fn link_names(&self) -> Vec<String> {
         self.links
             .iter()
             .map(|ljn| ljn.borrow().data.name.to_owned())
@@ -273,7 +273,7 @@ where
             })
             .collect()
     }
-    fn get_link_names(&self) -> Vec<String> {
+    fn link_names(&self) -> Vec<String> {
         self.iter_link().map(|link| link.name.to_owned()).collect()
     }
 }
@@ -408,14 +408,14 @@ fn it_works() {
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
     let real_end = arm.end_transform();
-    assert!(arm.get_end_link_name().is_none());
+    assert!(arm.end_link_name().is_none());
     arm.set_end_link_name("link3").unwrap();
     assert!(arm.set_end_link_name("linkhoge").is_err());
-    assert!(arm.get_end_link_name().clone().unwrap() == "link3");
+    assert!(arm.end_link_name().clone().unwrap() == "link3");
     // not changed if set same end link name
     assert_eq!(real_end, arm.end_transform());
     arm.set_end_link_name("link2").unwrap();
-    assert!(arm.get_end_link_name().clone().unwrap() == "link2");
+    assert!(arm.end_link_name().clone().unwrap() == "link2");
     assert!(real_end != arm.end_transform());
 
     let tree = LinkTree::new("robo1", ljn0);

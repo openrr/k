@@ -46,7 +46,7 @@ where
     fn link_transforms(&self) -> Vec<Isometry3<T>>;
 
     /// Get the names of the links
-    fn get_link_names(&self) -> Vec<String>;
+    fn link_names(&self) -> Vec<String>;
 }
 
 /// `JointContainer` which has an end transform
