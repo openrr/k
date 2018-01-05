@@ -51,6 +51,7 @@ impl<T> Node<T> {
     pub fn iter_ancestors(&self) -> Ancestors<T> {
         Ancestors { parent: Some(self.clone()) }
     }
+    /// iter to the end, it contains nodes[id] itsself
     pub fn iter_descendants(&self) -> Descendants<T> {
         Descendants { stack: vec![self.clone()] }
     }
@@ -68,6 +69,7 @@ impl<T> ::std::clone::Clone for Node<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeIter<'a, T: 'a> {
     pub iter: Iter<'a, Node<T>>,
 }
@@ -82,6 +84,7 @@ impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeIterMut<'a, T: 'a> {
     pub iter: Iter<'a, Node<T>>,
 }
@@ -96,6 +99,7 @@ impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Ancestors<T> {
     parent: Option<Node<T>>,
 }
@@ -118,6 +122,7 @@ impl<T> Iterator for Ancestors<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Descendants<T> {
     stack: Vec<Node<T>>,
 }

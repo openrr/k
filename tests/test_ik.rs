@@ -163,10 +163,10 @@ mod tests {
         let mut arm = create_joint_with_link_array7();
         let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
         arm.set_joint_angles(&angles).unwrap();
-        let init_pose = arm.calc_end_transform();
+        let init_pose = arm.end_transform();
         let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 100);
         solver.solve(&mut arm, &init_pose).unwrap();
-        let end_angles = arm.get_joint_angles();
+        let end_angles = arm.joint_angles();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
         }
@@ -177,13 +177,13 @@ mod tests {
         let mut arm = create_joint_with_link_array6();
         let angles = vec![0.8, 0.2, 0.0, -1.2, 0.0, 0.1];
         arm.set_joint_angles(&angles).unwrap();
-        let init_pose = arm.calc_end_transform();
+        let init_pose = arm.end_transform();
         let solver = k::JacobianIKSolverBuilder::new().finalize();
         // set different angles
         arm.set_joint_angles(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
             .unwrap();
         solver.solve(&mut arm, &init_pose).unwrap();
-        let end_angles = arm.get_joint_angles();
+        let end_angles = arm.joint_angles();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
         }

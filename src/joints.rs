@@ -28,7 +28,7 @@ pub enum JointType<T: Real> {
 }
 
 /// min/max range to check the joint position
-#[derive(Clone, Debug)]
+#[derive(Copy, Debug, Clone)]
 pub struct Range<T: Real> {
     pub min: T,
     pub max: T,
@@ -75,10 +75,6 @@ where
             limits: None,
         }
     }
-    /// Set the limits of this joint
-    pub fn set_limits(&mut self, limits: Option<Range<T>>) {
-        self.limits = limits;
-    }
     /// Set the angle of the joint
     ///
     /// It returns Err if it is out of the limits, or this is fixed joint.
@@ -95,14 +91,14 @@ where
         Ok(())
     }
     /// Returns the angle (position)
-    pub fn get_angle(&self) -> Option<T> {
+    pub fn angle(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
             _ => Some(self.angle),
         }
     }
     /// Calculate and returns the transform of the end of this joint
-    pub fn calc_transform(&self) -> Isometry3<T> {
+    pub fn transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => {

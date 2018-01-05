@@ -13,12 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-extern crate nalgebra as na;
+use na::{Isometry3, Real, Translation3, UnitQuaternion};
+use std::cell::RefCell;
 
 use errors::*;
 use joints::*;
-use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::RefCell;
 
 /// Joint and Link
 ///
@@ -49,12 +48,12 @@ where
         }
     }
     /// Return the name of the joint
-    pub fn get_joint_name(&self) -> &str {
+    pub fn joint_name(&self) -> &str {
         &self.joint.name
     }
     /// Updates and returns the transform of the end of the joint
-    pub fn calc_transform(&self) -> Isometry3<T> {
-        self.transform * self.joint.calc_transform()
+    pub fn transform(&self) -> Isometry3<T> {
+        self.transform * self.joint.transform()
     }
     /// Set the angle of the joint
     ///
@@ -63,8 +62,8 @@ where
         self.joint.set_angle(angle)
     }
     /// Get the angle of the joint. If it is fixed, it returns None.
-    pub fn get_joint_angle(&self) -> Option<T> {
-        self.joint.get_angle()
+    pub fn joint_angle(&self) -> Option<T> {
+        self.joint.angle()
     }
     /// Returns if it has a joint angle. similar to `is_not_fixed()`
     pub fn has_joint_angle(&self) -> bool {
@@ -128,7 +127,7 @@ where
         limits: Option<Range<T>>,
     ) -> LinkBuilder<T> {
         self.joint = Joint::new(name, joint_type);
-        self.joint.set_limits(limits);
+        self.joint.limits = limits;
         self
     }
     pub fn transform(mut self, transform: Isometry3<T>) -> LinkBuilder<T> {

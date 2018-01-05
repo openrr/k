@@ -13,9 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-extern crate nalgebra as na;
-
-use na::{DMatrix, Isometry3, Real, Vector6};
+use na::{self, DMatrix, Isometry3, Real, Vector6};
 use errors::*;
 use math::*;
 use traits::*;
@@ -42,7 +40,7 @@ pub trait InverseKinematicsSolver<T: Real> {
 
 
 /// Inverse Kinematics Solver using Jacobian matrix
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct JacobianIKSolver<T: Real> {
     /// Calculate jacobian matrix with this length in each joint
     pub jacobian_move_epsilon: T,
@@ -51,7 +49,7 @@ pub struct JacobianIKSolver<T: Real> {
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
     /// How many times the joints are tried to be moved
-    pub num_max_try: i32,
+    pub num_max_try: usize,
 }
 
 impl<T> JacobianIKSolver<T>
@@ -62,7 +60,7 @@ where
         jacobian_move_epsilon: T,
         move_epsilon: T,
         allowable_target_distance: T,
-        num_max_try: i32,
+        num_max_try: usize,
     ) -> JacobianIKSolver<T> {
         JacobianIKSolver {
             jacobian_move_epsilon: jacobian_move_epsilon,
@@ -75,16 +73,16 @@ where
     where
         K: KinematicChain<T>,
     {
-        let orig_angles = arm.get_joint_angles();
+        let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
-        let orig_pose6 = calc_vector6_pose(&arm.calc_end_transform());
+        let orig_pose6 = calc_vector6_pose(&arm.end_transform());
         let target_pose6 = calc_vector6_pose(target_pose);
         let mut jacobi_vec = Vec::new();
         for i in 0..dof {
             let mut small_diff_angles_i = orig_angles.clone();
             small_diff_angles_i[i] += self.jacobian_move_epsilon;
             arm.set_joint_angles(&small_diff_angles_i)?;
-            let small_diff_pose6 = calc_vector6_pose(&arm.calc_end_transform());
+            let small_diff_pose6 = calc_vector6_pose(&arm.end_transform());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
@@ -104,7 +102,7 @@ where
             angles_vec.push(orig_angles[i] + new_angles_diff[i]);
         }
         arm.set_joint_angles(&angles_vec)?;
-        let new_pose6 = calc_vector6_pose(&arm.calc_end_transform());
+        let new_pose6 = calc_vector6_pose(&arm.end_transform());
         Ok((target_pose6 - new_pose6).norm())
     }
 }
@@ -117,7 +115,7 @@ where
     where
         K: KinematicChain<T>,
     {
-        let orig_angles = arm.get_joint_angles();
+        let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
             println!("support only 6 or more DoF now");
             return Err(IKError::PreconditionError);
@@ -139,6 +137,7 @@ where
 /// This builder allow initialation of `JacobianIKSolver`
 /// without any parameters.
 ///
+#[derive(Debug, Clone)]
 pub struct JacobianIKSolverBuilder<T>
 where
     T: Real,
@@ -146,7 +145,7 @@ where
     pub jacobian_move_epsilon: T,
     pub move_epsilon: T,
     pub allowable_target_distance: T,
-    pub num_max_try: i32,
+    pub num_max_try: usize,
 }
 
 impl<T> JacobianIKSolverBuilder<T>
@@ -156,7 +155,7 @@ where
     const DEFAULT_JACOBIAN_MOVE_EPSILON: f64 = 0.0001;
     const DEFAULT_MOVE_EPSILON: f64 = 0.0001;
     const DEFAULT_ALLOWABLE_TARGET_DISTANCE: f64 = 0.001;
-    const DEAULT_NUM_MAX_TRY: i32 = 1000;
+    const DEAULT_NUM_MAX_TRY: usize = 1000;
 
     pub fn new() -> Self {
         JacobianIKSolverBuilder {
@@ -178,7 +177,7 @@ where
         self.allowable_target_distance = allowable_diff;
         self
     }
-    pub fn num_max_try(&mut self, max_try: i32) -> &mut Self {
+    pub fn num_max_try(&mut self, max_try: usize) -> &mut Self {
         self.num_max_try = max_try;
         self
     }

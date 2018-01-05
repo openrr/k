@@ -15,12 +15,11 @@
  */
 //! # Load [URDF](http://wiki.ros.org/urdf) format and create `k::LinkTree`
 //!
-extern crate nalgebra as na;
-extern crate urdf_rs;
+use urdf_rs;
 
 use std::collections::HashMap;
 use std::path::Path;
-use na::Real;
+use na::{self, Real};
 
 use links::*;
 use rctree::*;
@@ -155,8 +154,8 @@ where
                     for child_node in child_nodes.iter() {
                         info!(
                             "set paremt = {}, child = {}",
-                            parent_node.borrow().data.get_joint_name(),
-                            child_node.borrow().data.get_joint_name()
+                            parent_node.borrow().data.joint_name(),
+                            child_node.borrow().data.joint_name()
                         );
                         child_node.set_parent(parent_node);
                     }
@@ -194,7 +193,7 @@ fn test_tree_from_file() {
     let tree = LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
     let names = tree.iter_link()
-        .map(|link| link.get_joint_name().to_string())
+        .map(|link| link.joint_name().to_string())
         .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);
     println!("{}", names[0]);

@@ -24,6 +24,7 @@
 #[macro_use]
 extern crate log;
 extern crate nalgebra as na;
+extern crate urdf_rs;
 
 mod errors;
 mod ik;

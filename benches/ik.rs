@@ -17,13 +17,13 @@ where
     // set joint angles
     let angles = vec![0.5, 0.2, 0.0, -0.5, 0.0, -0.3];
     arm.set_joint_angles(&angles).unwrap();
-    let mut target = arm.calc_end_transform();
+    let mut target = arm.end_transform();
     target.translation.vector[0] += 0.02;
 
     let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 1000);
     b.iter(|| {
         solver.solve(arm, &target).unwrap();
-        let _trans = arm.calc_end_transform();
+        let _trans = arm.end_transform();
         arm.set_joint_angles(&angles).unwrap();
     });
 }

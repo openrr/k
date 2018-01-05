@@ -47,9 +47,9 @@ fn main() {
     // set joint angles
     let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
     arm.set_joint_angles(&angles).unwrap();
-    println!("initial angles={:?}", arm.get_joint_angles());
+    println!("initial angles={:?}", arm.joint_angles());
     // get the transform of the end of the manipulator (forward kinematics)
-    let mut target = arm.calc_end_transform();
+    let mut target = arm.end_transform();
     println!("initial target pos = {}", target.translation);
     println!("move z: +0.2");
     target.translation.vector[2] += 0.2;
@@ -59,10 +59,10 @@ fn main() {
         println!("Err: {}", err);
         0.0f32
     });
-    println!("solved angles={:?}", arm.get_joint_angles());
+    println!("solved angles={:?}", arm.joint_angles());
     println!(
         "solved target pos = {}",
-        arm.calc_end_transform().translation
+        arm.end_transform().translation
     );
 }
 ```

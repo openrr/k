@@ -13,9 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-extern crate nalgebra as na;
-
-use na::{Real, UnitQuaternion, Vector3};
+use na::{self, Real, UnitQuaternion, Vector3};
 
 
 /// Create rpy angles from quaternion

@@ -28,13 +28,13 @@ where
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
 
     /// Get the angles of the joints
-    fn get_joint_angles(&self) -> Vec<T>;
+    fn joint_angles(&self) -> Vec<T>;
 
     /// Get the limits of the joints, if it exists.
-    fn get_joint_limits(&self) -> Vec<Option<Range<T>>>;
+    fn joint_limits(&self) -> Vec<Option<Range<T>>>;
 
     /// Get the all names of the joints
-    fn get_joint_names(&self) -> Vec<String>;
+    fn joint_names(&self) -> Vec<String>;
 }
 
 /// Container of links which has a transformation
@@ -43,7 +43,7 @@ where
     T: Real,
 {
     /// Calculate the transforms of all of the links
-    fn calc_link_transforms(&self) -> Vec<Isometry3<T>>;
+    fn link_transforms(&self) -> Vec<Isometry3<T>>;
 
     /// Get the names of the links
     fn get_link_names(&self) -> Vec<String>;
@@ -55,14 +55,11 @@ where
     T: Real,
 {
     /// Calculate and return the transform of the end of the links
-    fn calc_end_transform(&self) -> Isometry3<T>;
+    fn end_transform(&self) -> Isometry3<T>;
 }
 
 /// Create KinematicChain
-pub trait ChainContainer<K, T>
-where
-    K: KinematicChain<T>,
-    T: Real,
-{
-    fn get_chain(&self, end_link_name: &str) -> Option<K>;
+pub trait ChainContainer {
+    type Chain;
+    fn get_chain(&self, end_link_name: &str) -> Option<Self::Chain>;
 }

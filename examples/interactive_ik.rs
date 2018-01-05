@@ -166,7 +166,7 @@ fn main() {
             Translation3::new(0.0, 0.0, 0.6),
             UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
         );
-    let mut target = arm.calc_end_transform();
+    let mut target = arm.end_transform();
 
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
@@ -185,7 +185,7 @@ fn main() {
                         Key::Z => {
                             // reset
                             arm.set_joint_angles(&angles).unwrap();
-                            target = arm.calc_end_transform();
+                            target = arm.end_transform();
                         }
                         Key::F => target.translation.vector[2] += 0.1,
                         Key::B => target.translation.vector[2] -= 0.1,
@@ -206,7 +206,7 @@ fn main() {
         });
         c_t.set_local_transformation(target.clone());
         cubes[0].set_local_transformation(arm.transform);
-        for (i, trans) in arm.calc_link_transforms().iter().enumerate() {
+        for (i, trans) in arm.link_transforms().iter().enumerate() {
             cubes[i + 1].set_local_transformation(trans.clone());
         }
     }
