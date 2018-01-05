@@ -1,6 +1,6 @@
 [package]
 name = "k"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
 description = "k is for kinematics"
 license = "Apache-2.0"
