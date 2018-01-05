@@ -18,7 +18,6 @@ cargo run --release --example interactive_ik
 
 ![ik_sample](img/screenshot.png)
 
-
 Push below keys to move the end of the manipulator.
 
 - `f`: forward
@@ -30,7 +29,6 @@ Push below keys to move the end of the manipulator.
 - `z`: reset the manipulator state.
 
 ## Create link tree from urdf and solve IK
-
 
 ```rust
 extern crate k;
