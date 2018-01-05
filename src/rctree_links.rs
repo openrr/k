@@ -284,7 +284,7 @@ where
 {
     type Chain = LinkChain<T>;
     /// Create LinkChain from `LinkTree` and the name of the end link
-    fn get_chain(&self, end_link_name: &str) -> Option<Self::Chain> {
+    fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain> {
         self.iter()
             .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
             .map(|ljn| LinkChain::new(end_link_name, ljn))
@@ -421,10 +421,10 @@ fn it_works() {
     let tree = LinkTree::new("robo1", ljn0);
     assert_eq!(tree.dof(), 6);
 
-    let none_chain = tree.get_chain("link_nono");
+    let none_chain = tree.new_chain("link_nono");
     assert!(none_chain.is_none());
 
-    let some_chain = tree.get_chain("link3");
+    let some_chain = tree.new_chain("link3");
     assert!(some_chain.is_some());
     assert_eq!(some_chain.unwrap().joint_angles().len(), 4);
 }

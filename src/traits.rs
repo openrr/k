@@ -61,5 +61,5 @@ where
 /// Create KinematicChain
 pub trait ChainContainer {
     type Chain;
-    fn get_chain(&self, end_link_name: &str) -> Option<Self::Chain>;
+    fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain>;
 }

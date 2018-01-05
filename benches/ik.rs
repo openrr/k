@@ -32,6 +32,6 @@ where
 #[bench]
 fn bench_rctree_ik(b: &mut test::Bencher) {
     let robot = k::LinkTree::<f64>::from_urdf_file::<f64, _>("urdf/sample.urdf").unwrap();
-    let mut arm = robot.get_chain("l_wrist2").unwrap();
+    let mut arm = robot.new_chain("l_wrist2").unwrap();
     bench_tree_ik(&mut arm, b);
 }
