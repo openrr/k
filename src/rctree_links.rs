@@ -150,7 +150,7 @@ where
                 .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
                 .collect::<Vec<_>>();
             if links_with_angle.len() != angles.len() {
-                println!("angles={:?}", angles);
+                debug!("size mismatch input angles={:?}", angles);
                 return Err(JointError::SizeMisMatch);
             }
             for (i, ljn_ref) in links_with_angle.iter_mut().enumerate() {
@@ -358,10 +358,8 @@ where
             .map(|ljn| {
                 let mut chain = LinkChain::new(end_link_name, ljn);
                 let joint_names = chain.joint_names();
-                println!("joint_names: {:?}", joint_names);
                 for (from, mimic) in self.mimics() {
                     if joint_names.contains(from) {
-                        println!("mimic in chain: {} -> {}", from, mimic.name);
                         chain.add_mimic(from, mimic.clone());
                     }
                 }
