@@ -22,6 +22,7 @@ use std::fmt;
 pub enum JointError {
     OutOfLimit,
     SizeMisMatch,
+    Mimic,
 }
 
 impl fmt::Display for JointError {
@@ -29,6 +30,7 @@ impl fmt::Display for JointError {
         match *self {
             JointError::OutOfLimit => write!(f, "limit over"),
             JointError::SizeMisMatch => write!(f, "size is invalid"),
+            JointError::Mimic => write!(f, "Mimic is invalid"),
         }
     }
 }
@@ -38,6 +40,7 @@ impl Error for JointError {
         match *self {
             JointError::OutOfLimit => "limit over",
             JointError::SizeMisMatch => "size is invalid",
+            JointError::Mimic => "mimic is invalid",
         }
     }
 }

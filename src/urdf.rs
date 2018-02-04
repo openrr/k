@@ -26,6 +26,17 @@ use rctree::*;
 use rctree_links::*;
 use joints::*;
 
+pub fn to_mimic<T>(urdf_mimic: &urdf_rs::Mimic) -> Mimic<T>
+where
+    T: Real,
+{
+    Mimic::new(
+            &urdf_mimic.joint,
+            na::convert(urdf_mimic.multiplier),
+            na::convert(urdf_mimic.offset),
+        )
+}
+
 /// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
 pub fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
 where
@@ -147,6 +158,19 @@ where
             }
             ref_nodes.push(node);
         }
+        let mimics = robot
+            .joints
+            .iter()
+            .filter_map(|j| {
+                if j.mimic.joint != "" {
+                    debug!("mimic found for {}", j.mimic.joint);
+                    Some((j.name.clone(), to_mimic(&j.mimic)))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
         for l in &robot.links {
             info!("link={}", l.name);
             if let Some(parent_node) = child_ref_map.get(&l.name) {
@@ -173,7 +197,12 @@ where
             rjn.set_parent(&root_node);
         }
         // create root node..
-        LinkTree::new(&robot.name, root_node)
+        let mut tree = LinkTree::new(&robot.name, root_node);
+        // add mimics
+        for (name, mimic) in mimics {
+            tree.add_mimic(&name, mimic);
+        }
+        tree
     }
 }
 

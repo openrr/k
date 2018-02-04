@@ -16,6 +16,7 @@
 use std::cell::{Ref, RefCell};
 use na::{Isometry3, Real};
 use std::slice::{Iter, IterMut};
+use std::collections::HashMap;
 
 use errors::*;
 use joints::*;
@@ -25,6 +26,29 @@ use rctree::*;
 
 pub type LinkNode<T> = Node<Link<T>>;
 
+#[derive(Debug, Clone)]
+pub struct Mimic<T: Real> {
+    pub name: String,
+    pub multiplier: T,
+    pub offset: T,
+}
+
+impl<T> Mimic<T>
+where
+    T: Real,
+{
+    pub fn new(name: &str, multiplier: T, offset: T) -> Self {
+        Mimic {
+            name: name.to_owned(),
+            multiplier,
+            offset,
+        }
+    }
+    pub fn mimic_angle(&self, from_angle: T) -> T {
+        from_angle * self.multiplier + self.offset
+    }
+}
+
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
 pub struct LinkChain<T: Real> {
@@ -32,6 +56,7 @@ pub struct LinkChain<T: Real> {
     pub links: Vec<LinkNode<T>>,
     pub transform: Isometry3<T>,
     end_link_name: Option<String>,
+    mimics: HashMap<String, Mimic<T>>,
 }
 
 impl<T> LinkChain<T>
@@ -63,7 +88,14 @@ where
             links: links,
             transform: Isometry3::identity(),
             end_link_name: None,
+            mimics: HashMap::new(),
         }
+    }
+    pub fn add_mimic(&mut self, name: &str, mimic_info: Mimic<T>) {
+        self.mimics.insert(name.to_owned(), mimic_info);
+    }
+    pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
+        &self.mimics
     }
 }
 
@@ -112,16 +144,33 @@ where
 {
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         // TODO: is it possible to cache the joint_with_angle to speed up?
-        let mut links_with_angle = self.links
-            .iter_mut()
-            .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
-            .collect::<Vec<_>>();
-        if links_with_angle.len() != angles.len() {
-            println!("angles={:?}", angles);
-            return Err(JointError::SizeMisMatch);
+        {
+            let mut links_with_angle = self.links
+                .iter_mut()
+                .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
+                .collect::<Vec<_>>();
+            if links_with_angle.len() != angles.len() {
+                println!("angles={:?}", angles);
+                return Err(JointError::SizeMisMatch);
+            }
+            for (i, ljn_ref) in links_with_angle.iter_mut().enumerate() {
+                ljn_ref.borrow_mut().data.set_joint_angle(angles[i])?;
+            }
         }
-        for (i, ljn_ref) in links_with_angle.iter_mut().enumerate() {
-            ljn_ref.borrow_mut().data.set_joint_angle(angles[i])?;
+        for (from, mimic) in &self.mimics {
+            let from_angle = self.links
+                .iter()
+                .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == mimic.name)
+                .and_then(|ljn_ref| ljn_ref.borrow().data.joint_angle())
+                .ok_or_else(|| JointError::Mimic)?;
+            self.links
+                .iter_mut()
+                .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == *from)
+                .map(|ljn_ref| {
+                    ljn_ref.borrow_mut().data.set_joint_angle(
+                        mimic.mimic_angle(from_angle),
+                    )
+                });
         }
         Ok(())
     }
@@ -162,6 +211,7 @@ pub struct LinkTree<T: Real> {
     pub name: String,
     pub root_link: LinkNode<T>,
     expanded_robot_link_vec: Vec<LinkNode<T>>,
+    mimics: HashMap<String, Mimic<T>>,
 }
 
 impl<T: Real> LinkTree<T> {
@@ -175,7 +225,14 @@ impl<T: Real> LinkTree<T> {
             name: name.to_string(),
             expanded_robot_link_vec: root_link.iter_descendants().map(|ln| ln.clone()).collect(),
             root_link: root_link,
+            mimics: HashMap::new(),
         }
+    }
+    pub fn add_mimic(&mut self, name: &str, mimic_info: Mimic<T>) {
+        self.mimics.insert(name.to_owned(), mimic_info);
+    }
+    pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
+        &self.mimics
     }
     /// iter for all link nodes
     pub fn iter(&self) -> Iter<LinkNode<T>> {
@@ -234,6 +291,17 @@ where
         for (lj, angle) in self.iter_joints().zip(angles_vec.iter()) {
             lj.borrow_mut().data.set_joint_angle(*angle)?;
         }
+        for (from, mimic) in &self.mimics {
+            let from_angle = self.iter_joints_link()
+                .find(|link| link.joint_name() == mimic.name)
+                .and_then(|link| link.joint_angle())
+                .ok_or(JointError::Mimic)?;
+            self.iter_link_mut()
+                .find(|link| link.joint.name == *from)
+                .map(|mut link| {
+                    link.set_joint_angle(mimic.mimic_angle(from_angle))
+                });
+        }
         Ok(())
     }
     fn joint_limits(&self) -> Vec<Option<Range<T>>> {
@@ -287,7 +355,18 @@ where
     fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain> {
         self.iter()
             .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
-            .map(|ljn| LinkChain::new(end_link_name, ljn))
+            .map(|ljn| {
+                let mut chain = LinkChain::new(end_link_name, ljn);
+                let joint_names = chain.joint_names();
+                println!("joint_names: {:?}", joint_names);
+                for (from, mimic) in self.mimics() {
+                    if joint_names.contains(from) {
+                        println!("mimic in chain: {} -> {}", from, mimic.name);
+                        chain.add_mimic(from, mimic.clone());
+                    }
+                }
+                chain
+            })
     }
 }
 
@@ -427,4 +506,59 @@ fn it_works() {
     let some_chain = tree.new_chain("link3");
     assert!(some_chain.is_some());
     assert_eq!(some_chain.unwrap().joint_angles().len(), 4);
+}
+
+
+
+#[test]
+fn test_mimic() {
+    use na;
+    let l0 = LinkBuilder::new()
+        .name("link0")
+        .translation(na::Translation3::new(0.0, 0.1, 0.0))
+        .joint(
+            "j0",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
+        .finalize();
+    let l1 = LinkBuilder::new()
+        .name("link1")
+        .translation(na::Translation3::new(0.0, 0.1, 0.1))
+        .joint(
+            "j1",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
+        .finalize();
+    let l2 = LinkBuilder::new()
+        .name("link2")
+        .translation(na::Translation3::new(0.0, 0.1, 0.1))
+        .joint(
+            "j2",
+            JointType::Rotational { axis: na::Vector3::y_axis() },
+            None,
+        )
+        .finalize();
+
+    let ljn0 = Node::new(l0);
+    let ljn1 = Node::new(l1);
+    let ljn2 = Node::new(l2);
+    ljn1.set_parent(&ljn0);
+    ljn2.set_parent(&ljn1);
+
+    let mut arm = LinkChain::new("chain1", &ljn2);
+    arm.add_mimic(
+        ljn2.borrow().data.joint_name(),
+        Mimic::new(ljn1.borrow().data.joint_name(), 2.0, 0.5),
+    );
+
+    assert_eq!(arm.joint_angles().len(), 3);
+    println!("{:?}", arm.joint_angles());
+    let angles = vec![0.1, 0.2, 0.3];
+    arm.set_joint_angles(&angles).unwrap();
+    let angles = arm.joint_angles();
+    assert!(angles[0] == 0.1);
+    assert!(angles[1] == 0.2);
+    assert!(angles[2] == 0.9);
 }
