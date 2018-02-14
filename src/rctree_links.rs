@@ -26,29 +26,6 @@ use rctree::*;
 
 pub type LinkNode<T> = Node<Link<T>>;
 
-#[derive(Debug, Clone)]
-pub struct Mimic<T: Real> {
-    pub name: String,
-    pub multiplier: T,
-    pub offset: T,
-}
-
-impl<T> Mimic<T>
-where
-    T: Real,
-{
-    pub fn new(name: &str, multiplier: T, offset: T) -> Self {
-        Mimic {
-            name: name.to_owned(),
-            multiplier,
-            offset,
-        }
-    }
-    pub fn mimic_angle(&self, from_angle: T) -> T {
-        from_angle * self.multiplier + self.offset
-    }
-}
-
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
 pub struct LinkChain<T: Real> {

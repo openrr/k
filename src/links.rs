@@ -151,3 +151,30 @@ where
         }
     }
 }
+
+/// Information for copying joint state of other joint
+///
+/// joint angles = joint[name] * multiplier + offset
+#[derive(Debug, Clone)]
+pub struct Mimic<T: Real> {
+    /// Name of other joint
+    pub name: String,
+    pub multiplier: T,
+    pub offset: T,
+}
+
+impl<T> Mimic<T>
+where
+    T: Real,
+{
+    pub fn new(name: String, multiplier: T, offset: T) -> Self {
+        Mimic {
+            name: name,
+            multiplier,
+            offset,
+        }
+    }
+    pub fn mimic_angle(&self, from_angle: T) -> T {
+        from_angle * self.multiplier + self.offset
+    }
+}

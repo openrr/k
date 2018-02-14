@@ -31,10 +31,10 @@ where
     T: Real,
 {
     Mimic::new(
-            &urdf_mimic.joint,
-            na::convert(urdf_mimic.multiplier),
-            na::convert(urdf_mimic.offset),
-        )
+        urdf_mimic.joint.clone(),
+        na::convert(urdf_mimic.multiplier),
+        na::convert(urdf_mimic.offset),
+    )
 }
 
 /// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
