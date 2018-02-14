@@ -86,9 +86,10 @@ where
             .joint(
                 &joint.name,
                 match joint.joint_type {
-                    urdf_rs::JointType::Revolute |
-                    urdf_rs::JointType::Continuous => {
-                        JointType::Rotational { axis: axis_from(joint.axis.xyz) }
+                    urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
+                        JointType::Rotational {
+                            axis: axis_from(joint.axis.xyz),
+                        }
                     }
                     urdf_rs::JointType::Prismatic => JointType::Linear {
                         axis: axis_from(joint.axis.xyz),
@@ -150,9 +151,10 @@ where
             let node = Node::new(Link::from_urdf_joint(j));
             child_ref_map.insert(&j.child.link, node.clone());
             if parent_ref_map.get(&j.parent.link).is_some() {
-                parent_ref_map.get_mut(&j.parent.link).unwrap().push(
-                    node.clone(),
-                );
+                parent_ref_map
+                    .get_mut(&j.parent.link)
+                    .unwrap()
+                    .push(node.clone());
             } else {
                 parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
             }
