@@ -50,7 +50,7 @@ where
 }
 
 /// `JointContainer` which has an end transform
-pub trait KinematicChain<T>: JointContainer<T>
+pub trait Manipulator<T>: JointContainer<T>
 where
     T: Real,
 {
@@ -58,7 +58,7 @@ where
     fn end_transform(&self) -> Isometry3<T>;
 }
 
-/// Create KinematicChain
+/// Create Manipulator
 pub trait ChainContainer {
     type Chain;
     fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain>;

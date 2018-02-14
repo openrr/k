@@ -35,7 +35,7 @@ extern crate k;
 
 use k::InverseKinematicsSolver;
 use k::JointContainer;
-use k::KinematicChain;
+use k::Manipulator;
 use k::ChainContainer;
 use k::urdf::FromUrdf;
 

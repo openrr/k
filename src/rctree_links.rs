@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<T> KinematicChain<T> for LinkChain<T>
+impl<T> Manipulator<T> for LinkChain<T>
 where
     T: Real,
 {

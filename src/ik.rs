@@ -35,7 +35,7 @@ pub trait InverseKinematicsSolver<T: Real> {
     /// Move the end transform of the `arm` to `target_pose`
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>;
+        K: Manipulator<T>;
 }
 
 
@@ -71,7 +71,7 @@ where
     }
     fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>,
+        K: Manipulator<T>,
     {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
@@ -113,7 +113,7 @@ where
 {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>,
+        K: Manipulator<T>,
     {
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {

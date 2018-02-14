@@ -5,14 +5,14 @@ extern crate test;
 extern crate k;
 extern crate nalgebra as na;
 
-use k::KinematicChain;
+use k::Manipulator;
 use k::urdf::FromUrdf;
 use k::InverseKinematicsSolver;
 use k::ChainContainer;
 
 fn bench_tree_ik<K>(arm: &mut K, b: &mut test::Bencher)
 where
-    K: KinematicChain<f64>,
+    K: Manipulator<f64>,
 {
     // set joint angles
     let angles = vec![0.5, 0.2, 0.0, -0.5, 0.0, -0.3];
