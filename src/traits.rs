@@ -59,7 +59,7 @@ where
 }
 
 /// Create Manipulator
-pub trait ChainContainer {
-    type Chain;
-    fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain>;
+pub trait ManipulatorContainer {
+    type Manipulator;
+    fn new_manipulator(&self, end_link_name: &str) -> Option<Self::Manipulator>;
 }

@@ -346,13 +346,13 @@ where
     }
 }
 
-impl<T> ChainContainer for LinkTree<T>
+impl<T> ManipulatorContainer for LinkTree<T>
 where
     T: Real,
 {
-    type Chain = LinkChain<T>;
+    type Manipulator = LinkChain<T>;
     /// Create LinkChain from `LinkTree` and the name of the end link
-    fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain> {
+    fn new_manipulator(&self, end_link_name: &str) -> Option<Self::Manipulator> {
         self.iter()
             .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
             .map(|ljn| {

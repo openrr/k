@@ -36,7 +36,7 @@ extern crate k;
 use k::InverseKinematicsSolver;
 use k::JointContainer;
 use k::Manipulator;
-use k::ChainContainer;
+use k::ManipulatorContainer;
 use k::urdf::FromUrdf;
 
 fn main() {

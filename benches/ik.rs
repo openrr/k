@@ -8,7 +8,7 @@ extern crate nalgebra as na;
 use k::Manipulator;
 use k::urdf::FromUrdf;
 use k::InverseKinematicsSolver;
-use k::ChainContainer;
+use k::ManipulatorContainer;
 
 fn bench_tree_ik<K>(arm: &mut K, b: &mut test::Bencher)
 where
