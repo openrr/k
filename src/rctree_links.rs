@@ -167,9 +167,10 @@ where
                 .iter_mut()
                 .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == *from)
                 .map(|ljn_ref| {
-                    ljn_ref.borrow_mut().data.set_joint_angle(
-                        mimic.mimic_angle(from_angle),
-                    )
+                    ljn_ref
+                        .borrow_mut()
+                        .data
+                        .set_joint_angle(mimic.mimic_angle(from_angle))
                 });
         }
         Ok(())
@@ -244,17 +245,22 @@ impl<T: Real> LinkTree<T> {
     }
     /// iter for all links, not as node
     pub fn iter_link<'a>(&'a self) -> NodeIter<'a, Link<T>> {
-        NodeIter { iter: self.expanded_robot_link_vec.iter() }
+        NodeIter {
+            iter: self.expanded_robot_link_vec.iter(),
+        }
     }
     /// iter for all links as mut, not as node
     pub fn iter_link_mut<'a>(&'a self) -> NodeIterMut<'a, Link<T>> {
-        NodeIterMut { iter: self.expanded_robot_link_vec.iter() }
+        NodeIterMut {
+            iter: self.expanded_robot_link_vec.iter(),
+        }
     }
     /// iter for the links with the joint which is not fixed
     pub fn iter_joints<'a>(&'a self) -> Box<Iterator<Item = &LinkNode<T>> + 'a> {
-        Box::new(self.iter().filter(
-            |ljn| ljn.borrow().data.has_joint_angle(),
-        ))
+        Box::new(
+            self.iter()
+                .filter(|ljn| ljn.borrow().data.has_joint_angle()),
+        )
     }
     /// iter for the links with the joint which is not fixed
     pub fn iter_joints_link<'a>(&'a self) -> Box<Iterator<Item = Ref<'a, Link<T>>> + 'a> {
@@ -376,7 +382,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint(
             "j0",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -385,7 +393,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j1",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -394,7 +404,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j2",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -403,7 +415,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint(
             "j3",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -412,7 +426,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j4",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -421,7 +437,9 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j5",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -516,7 +534,9 @@ fn test_mimic() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint(
             "j0",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -525,7 +545,9 @@ fn test_mimic() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j1",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -534,7 +556,9 @@ fn test_mimic() {
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint(
             "j2",
-            JointType::Rotational { axis: na::Vector3::y_axis() },
+            JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
