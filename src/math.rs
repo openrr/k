@@ -15,7 +15,6 @@
  */
 use na::{self, Real, UnitQuaternion, Vector3};
 
-
 /// Create rpy angles from quaternion
 pub fn to_euler_angles<T: Real>(q: &UnitQuaternion<T>) -> Vector3<T> {
     let x = q[0];

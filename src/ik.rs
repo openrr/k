@@ -13,9 +13,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{self, DMatrix, Isometry3, Real, Vector6};
 use errors::*;
 use math::*;
+use na::{self, DMatrix, Isometry3, Real, Vector6};
 use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
@@ -33,11 +33,12 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
 /// IK solver
 pub trait InverseKinematicsSolver<T: Real> {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: Manipulator<T>;
+    fn solve(
+        &self,
+        arm: &mut impl Manipulator<T>,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError>;
 }
-
 
 /// Inverse Kinematics Solver using Jacobian matrix
 #[derive(Debug, Clone)]
@@ -69,10 +70,11 @@ where
             num_max_try: num_max_try,
         }
     }
-    fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: Manipulator<T>,
-    {
+    fn solve_one_loop(
+        &self,
+        arm: &mut impl Manipulator<T>,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError> {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
         let orig_pose6 = calc_vector6_pose(&arm.end_transform());
@@ -111,10 +113,11 @@ impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
 {
-    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: Manipulator<T>,
-    {
+    fn solve(
+        &self,
+        arm: &mut impl Manipulator<T>,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError> {
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
             println!("support only 6 or more DoF now");
@@ -130,7 +133,6 @@ where
         Err(IKError::NotConverged)
     }
 }
-
 
 /// Build `jacobianIKSolverBuilder`
 ///

@@ -17,14 +17,14 @@
 //!
 use urdf_rs;
 
+use na::{self, Real};
 use std::collections::HashMap;
 use std::path::Path;
-use na::{self, Real};
 
+use joints::*;
 use links::*;
 use rctree::*;
 use rctree_links::*;
-use joints::*;
 
 pub fn to_mimic<T>(urdf_mimic: &urdf_rs::Mimic) -> Mimic<T>
 where
@@ -189,12 +189,12 @@ where
             }
         }
         // set root as parent of root joint nodes
-        let root_joint_nodes = ref_nodes.iter().filter_map(
-            |ref_node| match ref_node.borrow().parent {
+        let root_joint_nodes = ref_nodes.iter().filter_map(|ref_node| {
+            match ref_node.borrow().parent {
                 None => Some(ref_node),
                 Some(_) => None,
-            },
-        );
+            }
+        });
         for rjn in root_joint_nodes {
             rjn.set_parent(&root_node);
         }
@@ -208,7 +208,6 @@ where
     }
 }
 
-
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
@@ -216,14 +215,14 @@ fn test_tree() {
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
     let tree = LinkTree::<f32>::from_urdf_robot(&robo);
-    assert_eq!(tree.iter_link().map(|_| {}).count(), 13);
+    assert_eq!(tree.iter().map(|_| {}).count(), 13);
 }
 
 #[test]
 fn test_tree_from_file() {
     let tree = LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
-    let names = tree.iter_link()
+    let names = tree.iter()
         .map(|link| link.joint_name().to_string())
         .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);

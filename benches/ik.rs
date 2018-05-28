@@ -1,14 +1,14 @@
 // rustup run nightly cargo bench
 #![feature(test)]
 
-extern crate test;
 extern crate k;
 extern crate nalgebra as na;
+extern crate test;
 
-use k::Manipulator;
-use k::urdf::FromUrdf;
 use k::InverseKinematicsSolver;
+use k::Manipulator;
 use k::ManipulatorContainer;
+use k::urdf::FromUrdf;
 
 fn bench_tree_ik<K>(arm: &mut K, b: &mut test::Bencher)
 where
@@ -28,10 +28,9 @@ where
     });
 }
 
-
 #[bench]
 fn bench_rctree_ik(b: &mut test::Bencher) {
     let robot = k::LinkTree::<f64>::from_urdf_file::<f64, _>("urdf/sample.urdf").unwrap();
-    let mut arm = robot.new_chain("l_wrist2").unwrap();
+    let mut arm = robot.new_manipulator("l_wrist2").unwrap();
     bench_tree_ik(&mut arm, b);
 }

@@ -74,7 +74,6 @@ where
     }
 }
 
-
 /// Build a `Link<T>`
 ///
 /// # Examples

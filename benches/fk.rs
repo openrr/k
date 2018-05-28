@@ -6,12 +6,11 @@ extern crate nalgebra as na;
 extern crate rand;
 extern crate test;
 
-use std::f64::consts::PI;
 use k::JointContainer;
 use k::LinkContainer;
 use k::urdf::FromUrdf;
 use na::Real;
-
+use std::f64::consts::PI;
 
 fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::Range<T>>>) -> Vec<T>
 where
@@ -25,7 +24,6 @@ where
         })
         .collect()
 }
-
 
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
@@ -44,5 +42,7 @@ fn bench_rctree_set_joints(b: &mut test::Bencher) {
     let mut robot = k::LinkTree::<f64>::from_urdf_file::<f64, _>("urdf/sample.urdf").unwrap();
     let limits = robot.joint_limits();
     let angles = generate_random_joint_angles_from_limits(&limits);
-    b.iter(|| { robot.set_joint_angles(&angles).unwrap(); });
+    b.iter(|| {
+        robot.set_joint_angles(&angles).unwrap();
+    });
 }

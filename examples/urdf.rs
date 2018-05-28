@@ -23,7 +23,7 @@ use k::urdf::FromUrdf;
 
 fn main() {
     let robot = k::LinkTree::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
-    let mut arm = robot.new_chain("l_wrist2").unwrap();
+    let mut arm = robot.new_manipulator("l_wrist2").unwrap();
     // set joint angles
     let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
     arm.set_joint_angles(&angles).unwrap();
@@ -40,8 +40,5 @@ fn main() {
         0.0f32
     });
     println!("solved angles={:?}", arm.joint_angles());
-    println!(
-        "solved target pos = {}",
-        arm.end_transform().translation
-    );
+    println!("solved target pos = {}", arm.end_transform().translation);
 }

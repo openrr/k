@@ -11,7 +11,7 @@ mod tests {
     pub fn test_tree() {
         let tree = k::LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
         assert_eq!(tree.dof(), 12);
-        let all_names = tree.iter_link()
+        let all_names = tree.iter()
             .map(|link| link.joint_name().to_string())
             .collect::<Vec<_>>();
         assert!(all_names.len() == 13);

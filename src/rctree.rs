@@ -13,10 +13,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use std::rc::{Rc, Weak};
-use std::slice::Iter;
 use std::cell::{Ref, RefCell, RefMut};
-
+use std::rc::{Rc, Weak};
 
 pub type RcNode<T> = Rc<RefCell<NodeImpl<T>>>;
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
@@ -49,11 +47,15 @@ impl<T> Node<T> {
 
     /// iter from the end to root, it contains nodes[id] itsself
     pub fn iter_ancestors(&self) -> Ancestors<T> {
-        Ancestors { parent: Some(self.clone()) }
+        Ancestors {
+            parent: Some(self.clone()),
+        }
     }
     /// iter to the end, it contains nodes[id] itsself
     pub fn iter_descendants(&self) -> Descendants<T> {
-        Descendants { stack: vec![self.clone()] }
+        Descendants {
+            stack: vec![self.clone()],
+        }
     }
 
     /// Set parent and child relations at same time
@@ -66,36 +68,6 @@ impl<T> Node<T> {
 impl<T> ::std::clone::Clone for Node<T> {
     fn clone(&self) -> Self {
         Node::<T>(self.0.clone())
-    }
-}
-
-#[derive(Debug)]
-pub struct NodeIter<'a, T: 'a> {
-    pub iter: Iter<'a, Node<T>>,
-}
-
-impl<'a, T: 'a> Iterator for NodeIter<'a, T> {
-    type Item = Ref<'a, T>;
-
-    fn next(&mut self) -> Option<Ref<'a, T>> {
-        self.iter.next().map(|rc| {
-            Ref::map(rc.borrow(), |node| &node.data)
-        })
-    }
-}
-
-#[derive(Debug)]
-pub struct NodeIterMut<'a, T: 'a> {
-    pub iter: Iter<'a, Node<T>>,
-}
-
-impl<'a, T: 'a> Iterator for NodeIterMut<'a, T> {
-    type Item = RefMut<'a, T>;
-
-    fn next(&mut self) -> Option<RefMut<'a, T>> {
-        self.iter.next().map(|rc| {
-            RefMut::map(rc.borrow_mut(), |node| &mut node.data)
-        })
     }
 }
 
@@ -141,7 +113,6 @@ impl<T> Iterator for Descendants<T> {
         Some(node)
     }
 }
-
 
 #[test]
 fn test() {
