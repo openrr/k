@@ -11,7 +11,7 @@ documentation = "http://docs.rs/k"
 readme = "README.md"
 
 [dependencies]
-nalgebra = "0.14.0"
+nalgebra = "0.15.0"
 urdf-rs = "0.4.2"
 log = "0.3"
 
