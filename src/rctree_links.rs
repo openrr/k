@@ -27,7 +27,7 @@ pub type LinkNode<T> = Node<Link<T>>;
 
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
-pub struct LinkChain<T: Real> {
+pub struct Manipulator<T: Real> {
     pub name: String,
     pub links: Vec<LinkNode<T>>,
     links_with_joint_angle: Vec<LinkNode<T>>,
@@ -36,7 +36,7 @@ pub struct LinkChain<T: Real> {
     mimics: HashMap<String, Mimic<T>>,
 }
 
-impl<T> LinkChain<T>
+impl<T> Manipulator<T>
 where
     T: Real,
 {
@@ -65,7 +65,7 @@ where
             .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
             .map(|ljn_ref| ljn_ref.clone())
             .collect::<Vec<_>>();
-        LinkChain {
+        Manipulator {
             name: name.to_string(),
             links,
             links_with_joint_angle,
@@ -73,6 +73,20 @@ where
             end_link_name: None,
             mimics: HashMap::new(),
         }
+    }
+    pub fn from_link_tree(end_link_name: &str, tree: &LinkTree<T>) -> Option<Self> {
+        tree.iter_node()
+            .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
+            .map(|ljn| {
+                let mut chain = Manipulator::new(end_link_name, ljn);
+                let joint_names = chain.joint_names();
+                for (from, mimic) in tree.mimics() {
+                    if joint_names.contains(from) {
+                        chain.add_mimic(from, mimic.clone());
+                    }
+                }
+                chain
+            })
     }
     pub fn add_mimic(&mut self, name: &str, mimic_info: Mimic<T>) {
         self.mimics.insert(name.to_owned(), mimic_info);
@@ -82,7 +96,7 @@ where
     }
 }
 
-impl<T> Manipulator<T> for LinkChain<T>
+impl<T> EndTransform<T> for Manipulator<T>
 where
     T: Real,
 {
@@ -100,7 +114,7 @@ where
     }
 }
 
-impl<T> LinkContainer<T> for LinkChain<T>
+impl<T> HasLinks<T> for Manipulator<T>
 where
     T: Real,
 {
@@ -121,7 +135,7 @@ where
     }
 }
 
-impl<T> JointContainer<T> for LinkChain<T>
+impl<T> HasJoints<T> for Manipulator<T>
 where
     T: Real,
 {
@@ -250,7 +264,7 @@ impl<T: Real> LinkTree<T> {
     }
 }
 
-impl<T> JointContainer<T> for LinkTree<T>
+impl<T> HasJoints<T> for LinkTree<T>
 where
     T: Real,
 {
@@ -296,7 +310,7 @@ where
     }
 }
 
-impl<T> LinkContainer<T> for LinkTree<T>
+impl<T> HasLinks<T> for LinkTree<T>
 where
     T: Real,
 {
@@ -323,28 +337,6 @@ where
     }
     fn link_names(&self) -> Vec<String> {
         self.iter().map(|link| link.name.to_owned()).collect()
-    }
-}
-
-impl<T> ManipulatorContainer for LinkTree<T>
-where
-    T: Real,
-{
-    type Manipulator = LinkChain<T>;
-    /// Create `LinkChain` from `LinkTree` and the name of the end link
-    fn new_manipulator(&self, end_link_name: &str) -> Option<Self::Manipulator> {
-        self.iter_node()
-            .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
-            .map(|ljn| {
-                let mut chain = LinkChain::new(end_link_name, ljn);
-                let joint_names = chain.joint_names();
-                for (from, mimic) in self.mimics() {
-                    if joint_names.contains(from) {
-                        chain.add_mimic(from, mimic.clone());
-                    }
-                }
-                chain
-            })
     }
 }
 
@@ -473,7 +465,7 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let mut arm = LinkChain::new("chain1", &ljn3);
+    let mut arm = Manipulator::new("chain1", &ljn3);
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
     let real_end = arm.end_transform();
@@ -490,10 +482,10 @@ fn it_works() {
     let tree = LinkTree::new("robo1", ljn0);
     assert_eq!(tree.dof(), 6);
 
-    let none_chain = tree.new_manipulator("link_nono");
+    let none_chain = Manipulator::from_link_tree("link_nono", &tree);
     assert!(none_chain.is_none());
 
-    let some_chain = tree.new_manipulator("link3");
+    let some_chain = Manipulator::from_link_tree("link3", &tree);
     assert!(some_chain.is_some());
     assert_eq!(some_chain.unwrap().joint_angles().len(), 4);
 }
@@ -541,7 +533,7 @@ fn test_mimic() {
     ljn1.set_parent(&ljn0);
     ljn2.set_parent(&ljn1);
 
-    let mut arm = LinkChain::new("chain1", &ljn2);
+    let mut arm = Manipulator::new("chain1", &ljn2);
     arm.add_mimic(
         ljn2.borrow().data.joint_name(),
         Mimic::new(ljn1.borrow().data.joint_name().to_owned(), 2.0, 0.5),

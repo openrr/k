@@ -122,7 +122,7 @@ fn get_root_link_name(robot: &urdf_rs::Robot) -> String {
 /// Convert from URDF robot model
 pub trait FromUrdf {
     fn from_urdf_robot(robot: &urdf_rs::Robot) -> Self;
-    fn from_urdf_file<T, P>(path: P) -> Result<Self, urdf_rs::UrdfError>
+    fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
     where
         Self: ::std::marker::Sized,
         P: AsRef<Path>,
@@ -220,7 +220,7 @@ fn test_tree() {
 
 #[test]
 fn test_tree_from_file() {
-    let tree = LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
+    let tree = LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
     let names = tree.iter()
         .map(|link| link.joint_name().to_string())

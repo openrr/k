@@ -31,13 +31,14 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
 }
 
 /// IK solver
-pub trait InverseKinematicsSolver<T: Real> {
+pub trait InverseKinematicsSolver<T>
+where
+    T: Real,
+{
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve(
-        &self,
-        arm: &mut impl Manipulator<T>,
-        target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError>;
+    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    where
+        K: HasJoints<T> + EndTransform<T>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
@@ -70,11 +71,10 @@ where
             num_max_try: num_max_try,
         }
     }
-    fn solve_one_loop(
-        &self,
-        arm: &mut impl Manipulator<T>,
-        target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError> {
+    fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    where
+        K: HasJoints<T> + EndTransform<T>,
+    {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
         let orig_pose6 = calc_vector6_pose(&arm.end_transform());
@@ -113,11 +113,10 @@ impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
 {
-    fn solve(
-        &self,
-        arm: &mut impl Manipulator<T>,
-        target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError> {
+    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    where
+        K: EndTransform<T> + HasJoints<T>,
+    {
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
             println!("support only 6 or more DoF now");

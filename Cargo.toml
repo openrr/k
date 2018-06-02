@@ -16,6 +16,6 @@ urdf-rs = "0.4.2"
 log = "0.3"
 
 [dev-dependencies]
-kiss3d = "0.14.0"
+kiss3d = "0.15.0"
 glfw = { version = "0.19.0", default-features = false }
 rand = "0.3.18"

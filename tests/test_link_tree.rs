@@ -1,15 +1,15 @@
-extern crate nalgebra as na;
 extern crate k;
+extern crate nalgebra as na;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use k::HasJoints;
     use k::urdf::FromUrdf;
-    use k::JointContainer;
 
     #[test]
     pub fn test_tree() {
-        let tree = k::LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
+        let tree = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
         assert_eq!(tree.dof(), 12);
         let all_names = tree.iter()
             .map(|link| link.joint_name().to_string())
