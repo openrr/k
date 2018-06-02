@@ -13,6 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+//! math related functions
 use na::{self, Real, UnitQuaternion, Vector3};
 
 /// Create rpy angles from quaternion

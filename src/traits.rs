@@ -17,7 +17,7 @@ use errors::*;
 use joints::*;
 use na::{Isometry3, Real};
 
-/// Container of links with joints
+/// Container of joints which has angle
 pub trait HasJoints<T>
 where
     T: Real,

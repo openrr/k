@@ -16,7 +16,6 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::{Rc, Weak};
 
-pub type RcNode<T> = Rc<RefCell<NodeImpl<T>>>;
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 
 #[derive(Debug, Clone)]
@@ -28,6 +27,7 @@ pub struct NodeImpl<T> {
 }
 
 #[derive(Debug)]
+/// Graph Node, which has a parent and children
 pub struct Node<T>(Rc<RefCell<NodeImpl<T>>>);
 
 impl<T> Node<T> {

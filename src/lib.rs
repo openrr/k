@@ -41,6 +41,6 @@ pub use self::errors::*;
 pub use self::ik::*;
 pub use self::joints::*;
 pub use self::links::*;
-pub use self::rctree::*;
+pub use self::rctree::Node;
 pub use self::rctree_links::*;
 pub use self::traits::*;

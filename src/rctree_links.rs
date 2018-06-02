@@ -14,7 +14,7 @@
    limitations under the License.
  */
 use na::{Isometry3, Real};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefMut};
 use std::collections::HashMap;
 
 use errors::*;
@@ -321,7 +321,7 @@ where
                     Some(ref parent) => {
                         let rc_parent = parent.upgrade().unwrap().clone();
                         let parent_obj = rc_parent.borrow();
-                        let cache = parent_obj.data.world_transform_cache.borrow();
+                        let cache = parent_obj.data.world_transform();
                         match *cache {
                             Some(trans) => trans,
                             None => panic!("cache must exist"),
@@ -330,7 +330,7 @@ where
                     None => Isometry3::identity(),
                 };
                 let trans = parent_transform * ljn.borrow().data.transform();
-                ljn.borrow_mut().data.world_transform_cache = RefCell::new(Some(trans));
+                ljn.borrow_mut().data.set_world_transform(trans);
                 trans
             })
             .collect()

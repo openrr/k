@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-//! # Load [URDF](http://wiki.ros.org/urdf) format and create `k::LinkTree`
+//! Load [URDF](http://wiki.ros.org/urdf) format and create `k::LinkTree`
 //!
 use urdf_rs;
 
