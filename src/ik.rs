@@ -13,9 +13,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{self, DMatrix, Isometry3, Real, Vector6};
 use errors::*;
 use math::*;
+use na::{self, DMatrix, Isometry3, Real, Vector6};
 use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
@@ -31,13 +31,15 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
 }
 
 /// IK solver
-pub trait InverseKinematicsSolver<T: Real> {
+pub trait InverseKinematicsSolver<T>
+where
+    T: Real,
+{
     /// Move the end transform of the `arm` to `target_pose`
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>;
+        K: HasJoints<T> + EndTransform<T>;
 }
-
 
 /// Inverse Kinematics Solver using Jacobian matrix
 #[derive(Debug, Clone)]
@@ -71,7 +73,7 @@ where
     }
     fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>,
+        K: HasJoints<T> + EndTransform<T>,
     {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
@@ -113,7 +115,7 @@ where
 {
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
-        K: KinematicChain<T>,
+        K: EndTransform<T> + HasJoints<T>,
     {
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
@@ -130,7 +132,6 @@ where
         Err(IKError::NotConverged)
     }
 }
-
 
 /// Build `jacobianIKSolverBuilder`
 ///

@@ -34,14 +34,13 @@ Push below keys to move the end of the manipulator.
 extern crate k;
 
 use k::InverseKinematicsSolver;
-use k::JointContainer;
-use k::KinematicChain;
-use k::ChainContainer;
+use k::HasJoints;
+use k::Manipulator;
 use k::urdf::FromUrdf;
 
 fn main() {
-    let robot = k::LinkTree::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
-    let mut arm = robot.new_chain("l_wrist2").unwrap();
+    let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
     // set joint angles
     let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
     arm.set_joint_angles(&angles).unwrap();

@@ -1,20 +1,19 @@
-extern crate nalgebra as na;
 extern crate k;
+extern crate nalgebra as na;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use na::{Vector3, Translation3};
-    use k::InverseKinematicsSolver;
-    use k::KinematicChain;
-    use k::JointContainer;
-
-    pub fn create_joint_with_link_array6() -> k::LinkChain<f64> {
+    use k::{EndTransform, HasJoints, InverseKinematicsSolver};
+    use na::{Translation3, Vector3};
+    pub fn create_joint_with_link_array6() -> k::Manipulator<f64> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
             .joint(
                 "shoulder_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .finalize();
@@ -22,7 +21,9 @@ mod tests {
             .name("shoulder_link2")
             .joint(
                 "shoulder_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::x_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.1, 0.0))
@@ -31,7 +32,9 @@ mod tests {
             .name("shoulder_link3")
             .joint(
                 "shoulder_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::z_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.30))
@@ -40,7 +43,9 @@ mod tests {
             .name("elbow_link1")
             .joint(
                 "elbow_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -49,7 +54,9 @@ mod tests {
             .name("wrist_link1")
             .joint(
                 "wrist_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::z_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -58,7 +65,9 @@ mod tests {
             .name("wrist_link2")
             .joint(
                 "wrist_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -74,16 +83,17 @@ mod tests {
         n3.set_parent(&n2);
         n4.set_parent(&n3);
         n5.set_parent(&n4);
-        k::LinkChain::new("arm6", &n5)
+        k::Manipulator::new("arm6", &n5)
     }
 
-
-    pub fn create_joint_with_link_array7() -> k::LinkChain<f32> {
+    pub fn create_joint_with_link_array7() -> k::Manipulator<f32> {
         let l0 = k::LinkBuilder::new()
             .name("shoulder_link1")
             .joint(
                 "shoulder_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .finalize();
@@ -91,7 +101,9 @@ mod tests {
             .name("shoulder_link2")
             .joint(
                 "shoulder_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::x_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.1, 0.0))
@@ -100,7 +112,9 @@ mod tests {
             .name("shoulder_link3")
             .joint(
                 "shoulder_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::z_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.30))
@@ -109,7 +123,9 @@ mod tests {
             .name("elbow_link1")
             .joint(
                 "elbow_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -118,7 +134,9 @@ mod tests {
             .name("wrist_link1")
             .joint(
                 "wrist_yaw",
-                k::JointType::Rotational { axis: Vector3::z_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::z_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -127,7 +145,9 @@ mod tests {
             .name("wrist_link2")
             .joint(
                 "wrist_pitch",
-                k::JointType::Rotational { axis: Vector3::y_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::y_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -136,7 +156,9 @@ mod tests {
             .name("wrist_link3")
             .joint(
                 "wrist_roll",
-                k::JointType::Rotational { axis: Vector3::x_axis() },
+                k::JointType::Rotational {
+                    axis: Vector3::x_axis(),
+                },
                 None,
             )
             .translation(Translation3::new(0.0, 0.0, -0.10))
@@ -155,7 +177,7 @@ mod tests {
         n4.set_parent(&n3);
         n5.set_parent(&n4);
         n6.set_parent(&n5);
-        k::LinkChain::new("arm", &n6)
+        k::Manipulator::new("arm", &n6)
     }
 
     #[test]

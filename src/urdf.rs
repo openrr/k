@@ -13,28 +13,28 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-//! # Load [URDF](http://wiki.ros.org/urdf) format and create `k::LinkTree`
+//! Load [URDF](http://wiki.ros.org/urdf) format and create `k::LinkTree`
 //!
 use urdf_rs;
 
+use na::{self, Real};
 use std::collections::HashMap;
 use std::path::Path;
-use na::{self, Real};
 
+use joints::*;
 use links::*;
 use rctree::*;
 use rctree_links::*;
-use joints::*;
 
 pub fn to_mimic<T>(urdf_mimic: &urdf_rs::Mimic) -> Mimic<T>
 where
     T: Real,
 {
     Mimic::new(
-            &urdf_mimic.joint,
-            na::convert(urdf_mimic.multiplier),
-            na::convert(urdf_mimic.offset),
-        )
+        urdf_mimic.joint.clone(),
+        na::convert(urdf_mimic.multiplier),
+        na::convert(urdf_mimic.offset),
+    )
 }
 
 /// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
@@ -86,9 +86,10 @@ where
             .joint(
                 &joint.name,
                 match joint.joint_type {
-                    urdf_rs::JointType::Revolute |
-                    urdf_rs::JointType::Continuous => {
-                        JointType::Rotational { axis: axis_from(joint.axis.xyz) }
+                    urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
+                        JointType::Rotational {
+                            axis: axis_from(joint.axis.xyz),
+                        }
                     }
                     urdf_rs::JointType::Prismatic => JointType::Linear {
                         axis: axis_from(joint.axis.xyz),
@@ -121,7 +122,7 @@ fn get_root_link_name(robot: &urdf_rs::Robot) -> String {
 /// Convert from URDF robot model
 pub trait FromUrdf {
     fn from_urdf_robot(robot: &urdf_rs::Robot) -> Self;
-    fn from_urdf_file<T, P>(path: P) -> Result<Self, urdf_rs::UrdfError>
+    fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
     where
         Self: ::std::marker::Sized,
         P: AsRef<Path>,
@@ -150,9 +151,10 @@ where
             let node = Node::new(Link::from_urdf_joint(j));
             child_ref_map.insert(&j.child.link, node.clone());
             if parent_ref_map.get(&j.parent.link).is_some() {
-                parent_ref_map.get_mut(&j.parent.link).unwrap().push(
-                    node.clone(),
-                );
+                parent_ref_map
+                    .get_mut(&j.parent.link)
+                    .unwrap()
+                    .push(node.clone());
             } else {
                 parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
             }
@@ -187,12 +189,12 @@ where
             }
         }
         // set root as parent of root joint nodes
-        let root_joint_nodes = ref_nodes.iter().filter_map(
-            |ref_node| match ref_node.borrow().parent {
+        let root_joint_nodes = ref_nodes.iter().filter_map(|ref_node| {
+            match ref_node.borrow().parent {
                 None => Some(ref_node),
                 Some(_) => None,
-            },
-        );
+            }
+        });
         for rjn in root_joint_nodes {
             rjn.set_parent(&root_node);
         }
@@ -206,7 +208,6 @@ where
     }
 }
 
-
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
@@ -214,14 +215,14 @@ fn test_tree() {
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
     let tree = LinkTree::<f32>::from_urdf_robot(&robo);
-    assert_eq!(tree.iter_link().map(|_| {}).count(), 13);
+    assert_eq!(tree.iter().map(|_| {}).count(), 13);
 }
 
 #[test]
 fn test_tree_from_file() {
-    let tree = LinkTree::<f32>::from_urdf_file::<f32, _>("urdf/sample.urdf").unwrap();
+    let tree = LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
-    let names = tree.iter_link()
+    let names = tree.iter()
         .map(|link| link.joint_name().to_string())
         .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);

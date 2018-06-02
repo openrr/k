@@ -14,12 +14,12 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 
 use errors::*;
 use joints::*;
 
-/// Joint and Link
+/// Link contains a joint and a transform
 ///
 #[derive(Debug, Clone)]
 pub struct Link<T: Real> {
@@ -29,7 +29,7 @@ pub struct Link<T: Real> {
     /// local transfrom of joint
     pub transform: Isometry3<T>,
     /// cache of world transform
-    pub world_transform_cache: RefCell<Option<Isometry3<T>>>,
+    world_transform_cache: RefCell<Option<Isometry3<T>>>,
 }
 
 impl<T> Link<T>
@@ -72,8 +72,13 @@ where
             _ => true,
         }
     }
+    pub fn set_world_transform(&self, world_transform: Isometry3<T>) {
+        self.world_transform_cache.replace(Some(world_transform));
+    }
+    pub fn world_transform(&self) -> Ref<Option<Isometry3<T>>> {
+        self.world_transform_cache.borrow()
+    }
 }
-
 
 /// Build a `Link<T>`
 ///
@@ -149,5 +154,32 @@ where
             transform: self.transform,
             world_transform_cache: RefCell::new(None),
         }
+    }
+}
+
+/// Information for copying joint state of other joint
+///
+/// joint angles = joint[name] * multiplier + offset
+#[derive(Debug, Clone)]
+pub struct Mimic<T: Real> {
+    /// Name of other joint
+    pub name: String,
+    pub multiplier: T,
+    pub offset: T,
+}
+
+impl<T> Mimic<T>
+where
+    T: Real,
+{
+    pub fn new(name: String, multiplier: T, offset: T) -> Self {
+        Mimic {
+            name: name,
+            multiplier,
+            offset,
+        }
+    }
+    pub fn mimic_angle(&self, from_angle: T) -> T {
+        from_angle * self.multiplier + self.offset
     }
 }

@@ -13,8 +13,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
 use errors::*;
+use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
@@ -101,18 +101,14 @@ where
     pub fn transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
-            JointType::Rotational { axis } => {
-                Isometry3::from_parts(
-                    Translation3::new(T::zero(), T::zero(), T::zero()),
-                    UnitQuaternion::from_axis_angle(&axis, self.angle),
-                )
-            }
-            JointType::Linear { axis } => {
-                Isometry3::from_parts(
-                    Translation3::from_vector(axis.unwrap() * self.angle),
-                    UnitQuaternion::identity(),
-                )
-            }
+            JointType::Rotational { axis } => Isometry3::from_parts(
+                Translation3::new(T::zero(), T::zero(), T::zero()),
+                UnitQuaternion::from_axis_angle(&axis, self.angle),
+            ),
+            JointType::Linear { axis } => Isometry3::from_parts(
+                Translation3::from_vector(axis.unwrap() * self.angle),
+                UnitQuaternion::identity(),
+            ),
         }
     }
 }

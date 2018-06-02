@@ -17,8 +17,8 @@ use errors::*;
 use joints::*;
 use na::{Isometry3, Real};
 
-/// Container of links with joints
-pub trait JointContainer<T>
+/// Container of joints which has angle
+pub trait HasJoints<T>
 where
     T: Real,
 {
@@ -38,7 +38,7 @@ where
 }
 
 /// Container of links which has a transformation
-pub trait LinkContainer<T>
+pub trait HasLinks<T>
 where
     T: Real,
 {
@@ -49,17 +49,11 @@ where
     fn link_names(&self) -> Vec<String>;
 }
 
-/// `JointContainer` which has an end transform
-pub trait KinematicChain<T>: JointContainer<T>
+/// End transform, which is used for IK
+pub trait EndTransform<T>
 where
     T: Real,
 {
     /// Calculate and return the transform of the end of the links
     fn end_transform(&self) -> Isometry3<T>;
-}
-
-/// Create KinematicChain
-pub trait ChainContainer {
-    type Chain;
-    fn new_chain(&self, end_link_name: &str) -> Option<Self::Chain>;
 }

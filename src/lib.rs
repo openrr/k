@@ -30,8 +30,8 @@ mod errors;
 mod ik;
 mod joints;
 mod links;
-mod rctree_links;
 mod rctree;
+mod rctree_links;
 mod traits;
 
 pub mod math;
@@ -39,8 +39,8 @@ pub mod urdf;
 
 pub use self::errors::*;
 pub use self::ik::*;
-pub use self::rctree::*;
 pub use self::joints::*;
 pub use self::links::*;
+pub use self::rctree::Node;
 pub use self::rctree_links::*;
 pub use self::traits::*;
