@@ -7,7 +7,7 @@ extern crate rand;
 extern crate test;
 
 use k::urdf::FromUrdf;
-use k::{HasJoints, HasLinks};
+use k::prelude::*;
 use na::Real;
 use std::f64::consts::PI;
 

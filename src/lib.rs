@@ -36,6 +36,7 @@ mod traits;
 
 pub mod math;
 pub mod urdf;
+pub mod prelude;
 
 pub use self::errors::*;
 pub use self::ik::*;

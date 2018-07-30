@@ -16,7 +16,7 @@
 extern crate k;
 
 use k::urdf::FromUrdf;
-use k::{EndTransform, HasJoints, InverseKinematicsSolver};
+use k::prelude::*;
 
 fn main() {
     let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();

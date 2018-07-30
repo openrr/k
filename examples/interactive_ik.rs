@@ -24,7 +24,8 @@ use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
-use k::*;
+use k::{LinkBuilder, JointType, Manipulator, JacobianIKSolverBuilder};
+use k::prelude::*;
 
 fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
     let l0 = LinkBuilder::new()

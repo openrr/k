@@ -33,9 +33,7 @@ Push below keys to move the end of the manipulator.
 ```rust
 extern crate k;
 
-use k::InverseKinematicsSolver;
-use k::HasJoints;
-use k::Manipulator;
+use k::prelude::*;
 use k::urdf::FromUrdf;
 
 fn main() {
