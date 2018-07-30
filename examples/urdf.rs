@@ -15,8 +15,8 @@
  */
 extern crate k;
 
-use k::urdf::FromUrdf;
 use k::prelude::*;
+use k::urdf::FromUrdf;
 
 fn main() {
     let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();

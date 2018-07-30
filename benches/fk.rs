@@ -6,8 +6,8 @@ extern crate nalgebra as na;
 extern crate rand;
 extern crate test;
 
-use k::urdf::FromUrdf;
 use k::prelude::*;
+use k::urdf::FromUrdf;
 use na::Real;
 use std::f64::consts::PI;
 

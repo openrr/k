@@ -55,9 +55,7 @@ where
     T: Real,
 {
     na::convert(na::UnitQuaternion::from_euler_angles(
-        array3[0],
-        array3[1],
-        array3[2],
+        array3[0], array3[1], array3[2],
     ))
 }
 

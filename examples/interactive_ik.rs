@@ -19,20 +19,22 @@ extern crate kiss3d;
 extern crate nalgebra as na;
 
 use glfw::{Action, Key, WindowEvent};
+use k::prelude::*;
+use k::{JacobianIKSolverBuilder, JointType, LinkBuilder, Manipulator};
 use kiss3d::camera::ArcBall;
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
-use k::{LinkBuilder, JointType, Manipulator, JacobianIKSolverBuilder};
-use k::prelude::*;
 
 fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
     let l0 = LinkBuilder::new()
         .name("shoulder_link1")
         .joint(
             "shoulder_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .finalize();
@@ -40,7 +42,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("shoulder_link2")
         .joint(
             "shoulder_roll",
-            JointType::Rotational { axis: Vector3::x_axis() },
+            JointType::Rotational {
+                axis: Vector3::x_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.1, 0.0))
@@ -49,7 +53,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("shoulder_link3")
         .joint(
             "shoulder_yaw",
-            JointType::Rotational { axis: Vector3::z_axis() },
+            JointType::Rotational {
+                axis: Vector3::z_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.30))
@@ -58,7 +64,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("elbow_link1")
         .joint(
             "elbow_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -67,7 +75,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("wrist_link1")
         .joint(
             "wrist_yaw",
-            JointType::Rotational { axis: Vector3::z_axis() },
+            JointType::Rotational {
+                axis: Vector3::z_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -76,7 +86,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("wrist_link2")
         .joint(
             "wrist_pitch",
-            JointType::Rotational { axis: Vector3::y_axis() },
+            JointType::Rotational {
+                axis: Vector3::y_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
@@ -85,7 +97,9 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
         .name("wrist_link3")
         .joint(
             "wrist_roll",
-            JointType::Rotational { axis: Vector3::x_axis() },
+            JointType::Rotational {
+                axis: Vector3::x_axis(),
+            },
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.10))
@@ -162,8 +176,8 @@ fn main() {
         Translation3::new(0.0, 0.0, 0.0),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
-    arm.transform = base_rot *
-        Isometry3::from_parts(
+    arm.transform = base_rot
+        * Isometry3::from_parts(
             Translation3::new(0.0, 0.0, 0.6),
             UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
         );

@@ -4,8 +4,8 @@ extern crate nalgebra as na;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use k::HasJoints;
     use k::urdf::FromUrdf;
+    use k::HasJoints;
 
     #[test]
     pub fn test_tree() {

@@ -5,8 +5,8 @@ extern crate k;
 extern crate nalgebra as na;
 extern crate test;
 
-use k::urdf::FromUrdf;
 use k::prelude::*;
+use k::urdf::FromUrdf;
 
 fn bench_tree_ik<K>(arm: &mut K, b: &mut test::Bencher)
 where

@@ -45,7 +45,6 @@ impl Error for JointError {
     }
 }
 
-
 /// The reason of the fail of inverse kinematics
 #[derive(Debug)]
 pub enum IKError {
