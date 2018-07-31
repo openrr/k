@@ -99,9 +99,9 @@ where
             jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?
         };
         let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
-        let mut angles_vec = Vec::new();
+        let mut angles_vec = orig_angles.clone();
         for i in 0..dof {
-            angles_vec.push(orig_angles[i] + new_angles_diff[i]);
+            angles_vec[i] += new_angles_diff[i];
         }
         arm.set_joint_angles(&angles_vec)?;
         let new_pose6 = calc_vector6_pose(&arm.end_transform());
