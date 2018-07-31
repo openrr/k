@@ -122,11 +122,19 @@ where
             println!("support only 6 or more DoF now");
             return Err(IKError::PreconditionError);
         }
+        let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
             let target_distance = self.solve_one_loop(arm, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }
+            if let Some(last) = last_target_distance {
+                if last < target_distance {
+                    arm.set_joint_angles(&orig_angles)?;
+                    return Err(IKError::NotConverged);
+                }
+            }
+            last_target_distance = Some(target_distance);
         }
         arm.set_joint_angles(&orig_angles)?;
         Err(IKError::NotConverged)
