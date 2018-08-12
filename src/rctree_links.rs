@@ -41,7 +41,8 @@ where
     T: Real,
 {
     pub fn set_end_link_name(&mut self, name: &str) -> Result<(), String> {
-        if self.links
+        if self
+            .links
             .iter()
             .find(|&ljn| ljn.borrow().data.name == name)
             .is_none()
@@ -56,7 +57,8 @@ where
         &self.end_link_name
     }
     pub fn new(name: &str, end: &LinkNode<T>) -> Self {
-        let mut links = end.iter_ancestors()
+        let mut links = end
+            .iter_ancestors()
             .map(|ljn| ljn.clone())
             .collect::<Vec<_>>();
         links.reverse();
@@ -142,13 +144,17 @@ where
     fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
         if self.links_with_joint_angle.len() != angles.len() {
             debug!("size mismatch input angles={:?}", angles);
-            return Err(JointError::SizeMisMatch);
+            return Err(JointError::SizeMisMatch {
+                input: angles.len(),
+                required: self.links_with_joint_angle.len(),
+            });
         }
         for (i, ljn_ref) in self.links_with_joint_angle.iter_mut().enumerate() {
             ljn_ref.borrow_mut().data.set_joint_angle(angles[i])?;
         }
         for (from, mimic) in &self.mimics {
-            let from_angle = self.links
+            let from_angle = self
+                .links
                 .iter()
                 .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == mimic.name)
                 .and_then(|ljn_ref| ljn_ref.borrow().data.joint_angle())
@@ -282,13 +288,17 @@ where
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
     fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
         if angles_vec.len() != self.dof() {
-            return Err(JointError::SizeMisMatch);
+            return Err(JointError::SizeMisMatch {
+                input: angles_vec.len(),
+                required: self.dof(),
+            });
         }
         for (mut link, angle) in self.iter_movable_mut().zip(angles_vec.iter()) {
             link.set_joint_angle(*angle)?;
         }
         for (from, mimic) in &self.mimics {
-            let from_angle = self.iter_movable()
+            let from_angle = self
+                .iter_movable()
                 .find(|link| link.joint_name() == mimic.name)
                 .and_then(|link| link.joint_angle())
                 .ok_or(JointError::Mimic)?;
@@ -422,13 +432,15 @@ fn it_works() {
     ljn4.set_parent(&ljn0);
     ljn5.set_parent(&ljn4);
 
-    let names = ljn0.iter_descendants()
+    let names = ljn0
+        .iter_descendants()
         .map(|ljn| ljn.borrow().data.joint_name().to_string())
         .collect::<Vec<_>>();
     println!("{:?}", ljn0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
-    let angles = ljn0.iter_descendants()
+    let angles = ljn0
+        .iter_descendants()
         .map(|ljn| ljn.borrow().data.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
@@ -447,20 +459,24 @@ fn it_works() {
         }
     }
 
-    let poses = ljn0.iter_descendants()
+    let poses = ljn0
+        .iter_descendants()
         .map(|ljn| get_z(&ljn))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let _ = ljn0.iter_ancestors()
+    let _ = ljn0
+        .iter_ancestors()
         .map(|ljn| ljn.borrow_mut().data.set_joint_angle(-0.5))
         .collect::<Vec<_>>();
-    let angles = ljn0.iter_descendants()
+    let angles = ljn0
+        .iter_descendants()
         .map(|ljn| ljn.borrow().data.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    let poses = ljn0.iter_descendants()
+    let poses = ljn0
+        .iter_descendants()
         .map(|ljn| get_z(&ljn))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);

@@ -220,7 +220,8 @@ fn test_tree() {
 fn test_tree_from_file() {
     let tree = LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
-    let names = tree.iter()
+    let names = tree
+        .iter()
         .map(|link| link.joint_name().to_string())
         .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);

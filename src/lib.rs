@@ -22,6 +22,8 @@
 //! 1. URDF Loader
 //!
 #[macro_use]
+extern crate failure;
+#[macro_use]
 extern crate log;
 extern crate nalgebra as na;
 extern crate urdf_rs;

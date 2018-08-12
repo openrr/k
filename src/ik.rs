@@ -120,7 +120,12 @@ where
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
             println!("support only 6 or more DoF now");
-            return Err(IKError::PreconditionError);
+            return Err(IKError::PreconditionError {
+                error: format!(
+                    "support only 6 or more DoF now, input Dof={}",
+                    orig_angles.len()
+                ),
+            });
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
@@ -131,13 +136,20 @@ where
             if let Some(last) = last_target_distance {
                 if last < target_distance {
                     arm.set_joint_angles(&orig_angles)?;
-                    return Err(IKError::NotConverged);
+                    return Err(IKError::NotConverged {
+                        error: format!("jacobian did not work"),
+                    });
                 }
             }
             last_target_distance = Some(target_distance);
         }
         arm.set_joint_angles(&orig_angles)?;
-        Err(IKError::NotConverged)
+        Err(IKError::NotConverged {
+            error: format!(
+                "iteration has not converged: tried {} timed",
+                self.num_max_try
+            ),
+        })
     }
 }
 
