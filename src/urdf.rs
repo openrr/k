@@ -197,6 +197,15 @@ where
     }
 }
 
+impl<T> From<urdf_rs::Robot> for LinkTree<T>
+where
+    T: na::Real,
+{
+    fn from(robot: urdf_rs::Robot) -> Self {
+        Self::from(&robot)
+    }
+}
+
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
@@ -209,7 +218,7 @@ fn test_tree() {
 
 #[test]
 fn test_tree_from_file() {
-    let tree = LinkTree::<f32>::from(&read_file("urdf/sample.urdf").unwrap());
+    let tree = LinkTree::<f32>::from(read_file("urdf/sample.urdf").unwrap());
     assert_eq!(tree.dof(), 12);
     let names = tree
         .iter()
