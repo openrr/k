@@ -16,10 +16,9 @@
 extern crate k;
 
 use k::prelude::*;
-use k::urdf::FromUrdf;
 
 fn main() {
-    let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let robot = (&k::urdf::read_file("urdf/sample.urdf").unwrap()).into();
     let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
     // set joint angles
     let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
@@ -28,8 +27,8 @@ fn main() {
     // get the transform of the end of the manipulator (forward kinematics)
     let mut target = arm.end_transform();
     println!("initial target pos = {}", target.translation);
-    println!("move z: +0.2");
-    target.translation.vector[2] += 0.2;
+    println!("move z: -0.1");
+    target.translation.vector[2] -= 0.1;
     let solver = k::JacobianIKSolverBuilder::new().finalize();
     // solve and move the manipulator angles
     solver.solve(&mut arm, &target).unwrap_or_else(|err| {

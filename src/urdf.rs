@@ -19,26 +19,27 @@ use urdf_rs;
 
 use na::{self, Real};
 use std::collections::HashMap;
-use std::path::Path;
 
 use joints::*;
 use links::*;
 use rctree::*;
 use rctree_links::*;
 
-pub fn to_mimic<T>(urdf_mimic: &urdf_rs::Mimic) -> Mimic<T>
+impl<'a, T> From<&'a urdf_rs::Mimic> for Mimic<T>
 where
     T: Real,
 {
-    Mimic::new(
-        urdf_mimic.joint.clone(),
-        na::convert(urdf_mimic.multiplier),
-        na::convert(urdf_mimic.offset),
-    )
+    fn from(urdf_mimic: &urdf_rs::Mimic) -> Self {
+        Mimic::new(
+            urdf_mimic.joint.clone(),
+            na::convert(urdf_mimic.multiplier),
+            na::convert(urdf_mimic.offset),
+        )
+    }
 }
 
 /// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
-pub fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
+fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
 where
     T: Real,
 {
@@ -50,7 +51,7 @@ where
 }
 
 /// Returns nalgebra::UnitQuaternion from f64 array
-pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
+fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
 where
     T: Real,
 {
@@ -60,18 +61,18 @@ where
 }
 
 /// Returns nalgebra::Translation3 from f64 array
-pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
+fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
 where
     T: Real,
 {
     na::convert(na::Translation3::new(array3[0], array3[1], array3[2]))
 }
 
-impl<T> Link<T>
+impl<'a, T> From<&'a urdf_rs::Joint> for Link<T>
 where
     T: Real,
 {
-    pub fn from_urdf_joint(joint: &urdf_rs::Joint) -> Link<T> {
+    fn from(joint: &urdf_rs::Joint) -> Link<T> {
         let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
             None
         } else {
@@ -117,24 +118,14 @@ fn get_root_link_name(robot: &urdf_rs::Robot) -> String {
     parent_link_name.to_string()
 }
 
-/// Convert from URDF robot model
-pub trait FromUrdf {
-    fn from_urdf_robot(robot: &urdf_rs::Robot) -> Self;
-    fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
-    where
-        Self: ::std::marker::Sized,
-        P: AsRef<Path>,
-    {
-        Ok(Self::from_urdf_robot(&urdf_rs::read_file(path)?))
-    }
-}
+/// re-export `urdf_rs::read_file`
+pub use urdf_rs::read_file;
 
-impl<T> FromUrdf for LinkTree<T>
+impl<'a, T> From<&'a urdf_rs::Robot> for LinkTree<T>
 where
-    T: Real,
+    T: na::Real,
 {
-    /// Create `LinkTree` from `urdf_rs::Robot`
-    fn from_urdf_robot(robot: &urdf_rs::Robot) -> Self {
+    fn from(robot: &urdf_rs::Robot) -> Self {
         let root_name = get_root_link_name(robot);
         let mut ref_nodes = Vec::new();
         let mut child_ref_map = HashMap::new();
@@ -146,7 +137,7 @@ where
                 .finalize(),
         );
         for j in &robot.joints {
-            let node = Node::new(Link::from_urdf_joint(j));
+            let node = Node::new(j.into());
             child_ref_map.insert(&j.child.link, node.clone());
             if parent_ref_map.get(&j.parent.link).is_some() {
                 parent_ref_map
@@ -164,7 +155,7 @@ where
             .filter_map(|j| {
                 if j.mimic.joint != "" {
                     debug!("mimic found for {}", j.mimic.joint);
-                    Some((j.name.clone(), to_mimic(&j.mimic)))
+                    Some((j.name.clone(), (&j.mimic).into()))
                 } else {
                     None
                 }
@@ -212,13 +203,13 @@ fn test_tree() {
     assert_eq!(robo.name, "robo");
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
-    let tree = LinkTree::<f32>::from_urdf_robot(&robo);
+    let tree = LinkTree::<f32>::from(&robo);
     assert_eq!(tree.iter().count(), 13);
 }
 
 #[test]
 fn test_tree_from_file() {
-    let tree = LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let tree = LinkTree::<f32>::from(&read_file("urdf/sample.urdf").unwrap());
     assert_eq!(tree.dof(), 12);
     let names = tree
         .iter()
