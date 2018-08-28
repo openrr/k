@@ -19,6 +19,7 @@ use urdf_rs;
 
 use na::{self, Real};
 use std::collections::HashMap;
+use std::path::Path;
 
 use joints::*;
 use links::*;
@@ -118,9 +119,6 @@ fn get_root_link_name(robot: &urdf_rs::Robot) -> String {
     parent_link_name.to_string()
 }
 
-/// re-export `urdf_rs::read_file`
-pub use urdf_rs::read_file;
-
 impl<'a, T> From<&'a urdf_rs::Robot> for LinkTree<T>
 where
     T: na::Real,
@@ -206,6 +204,18 @@ where
     }
 }
 
+impl<T> LinkTree<T>
+where
+    T: na::Real,
+{
+    pub fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
+    where
+        P: AsRef<Path>,
+    {
+        Ok(urdf_rs::read_file(path)?.into())
+    }
+}
+
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
@@ -218,7 +228,7 @@ fn test_tree() {
 
 #[test]
 fn test_tree_from_file() {
-    let tree = LinkTree::<f32>::from(read_file("urdf/sample.urdf").unwrap());
+    let tree = LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
     let names = tree
         .iter()

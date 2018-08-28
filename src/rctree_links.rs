@@ -208,7 +208,10 @@ where
                 .iter()
                 .find(|ljn_ref| ljn_ref.is_joint_name(&mimic.name))
                 .and_then(|ljn_ref| ljn_ref.joint_angle())
-                .ok_or_else(|| JointError::Mimic { from: mimic.name.clone(), to: to.to_owned()})?;
+                .ok_or_else(|| JointError::Mimic {
+                    from: mimic.name.clone(),
+                    to: to.to_owned(),
+                })?;
             self.links
                 .iter_mut()
                 .find(|ljn_ref| ljn_ref.is_joint_name(to))
@@ -329,7 +332,10 @@ where
                 .iter_movable()
                 .find(|link| link.joint_name() == mimic.name)
                 .and_then(|link| link.joint_angle())
-                .ok_or(JointError::Mimic { from: mimic.name.clone(), to: to.to_owned() })?;
+                .ok_or(JointError::Mimic {
+                    from: mimic.name.clone(),
+                    to: to.to_owned(),
+                })?;
             self.iter_movable()
                 .find(|link| link.joint_name() == *to)
                 .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
