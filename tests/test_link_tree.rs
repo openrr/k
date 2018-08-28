@@ -13,7 +13,7 @@ mod tests {
         assert_eq!(tree.dof(), 12);
         let all_names = tree
             .iter()
-            .map(|link| link.joint_name().to_string())
+            .map(|link| link.joint_name())
             .collect::<Vec<_>>();
         assert!(all_names.len() == 13);
         println!("{}", all_names[0]);

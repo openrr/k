@@ -178,8 +178,8 @@ where
                     for child_node in child_nodes.iter() {
                         info!(
                             "set paremt = {}, child = {}",
-                            parent_node.borrow().data.joint_name(),
-                            child_node.borrow().data.joint_name()
+                            parent_node.joint_name(),
+                            child_node.joint_name()
                         );
                         child_node.set_parent(parent_node);
                     }
@@ -200,7 +200,7 @@ where
         let mut tree = LinkTree::new(&robot.name, root_node);
         // add mimics
         for (name, mimic) in mimics {
-            tree.add_mimic(&name, mimic);
+            tree.add_mimic(name, mimic);
         }
         tree
     }
@@ -213,7 +213,7 @@ fn test_tree() {
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
     let tree = LinkTree::<f32>::from_urdf_robot(&robo);
-    assert_eq!(tree.iter().map(|_| {}).count(), 13);
+    assert_eq!(tree.iter().count(), 13);
 }
 
 #[test]
@@ -222,7 +222,7 @@ fn test_tree_from_file() {
     assert_eq!(tree.dof(), 12);
     let names = tree
         .iter()
-        .map(|link| link.joint_name().to_string())
+        .map(|link| link.joint_name())
         .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);
     println!("{}", names[0]);

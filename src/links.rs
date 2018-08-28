@@ -72,10 +72,10 @@ where
             _ => true,
         }
     }
-    pub fn set_world_transform(&self, world_transform: Isometry3<T>) {
+    pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
         self.world_transform_cache.replace(Some(world_transform));
     }
-    pub fn world_transform(&self) -> Ref<Option<Isometry3<T>>> {
+    pub(crate) fn world_transform(&self) -> Ref<Option<Isometry3<T>>> {
         self.world_transform_cache.borrow()
     }
 }

@@ -14,7 +14,6 @@
    limitations under the License.
  */
 use na::{Isometry3, Real};
-use std::cell::{Ref, RefMut};
 use std::collections::HashMap;
 
 use errors::*;
@@ -24,6 +23,60 @@ use rctree::*;
 use traits::*;
 
 pub type LinkNode<T> = Node<Link<T>>;
+
+impl<T> LinkNode<T>
+where
+    T: Real,
+{
+    pub fn link_name(&self) -> String {
+        self.borrow().data.name.to_owned()
+    }
+    /// Return the name of the joint
+    pub fn joint_name(&self) -> String {
+        self.borrow().data.joint_name().to_owned()
+    }
+    pub fn is_joint_name(&self, name: &str) -> bool {
+        self.borrow().data.joint_name() == name
+    }
+    pub fn is_link_name(&self, name: &str) -> bool {
+        self.borrow().data.name == name
+    }
+    pub fn joint_limits(&self) -> Option<Range<T>> {
+        self.borrow().data.joint.limits.clone()
+    }
+    /// Updates and returns the transform of the end of the joint
+    pub fn transform(&self) -> Isometry3<T> {
+        self.borrow().data.transform()
+    }
+    /// Set the angle of the joint
+    ///
+    /// If angle is out of limit, it returns Err.
+    pub fn set_joint_angle(&self, angle: T) -> Result<(), JointError> {
+        self.borrow_mut().data.set_joint_angle(angle)
+    }
+    /// Get the angle of the joint. If it is fixed, it returns None.
+    pub fn joint_angle(&self) -> Option<T> {
+        self.borrow().data.joint.angle()
+    }
+    /// Returns if it has a joint angle. similar to `is_not_fixed()`
+    pub fn has_joint_angle(&self) -> bool {
+        self.borrow().data.has_joint_angle()
+    }
+    pub(self) fn parent_world_transform(&self) -> Option<Isometry3<T>> {
+        match self.borrow().parent {
+            Some(ref parent) => {
+                let rc_parent = parent.upgrade().unwrap().clone();
+                let parent_obj = rc_parent.borrow();
+                let cache = parent_obj.data.world_transform();
+                match *cache {
+                    Some(trans) => Some(trans),
+                    None => None,
+                }
+            }
+            None => Some(Isometry3::identity()),
+        }
+    }
+}
 
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
@@ -44,7 +97,7 @@ where
         if self
             .links
             .iter()
-            .find(|&ljn| ljn.borrow().data.name == name)
+            .find(|&ljn| ljn.is_link_name(name))
             .is_none()
         {
             Err(format!("{} not found", name).to_owned())
@@ -64,7 +117,7 @@ where
         links.reverse();
         let links_with_joint_angle = links
             .iter()
-            .filter(|ljn_ref| ljn_ref.borrow().data.has_joint_angle())
+            .filter(|ljn_ref| ljn_ref.has_joint_angle())
             .map(|ljn_ref| ljn_ref.clone())
             .collect::<Vec<_>>();
         Manipulator {
@@ -77,21 +130,21 @@ where
         }
     }
     pub fn from_link_tree(end_link_name: &str, tree: &LinkTree<T>) -> Option<Self> {
-        tree.iter_node()
-            .find(|&ljn_ref| ljn_ref.borrow().data.name == end_link_name)
+        tree.iter()
+            .find(|&ljn_ref| ljn_ref.is_link_name(end_link_name))
             .map(|ljn| {
                 let mut chain = Manipulator::new(end_link_name, ljn);
                 let joint_names = chain.joint_names();
                 for (from, mimic) in tree.mimics() {
                     if joint_names.contains(from) {
-                        chain.add_mimic(from, mimic.clone());
+                        chain.add_mimic(from.to_owned(), mimic.clone());
                     }
                 }
                 chain
             })
     }
-    pub fn add_mimic(&mut self, name: &str, mimic_info: Mimic<T>) {
-        self.mimics.insert(name.to_owned(), mimic_info);
+    pub fn add_mimic(&mut self, name: String, mimic_info: Mimic<T>) {
+        self.mimics.insert(name, mimic_info);
     }
     pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
         &self.mimics
@@ -105,9 +158,9 @@ where
     fn end_transform(&self) -> Isometry3<T> {
         let mut end_transform = self.transform.clone();
         for ljn_ref in &self.links {
-            end_transform *= ljn_ref.borrow().data.transform();
+            end_transform *= ljn_ref.transform();
             if let Some(ref end_name) = self.end_link_name {
-                if end_name == &ljn_ref.borrow().data.name {
+                if ljn_ref.is_link_name(end_name) {
                     return end_transform;
                 }
             }
@@ -124,16 +177,13 @@ where
         self.links
             .iter()
             .scan(self.transform, |base, ljn| {
-                *base *= ljn.borrow().data.transform();
+                *base *= ljn.transform();
                 Some(*base)
             })
             .collect()
     }
     fn link_names(&self) -> Vec<String> {
-        self.links
-            .iter()
-            .map(|ljn| ljn.borrow().data.name.to_owned())
-            .collect()
+        self.links.iter().map(|ljn| ljn.link_name()).collect()
     }
 }
 
@@ -150,44 +200,43 @@ where
             });
         }
         for (i, ljn_ref) in self.links_with_joint_angle.iter_mut().enumerate() {
-            ljn_ref.borrow_mut().data.set_joint_angle(angles[i])?;
+            ljn_ref.set_joint_angle(angles[i])?;
         }
         for (from, mimic) in &self.mimics {
             let from_angle = self
                 .links
                 .iter()
-                .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == mimic.name)
-                .and_then(|ljn_ref| ljn_ref.borrow().data.joint_angle())
+                .find(|ljn_ref| ljn_ref.is_joint_name(&mimic.name))
+                .and_then(|ljn_ref| ljn_ref.joint_angle())
                 .ok_or_else(|| JointError::Mimic)?;
             self.links
                 .iter_mut()
-                .find(|ljn_ref| ljn_ref.borrow().data.joint_name() == *from)
-                .map(|ljn_ref| {
-                    ljn_ref
-                        .borrow_mut()
-                        .data
-                        .set_joint_angle(mimic.mimic_angle(from_angle))
-                });
+                .find(|ljn_ref| ljn_ref.is_joint_name(from))
+                .map(|ljn_ref| ljn_ref.set_joint_angle(mimic.mimic_angle(from_angle)));
         }
         Ok(())
     }
     fn joint_angles(&self) -> Vec<T> {
         self.links_with_joint_angle
             .iter()
-            .filter_map(|ljn_ref| ljn_ref.borrow().data.joint_angle())
+            .map(|ljn_ref| {
+                ljn_ref
+                    .joint_angle()
+                    .expect("links_with_joint_angle must have joitn angle")
+            })
             .collect()
     }
     fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.links_with_joint_angle
             .iter()
-            .map(|ljn_ref| ljn_ref.borrow().data.joint.limits.clone())
+            .map(|ljn_ref| ljn_ref.joint_limits())
             .collect()
     }
     /// skip fixed joint
     fn joint_names(&self) -> Vec<String> {
         self.links_with_joint_angle
             .iter()
-            .map(|ljn_ref| ljn_ref.borrow().data.joint.name.to_string())
+            .map(|ljn_ref| ljn_ref.joint_name())
             .collect()
     }
 }
@@ -215,7 +264,7 @@ impl<T: Real> LinkTree<T> {
             .collect::<Vec<_>>();
         let movable_expanded_links = expanded_links
             .iter()
-            .filter(|ljn| ljn.borrow().data.has_joint_angle())
+            .filter(|ljn| ljn.has_joint_angle())
             .map(|ljn_ref| ljn_ref.clone())
             .collect::<Vec<_>>();
         LinkTree {
@@ -226,47 +275,23 @@ impl<T: Real> LinkTree<T> {
             mimics: HashMap::new(),
         }
     }
-    pub fn add_mimic(&mut self, name: &str, mimic_info: Mimic<T>) {
-        self.mimics.insert(name.to_owned(), mimic_info);
+    pub fn add_mimic(&mut self, name: String, mimic_info: Mimic<T>) {
+        self.mimics.insert(name, mimic_info);
     }
     pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
         &self.mimics
     }
     /// iter for all link nodes
-    pub fn iter_node(&self) -> impl Iterator<Item = &LinkNode<T>> {
+    pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.expanded_links.iter()
     }
-    /// iter for all links, not as node
-    pub fn iter(&self) -> impl Iterator<Item = Ref<'_, Link<T>>> {
-        self.expanded_links
-            .iter()
-            .map(|rc| Ref::map(rc.borrow(), |node| &node.data))
-    }
-    /// iter for all links as mut, not as node
-    pub fn iter_mut(&self) -> impl Iterator<Item = RefMut<'_, Link<T>>> {
-        self.expanded_links
-            .iter()
-            .map(|rc| RefMut::map(rc.borrow_mut(), |node| &mut node.data))
-    }
     /// iter for the links with the joint which is not fixed
-    pub fn iter_movable_node(&self) -> impl Iterator<Item = &LinkNode<T>> {
+    pub fn iter_movable(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.movable_expanded_links.iter()
-    }
-    /// iter for the links with the joint which is not fixed
-    pub fn iter_movable(&self) -> impl Iterator<Item = Ref<'_, Link<T>>> {
-        self.movable_expanded_links
-            .iter()
-            .map(|rc| Ref::map(rc.borrow(), |node| &node.data))
-    }
-    /// iter mut for the links with the joint which is not fixed
-    pub fn iter_movable_mut(&self) -> impl Iterator<Item = RefMut<'_, Link<T>>> {
-        self.movable_expanded_links
-            .iter()
-            .map(|rc| RefMut::map(rc.borrow_mut(), |node| &mut node.data))
     }
     /// Get the degree of freedom
     pub fn dof(&self) -> usize {
-        self.iter_movable_node().count()
+        self.iter_movable().count()
     }
 }
 
@@ -279,7 +304,10 @@ where
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     fn joint_angles(&self) -> Vec<T> {
         self.iter_movable()
-            .map(|link| link.joint_angle().unwrap())
+            .map(|link| {
+                link.joint_angle()
+                    .expect("movable joints contains fix joint")
+            })
             .collect()
     }
 
@@ -293,7 +321,7 @@ where
                 required: self.dof(),
             });
         }
-        for (mut link, angle) in self.iter_movable_mut().zip(angles_vec.iter()) {
+        for (mut link, angle) in self.iter_movable().zip(angles_vec.iter()) {
             link.set_joint_angle(*angle)?;
         }
         for (from, mimic) in &self.mimics {
@@ -302,21 +330,19 @@ where
                 .find(|link| link.joint_name() == mimic.name)
                 .and_then(|link| link.joint_angle())
                 .ok_or(JointError::Mimic)?;
-            self.iter_mut()
-                .find(|link| link.joint.name == *from)
-                .map(|mut link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
+            self.iter_movable()
+                .find(|link| link.joint_name() == *from)
+                .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
         }
         Ok(())
     }
     fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.iter_movable()
-            .map(|link| link.joint.limits.clone())
+            .map(|link| link.joint_limits())
             .collect()
     }
     fn joint_names(&self) -> Vec<String> {
-        self.iter_movable()
-            .map(|link| link.joint.name.clone())
-            .collect()
+        self.iter_movable().map(|link| link.joint_name()).collect()
     }
 }
 
@@ -325,28 +351,17 @@ where
     T: Real,
 {
     fn link_transforms(&self) -> Vec<Isometry3<T>> {
-        self.iter_node()
+        self.iter()
             .map(|ljn| {
-                let parent_transform = match ljn.borrow().parent {
-                    Some(ref parent) => {
-                        let rc_parent = parent.upgrade().unwrap().clone();
-                        let parent_obj = rc_parent.borrow();
-                        let cache = parent_obj.data.world_transform();
-                        match *cache {
-                            Some(trans) => trans,
-                            None => panic!("cache must exist"),
-                        }
-                    }
-                    None => Isometry3::identity(),
-                };
-                let trans = parent_transform * ljn.borrow().data.transform();
+                let parent_transform = ljn.parent_world_transform().expect("cache must exist");
+                let trans = parent_transform * ljn.transform();
                 ljn.borrow_mut().data.set_world_transform(trans);
                 trans
             })
             .collect()
     }
     fn link_names(&self) -> Vec<String> {
-        self.iter().map(|link| link.name.to_owned()).collect()
+        self.iter().map(|link| link.link_name()).collect()
     }
 }
 
@@ -434,28 +449,21 @@ fn it_works() {
 
     let names = ljn0
         .iter_descendants()
-        .map(|ljn| ljn.borrow().data.joint_name().to_string())
+        .map(|ljn| ljn.joint_name())
         .collect::<Vec<_>>();
     println!("{:?}", ljn0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
     let angles = ljn0
         .iter_descendants()
-        .map(|ljn| ljn.borrow().data.joint_angle())
+        .map(|ljn| ljn.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
     fn get_z(ljn: &LinkNode<f32>) -> f32 {
-        match ljn.borrow().parent {
-            Some(ref parent) => {
-                let rc_parent = parent.upgrade().unwrap().clone();
-                let parent_obj = rc_parent.borrow();
-                (parent_obj.data.transform() * ljn.borrow().data.transform())
-                    .translation
-                    .vector
-                    .z
-            }
-            None => ljn.borrow().data.transform().translation.vector.z,
+        match ljn.parent_world_transform() {
+            Some(iso) => iso.translation.vector.z,
+            None => 0.0f32,
         }
     }
 
@@ -467,11 +475,11 @@ fn it_works() {
 
     let _ = ljn0
         .iter_ancestors()
-        .map(|ljn| ljn.borrow_mut().data.set_joint_angle(-0.5))
+        .map(|ljn| ljn.set_joint_angle(-0.5))
         .collect::<Vec<_>>();
     let angles = ljn0
         .iter_descendants()
-        .map(|ljn| ljn.borrow().data.joint_angle())
+        .map(|ljn| ljn.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
@@ -550,10 +558,7 @@ fn test_mimic() {
     ljn2.set_parent(&ljn1);
 
     let mut arm = Manipulator::new("chain1", &ljn2);
-    arm.add_mimic(
-        ljn2.borrow().data.joint_name(),
-        Mimic::new(ljn1.borrow().data.joint_name().to_owned(), 2.0, 0.5),
-    );
+    arm.add_mimic(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
 
     assert_eq!(arm.joint_angles().len(), 3);
     println!("{:?}", arm.joint_angles());
