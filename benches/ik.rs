@@ -6,7 +6,6 @@ extern crate nalgebra as na;
 extern crate test;
 
 use k::prelude::*;
-use k::urdf::FromUrdf;
 
 fn bench_tree_ik<K>(arm: &mut K, b: &mut test::Bencher)
 where
@@ -28,7 +27,7 @@ where
 
 #[bench]
 fn bench_rctree_ik(b: &mut test::Bencher) {
-    let robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let robot = k::urdf::read_file("urdf/sample.urdf").unwrap().into();
     let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
     bench_tree_ik(&mut arm, b);
 }

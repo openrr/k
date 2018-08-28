@@ -7,7 +7,6 @@ extern crate rand;
 extern crate test;
 
 use k::prelude::*;
-use k::urdf::FromUrdf;
 use na::Real;
 use std::f64::consts::PI;
 
@@ -44,7 +43,7 @@ where
 
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
-    let mut robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let mut robot: k::LinkTree<f64> = k::urdf::read_file("urdf/sample.urdf").unwrap().into();
     let limits = robot.joint_limits();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
@@ -56,7 +55,7 @@ fn bench_rctree(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_rctree_set_joints(b: &mut test::Bencher) {
-    let mut robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let mut robot : k::LinkTree<f64> = k::urdf::read_file("urdf/sample.urdf").unwrap().into();
     let limits = robot.joint_limits();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
