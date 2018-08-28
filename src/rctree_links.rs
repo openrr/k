@@ -202,16 +202,16 @@ where
         for (i, ljn_ref) in self.links_with_joint_angle.iter_mut().enumerate() {
             ljn_ref.set_joint_angle(angles[i])?;
         }
-        for (from, mimic) in &self.mimics {
+        for (to, mimic) in &self.mimics {
             let from_angle = self
                 .links
                 .iter()
                 .find(|ljn_ref| ljn_ref.is_joint_name(&mimic.name))
                 .and_then(|ljn_ref| ljn_ref.joint_angle())
-                .ok_or_else(|| JointError::Mimic)?;
+                .ok_or_else(|| JointError::Mimic { from: mimic.name.clone(), to: to.to_owned()})?;
             self.links
                 .iter_mut()
-                .find(|ljn_ref| ljn_ref.is_joint_name(from))
+                .find(|ljn_ref| ljn_ref.is_joint_name(to))
                 .map(|ljn_ref| ljn_ref.set_joint_angle(mimic.mimic_angle(from_angle)));
         }
         Ok(())
@@ -324,14 +324,14 @@ where
         for (mut link, angle) in self.iter_movable().zip(angles_vec.iter()) {
             link.set_joint_angle(*angle)?;
         }
-        for (from, mimic) in &self.mimics {
+        for (to, mimic) in &self.mimics {
             let from_angle = self
                 .iter_movable()
                 .find(|link| link.joint_name() == mimic.name)
                 .and_then(|link| link.joint_angle())
-                .ok_or(JointError::Mimic)?;
+                .ok_or(JointError::Mimic { from: mimic.name.clone(), to: to.to_owned() })?;
             self.iter_movable()
-                .find(|link| link.joint_name() == *from)
+                .find(|link| link.joint_name() == *to)
                 .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
         }
         Ok(())

@@ -17,12 +17,12 @@
 /// The reason of joint error
 #[derive(Debug, Clone, Fail)]
 pub enum JointError {
-    #[fail(display = "out of limit: {}", message)]
-    OutOfLimit { message: String },
+    #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
+    OutOfLimit { joint_name: String, message: String },
     #[fail(display = "size mismatch input = {}, required = {}", input, required)]
     SizeMisMatch { input: usize, required: usize },
-    #[fail(display = "mimic error")]
-    Mimic,
+    #[fail(display = "mimic error from {} to {}", from, to)]
+    Mimic { from: String, to: String},
 }
 
 /// The reason of the fail of inverse kinematics

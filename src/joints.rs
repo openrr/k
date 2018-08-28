@@ -81,12 +81,14 @@ where
     pub fn set_angle(&mut self, angle: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimit {
+                joint_name: self.name.to_string(),
                 message: "Joint is Fixed".to_owned(),
             });
         }
         if let Some(range) = self.limits.clone() {
             if !range.is_valid(angle) {
                 return Err(JointError::OutOfLimit {
+                    joint_name: self.name.to_string(),
                     message: format!("Joint is out of range: input={}, range={:?}", angle, range),
                 });
             }
