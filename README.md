@@ -10,6 +10,12 @@
 
 See [Document](http://docs.rs/k) and examples/ for more details.
 
+## Requirements to build examples
+
+```bash
+sudo apt install g++ cmake xorg-dev libglu1-mesa-dev
+```
+
 ## IK example with GUI
 
 ```bash
