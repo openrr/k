@@ -23,7 +23,7 @@ use rctree::*;
 use traits::*;
 
 /// Parts of `LinkTree`
-/// 
+///
 /// It contains joint, link (transform), and parent/children.
 pub type LinkNode<T> = Node<Link<T>>;
 
@@ -32,13 +32,13 @@ where
     T: Real,
 {
     /// Return the name of the link
-    /// 
+    ///
     /// The return value is `String`, not `&str`.
     /// If you want to check the link name, and don't want to store it,
     /// try to use `is_link_name()` instead.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// extern crate nalgebra as na;
     /// extern crate k;
@@ -53,13 +53,13 @@ where
         self.borrow().data.name.to_owned()
     }
     /// Return the name of the joint
-    /// 
+    ///
     /// The return value is `String`, not `&str`.
     /// If you want to check the joint name, and don't want to store it,
     /// try to use `is_joint_name()` instead.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// extern crate nalgebra as na;
     /// extern crate k;
@@ -121,10 +121,10 @@ where
 pub struct Manipulator<T: Real> {
     pub name: String,
     pub links: Vec<LinkNode<T>>,
-    links_with_joint_angle: Vec<LinkNode<T>>,
     pub transform: Isometry3<T>,
+    pub mimics: HashMap<String, Mimic<T>>,
+    links_with_joint_angle: Vec<LinkNode<T>>,
     end_link_name: Option<String>,
-    mimics: HashMap<String, Mimic<T>>,
 }
 
 impl<T> Manipulator<T>
@@ -155,8 +155,8 @@ where
         links.reverse();
         let links_with_joint_angle = links
             .iter()
-            .filter(|ljn_ref| ljn_ref.has_joint_angle())
-            .map(|ljn_ref| ljn_ref.clone())
+            .filter(|link| link.has_joint_angle())
+            .map(|link| link.clone())
             .collect::<Vec<_>>();
         Manipulator {
             name: name.to_string(),
@@ -169,23 +169,17 @@ where
     }
     pub fn from_link_tree(end_link_name: &str, tree: &LinkTree<T>) -> Option<Self> {
         tree.iter()
-            .find(|&ljn_ref| ljn_ref.is_link_name(end_link_name))
+            .find(|&link| link.is_link_name(end_link_name))
             .map(|ljn| {
                 let mut chain = Manipulator::new(end_link_name, ljn);
                 let joint_names = chain.joint_names();
-                for (from, mimic) in tree.mimics() {
+                for (from, mimic) in &tree.mimics {
                     if joint_names.contains(from) {
-                        chain.add_mimic(from.to_owned(), mimic.clone());
+                        chain.mimics.insert(from.to_owned(), mimic.clone());
                     }
                 }
                 chain
             })
-    }
-    pub fn add_mimic(&mut self, name: String, mimic_info: Mimic<T>) {
-        self.mimics.insert(name, mimic_info);
-    }
-    pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
-        &self.mimics
     }
 }
 
@@ -195,10 +189,10 @@ where
 {
     fn end_transform(&self) -> Isometry3<T> {
         let mut end_transform = self.transform.clone();
-        for ljn_ref in &self.links {
-            end_transform *= ljn_ref.transform();
+        for link in &self.links {
+            end_transform *= link.transform();
             if let Some(ref end_name) = self.end_link_name {
-                if ljn_ref.is_link_name(end_name) {
+                if link.is_link_name(end_name) {
                     return end_transform;
                 }
             }
@@ -237,31 +231,31 @@ where
                 required: self.links_with_joint_angle.len(),
             });
         }
-        for (i, ljn_ref) in self.links_with_joint_angle.iter_mut().enumerate() {
-            ljn_ref.set_joint_angle(angles[i])?;
+        for (i, link) in self.links_with_joint_angle.iter_mut().enumerate() {
+            link.set_joint_angle(angles[i])?;
         }
         for (to, mimic) in &self.mimics {
             let from_angle = self
                 .links
                 .iter()
-                .find(|ljn_ref| ljn_ref.is_joint_name(&mimic.name))
-                .and_then(|ljn_ref| ljn_ref.joint_angle())
+                .find(|link| link.is_joint_name(&mimic.name))
+                .and_then(|link| link.joint_angle())
                 .ok_or_else(|| JointError::Mimic {
                     from: mimic.name.clone(),
                     to: to.to_owned(),
                 })?;
             self.links
                 .iter_mut()
-                .find(|ljn_ref| ljn_ref.is_joint_name(to))
-                .map(|ljn_ref| ljn_ref.set_joint_angle(mimic.mimic_angle(from_angle)));
+                .find(|link| link.is_joint_name(to))
+                .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
         }
         Ok(())
     }
     fn joint_angles(&self) -> Vec<T> {
         self.links_with_joint_angle
             .iter()
-            .map(|ljn_ref| {
-                ljn_ref
+            .map(|link| {
+                link
                     .joint_angle()
                     .expect("links_with_joint_angle must have joitn angle")
             })
@@ -270,14 +264,14 @@ where
     fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.links_with_joint_angle
             .iter()
-            .map(|ljn_ref| ljn_ref.joint_limits())
+            .map(|link| link.joint_limits())
             .collect()
     }
     /// skip fixed joint
     fn joint_names(&self) -> Vec<String> {
         self.links_with_joint_angle
             .iter()
-            .map(|ljn_ref| ljn_ref.joint_name())
+            .map(|link| link.joint_name())
             .collect()
     }
 }
@@ -287,9 +281,8 @@ where
 pub struct LinkTree<T: Real> {
     pub name: String,
     pub root_link: LinkNode<T>,
+    pub mimics: HashMap<String, Mimic<T>>,
     expanded_links: Vec<LinkNode<T>>,
-    movable_expanded_links: Vec<LinkNode<T>>,
-    mimics: HashMap<String, Mimic<T>>,
 }
 
 impl<T: Real> LinkTree<T> {
@@ -303,36 +296,20 @@ impl<T: Real> LinkTree<T> {
             .iter_descendants()
             .map(|ln| ln.clone())
             .collect::<Vec<_>>();
-        let movable_expanded_links = expanded_links
-            .iter()
-            .filter(|ljn| ljn.has_joint_angle())
-            .map(|ljn_ref| ljn_ref.clone())
-            .collect::<Vec<_>>();
         LinkTree {
             name: name.to_string(),
-            expanded_links,
-            movable_expanded_links,
             root_link,
             mimics: HashMap::new(),
+            expanded_links,
         }
-    }
-    pub fn add_mimic(&mut self, name: String, mimic_info: Mimic<T>) {
-        self.mimics.insert(name, mimic_info);
-    }
-    pub fn mimics(&self) -> &HashMap<String, Mimic<T>> {
-        &self.mimics
     }
     /// iter for all link nodes
     pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.expanded_links.iter()
     }
-    /// iter for the links with the joint which is not fixed
-    pub fn iter_movable(&self) -> impl Iterator<Item = &LinkNode<T>> {
-        self.movable_expanded_links.iter()
-    }
-    /// Get the degree of freedom
+    /// Calculate the degree of freedom
     pub fn dof(&self) -> usize {
-        self.iter_movable().count()
+        self.iter().filter(|link| link.has_joint_angle()).count()
     }
 }
 
@@ -344,49 +321,59 @@ where
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     fn joint_angles(&self) -> Vec<T> {
-        self.iter_movable()
-            .map(|link| {
-                link.joint_angle()
-                    .expect("movable joints contains fix joint")
-            })
-            .collect()
+        self.iter().filter_map(|link| link.joint_angle()).collect()
     }
 
     /// Set the angles of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
     fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
-        if angles_vec.len() != self.dof() {
+        let dof = self.iter().filter(|link| link.has_joint_angle()).count();
+        if angles_vec.len() != dof {
             return Err(JointError::SizeMisMatch {
                 input: angles_vec.len(),
-                required: self.dof(),
+                required: dof,
             });
         }
-        for (mut link, angle) in self.iter_movable().zip(angles_vec.iter()) {
+        for (mut link, angle) in self
+            .iter()
+            .filter(|link| link.has_joint_angle())
+            .zip(angles_vec.iter())
+        {
             link.set_joint_angle(*angle)?;
         }
         for (to, mimic) in &self.mimics {
             let from_angle = self
-                .iter_movable()
-                .find(|link| link.joint_name() == mimic.name)
+                .iter()
+                .find(|link| link.is_joint_name(&mimic.name))
                 .and_then(|link| link.joint_angle())
                 .ok_or(JointError::Mimic {
                     from: mimic.name.clone(),
                     to: to.to_owned(),
                 })?;
-            self.iter_movable()
-                .find(|link| link.joint_name() == *to)
-                .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
+            match self.iter().find(|link| link.is_joint_name(to)) {
+                Some(target) => target.set_joint_angle(mimic.mimic_angle(from_angle))?,
+                None => {
+                    return Err(JointError::Mimic {
+                        from: mimic.name.clone(),
+                        to: to.to_owned(),
+                    })
+                }
+            }
         }
         Ok(())
     }
     fn joint_limits(&self) -> Vec<Option<Range<T>>> {
-        self.iter_movable()
+        self.iter()
+            .filter(|link| link.has_joint_angle())
             .map(|link| link.joint_limits())
             .collect()
     }
     fn joint_names(&self) -> Vec<String> {
-        self.iter_movable().map(|link| link.joint_name()).collect()
+        self.iter()
+            .filter(|link| link.has_joint_angle())
+            .map(|link| link.joint_name())
+            .collect()
     }
 }
 
@@ -602,7 +589,7 @@ fn test_mimic() {
     ljn2.set_parent(&ljn1);
 
     let mut arm = Manipulator::new("chain1", &ljn2);
-    arm.add_mimic(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
+    arm.mimics.insert(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
 
     assert_eq!(arm.joint_angles().len(), 3);
     println!("{:?}", arm.joint_angles());

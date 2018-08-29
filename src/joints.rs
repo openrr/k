@@ -72,6 +72,62 @@ where
     }
 }
 
+
+/// Information for copying joint state of other joint
+///
+/// For example, `Mimic` is used to calculate the angle of the gripper(R) from
+/// gripper(L). In that case, the code like below will be used.
+///
+/// ```
+/// let mimic_for_gripper_r = k::Mimic::new("gripper_l".to_owned(), -1.0, 0.0);
+/// ```
+///
+/// output angle (mimic_angle() is calculated by `joint angles = joint[name] * multiplier + offset`
+///
+#[derive(Debug, Clone)]
+pub struct Mimic<T: Real> {
+    /// Name of the other joint
+    pub name: String,
+    pub multiplier: T,
+    pub offset: T,
+}
+
+impl<T> Mimic<T>
+where
+    T: Real,
+{
+    /// Create new instance of Mimic
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// ```
+    pub fn new(name: String, multiplier: T, offset: T) -> Self {
+        Mimic {
+            name: name,
+            multiplier,
+            offset,
+        }
+    }
+    /// Calculate the mimic joint angle
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// assert_eq!(m.mimic_angle(0.2), 0.7); // 0.2 * 1.0 + 0.5
+    /// ```
+    ///
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), -2.0, -0.4);
+    /// assert_eq!(m.mimic_angle(0.2), -0.8); // 0.2 * -2.0 - 0.4
+    /// ```
+    pub fn mimic_angle(&self, from_angle: T) -> T {
+        from_angle * self.multiplier + self.offset
+    }
+}
+
 /// Joint with type
 #[derive(Debug, Clone)]
 pub struct Joint<T: Real> {
@@ -117,9 +173,9 @@ where
     /// Set the angle of the joint
     ///
     /// It returns Err if it is out of the limits, or this is fixed joint.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// extern crate nalgebra as na;
     /// extern crate k;
@@ -132,7 +188,7 @@ where
     /// // Create rotational joint with Y-axis
     /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
     /// // As default, it has not limit
-    /// 
+    ///
     /// // Initial angle is 0.0
     /// assert_eq!(rot.angle().unwrap(), 0.0);
     /// // If it has no limits, set_angle always succeeds.
@@ -166,9 +222,9 @@ where
         }
     }
     /// Calculate and returns the transform of the end of this joint
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// extern crate nalgebra as na;
     /// extern crate k;

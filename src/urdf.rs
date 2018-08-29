@@ -189,7 +189,7 @@ where
         let mut tree = LinkTree::new(&robot.name, root_node);
         // add mimics
         for (name, mimic) in mimics {
-            tree.add_mimic(name, mimic);
+            tree.mimics.insert(name, mimic);
         }
         tree
     }
