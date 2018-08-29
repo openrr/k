@@ -19,12 +19,18 @@ use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
 pub enum JointType<T: Real> {
-    /// Fixed joitn
+    /// Fixed joint. It has no `joint_angle` and axis.
     Fixed,
-    /// Rotational joint around axis. angle [rad].
-    Rotational { axis: Unit<Vector3<T>> },
+    /// Rotational joint around axis. It has an angle [rad].
+    Rotational {
+        /// axis of the joint
+        axis: Unit<Vector3<T>>,
+    },
     /// Linear joint. angle is length
-    Linear { axis: Unit<Vector3<T>> },
+    Linear {
+        /// axis of the joint
+        axis: Unit<Vector3<T>>,
+    },
 }
 
 /// min/max range to check the joint position
@@ -38,12 +44,29 @@ impl<T> Range<T>
 where
     T: Real,
 {
+    /// Create new Range instance
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let range = k::Range::new(-1.0, 1.0);
+    /// ```
     pub fn new(min: T, max: T) -> Self {
         Range { min: min, max: max }
     }
     /// Check if the value is in the range
     ///
-    /// true means it is OK.
+    /// `true` means it is OK.
+    /// If the val is the same as the limit value (`min` or `max`), it returns true (valid).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let range = k::Range::new(-1.0, 1.0);
+    /// assert!(range.is_valid(0.0));
+    /// assert!(range.is_valid(1.0));
+    /// assert!(!range.is_valid(1.5));
+    /// ```
     pub fn is_valid(&self, val: T) -> bool {
         val <= self.max && val >= self.min
     }
@@ -67,6 +90,22 @@ where
     T: Real,
 {
     /// Create new Joint with name and type
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// // create fixed joint
+    /// let fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
+    /// assert!(fixed.angle().is_none());
+    ///
+    /// // create rotational joint with Y-axis
+    /// let rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
+    /// assert_eq!(rot.angle().unwrap(), 0.0);
+    /// ```
+    ///
     pub fn new(name: &str, joint_type: JointType<T>) -> Joint<T> {
         Joint {
             name: name.to_string(),
@@ -78,6 +117,29 @@ where
     /// Set the angle of the joint
     ///
     /// It returns Err if it is out of the limits, or this is fixed joint.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// // Create fixed joint
+    /// let mut fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
+    /// // Set angle to fixed joint always fails
+    /// assert!(fixed.set_angle(1.0).is_err());
+    ///
+    /// // Create rotational joint with Y-axis
+    /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
+    /// // As default, it has not limit
+    /// 
+    /// // Initial angle is 0.0
+    /// assert_eq!(rot.angle().unwrap(), 0.0);
+    /// // If it has no limits, set_angle always succeeds.
+    /// rot.set_angle(0.2).unwrap();
+    /// assert_eq!(rot.angle().unwrap(), 0.2);
+    /// ```
+    ///
     pub fn set_angle(&mut self, angle: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimit {
@@ -104,6 +166,20 @@ where
         }
     }
     /// Calculate and returns the transform of the end of this joint
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// // Create linear joint with X-axis
+    /// let mut lin = k::Joint::<f64>::new("l0", k::JointType::Linear { axis: na::Vector3::x_axis() });
+    /// assert_eq!(lin.transform().translation.vector.x, 0.0);
+    /// lin.set_angle(-1.0).unwrap();
+    /// assert_eq!(lin.transform().translation.vector.x, -1.0);
+    /// ```
+    ///
     pub fn transform(&self) -> Isometry3<T> {
         match self.joint_type {
             JointType::Fixed => Isometry3::identity(),

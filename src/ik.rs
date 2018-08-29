@@ -58,6 +58,15 @@ impl<T> JacobianIKSolver<T>
 where
     T: Real,
 {
+    /// Create instance of `JacobianIKSolver`.
+    ///
+    ///  `JacobianIKSolverBuilder` is available instead of calling this `new` method.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.01, 1000);
+    /// ```
     pub fn new(
         jacobian_move_epsilon: T,
         move_epsilon: T,
@@ -113,6 +122,33 @@ impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
 {
+    /// Set joint angles of `arm` to reach the `target_pose`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use k::prelude::*;
+    ///
+    /// let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    /// let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
+    /// // set joint angles
+    /// let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
+    /// arm.set_joint_angles(&angles).unwrap();
+    /// println!("initial angles={:?}", arm.joint_angles());
+    /// // get the transform of the end of the manipulator (forward kinematics)
+    /// let mut target = arm.end_transform();
+    /// println!("initial target pos = {}", target.translation);
+    /// println!("move z: -0.1");
+    /// target.translation.vector[2] -= 0.1;
+    /// let solver = k::JacobianIKSolverBuilder::new().finalize();
+    /// // solve and move the manipulator angles
+    /// solver.solve(&mut arm, &target).unwrap_or_else(|err| {
+    ///     println!("Err: {}", err);
+    ///     0.0f32
+    /// });
+    /// println!("solved angles={:?}", arm.joint_angles());
+    /// println!("solved target pos = {}", arm.end_transform().translation);
+    /// ```
     fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
     where
         K: EndTransform<T> + HasJoints<T>,

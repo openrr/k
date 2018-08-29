@@ -22,16 +22,54 @@ use links::*;
 use rctree::*;
 use traits::*;
 
+/// Parts of `LinkTree`
+/// 
+/// It contains joint, link (transform), and parent/children.
 pub type LinkNode<T> = Node<Link<T>>;
 
 impl<T> LinkNode<T>
 where
     T: Real,
 {
+    /// Return the name of the link
+    /// 
+    /// The return value is `String`, not `&str`.
+    /// If you want to check the link name, and don't want to store it,
+    /// try to use `is_link_name()` instead.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// assert_eq!(l0.link_name(), "link0");
+    /// ```
     pub fn link_name(&self) -> String {
         self.borrow().data.name.to_owned()
     }
     /// Return the name of the joint
+    /// 
+    /// The return value is `String`, not `&str`.
+    /// If you want to check the joint name, and don't want to store it,
+    /// try to use `is_joint_name()` instead.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// assert_eq!(l0.joint_name(), "link_pitch");
+    /// ```
     pub fn joint_name(&self) -> String {
         self.borrow().data.joint_name().to_owned()
     }
@@ -244,7 +282,7 @@ where
     }
 }
 
-/// Kinematic Tree using `Rc<RefCell<Link<T>>>`
+/// Kinematic Tree using `LinkNode`
 #[derive(Debug)]
 pub struct LinkTree<T: Real> {
     pub name: String,

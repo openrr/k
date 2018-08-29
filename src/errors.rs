@@ -17,12 +17,30 @@
 /// The reason of joint error
 #[derive(Debug, Clone, Fail)]
 pub enum JointError {
+    /// Failed to set joint angle because the input is out of range or it is fixed joint
     #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
-    OutOfLimit { joint_name: String, message: String },
+    OutOfLimit {
+        /// name of the joint
+        joint_name: String,
+        /// detail error message
+        message: String,
+    },
+    /// Gave invalid size of vec as input
     #[fail(display = "size mismatch input = {}, required = {}", input, required)]
-    SizeMisMatch { input: usize, required: usize },
+    SizeMisMatch {
+        /// size of input
+        input: usize,
+        /// required size
+        required: usize,
+    },
+    /// Error about mimic
     #[fail(display = "mimic error from {} to {}", from, to)]
-    Mimic { from: String, to: String },
+    Mimic {
+        /// tried to copy from `from`
+        from: String,
+        /// tried to copy to `to`
+        to: String,
+    },
 }
 
 /// The reason of the fail of inverse kinematics

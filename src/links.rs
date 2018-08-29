@@ -121,10 +121,12 @@ where
             transform: Isometry3::identity(),
         }
     }
+    /// Set the name of the `Link`
     pub fn name(mut self, name: &str) -> LinkBuilder<T> {
         self.name = name.to_string();
         self
     }
+    /// Set the joint which is connected to this link
     pub fn joint(
         mut self,
         name: &str,
@@ -135,18 +137,22 @@ where
         self.joint.limits = limits;
         self
     }
+    /// Set the transform of this link
     pub fn transform(mut self, transform: Isometry3<T>) -> LinkBuilder<T> {
         self.transform = transform;
         self
     }
+    /// Set the translation of the transform of this link
     pub fn translation(mut self, translation: Translation3<T>) -> LinkBuilder<T> {
         self.transform.translation = translation;
         self
     }
+    /// Set the rotation of the transform of this link
     pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> LinkBuilder<T> {
         self.transform.rotation = rotation;
         self
     }
+    /// Create `Link` instance
     pub fn finalize(self) -> Link<T> {
         Link {
             name: self.name,
@@ -159,10 +165,18 @@ where
 
 /// Information for copying joint state of other joint
 ///
-/// joint angles = joint[name] * multiplier + offset
+/// For example, `Mimic` is used to calculate the angle of the gripper(R) from
+/// gripper(L). In that case, the code like below will be used.
+///
+/// ```
+/// let mimic_for_gripper_r = k::Mimic::new("gripper_l".to_owned(), -1.0, 0.0);
+/// ```
+/// 
+/// output angle (mimic_angle() is calculated by `joint angles = joint[name] * multiplier + offset`
+/// 
 #[derive(Debug, Clone)]
 pub struct Mimic<T: Real> {
-    /// Name of other joint
+    /// Name of the other joint
     pub name: String,
     pub multiplier: T,
     pub offset: T,
@@ -172,6 +186,13 @@ impl<T> Mimic<T>
 where
     T: Real,
 {
+    /// Create new instance of Mimic
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// ```
     pub fn new(name: String, multiplier: T, offset: T) -> Self {
         Mimic {
             name: name,
@@ -179,6 +200,19 @@ where
             offset,
         }
     }
+    /// Calculate the mimic joint angle
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// assert_eq!(m.mimic_angle(0.2), 0.7); // 0.2 * 1.0 + 0.5
+    /// ```
+    /// 
+    /// ```
+    /// let m = k::Mimic::<f64>::new("from".to_owned(), -2.0, -0.4);
+    /// assert_eq!(m.mimic_angle(0.2), -0.8); // 0.2 * -2.0 - 0.4
+    /// ```
     pub fn mimic_angle(&self, from_angle: T) -> T {
         from_angle * self.multiplier + self.offset
     }
