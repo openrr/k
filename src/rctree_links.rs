@@ -127,6 +127,7 @@ impl<T: Real> Display for LinkNode<T> {
     }
 }
 
+/*
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
 pub struct Manipulator<T: Real> {
@@ -292,6 +293,7 @@ where
             .collect()
     }
 }
+*/
 
 /// Kinematic Tree using `LinkNode`
 ///
@@ -411,7 +413,7 @@ impl<T: Real> LinkTree<T> {
     /// l1.set_parent(&l0);
     /// let tree = k::LinkTree::new("tree0", l0);
     /// ```
-    pub fn new(name: &str, root_link: LinkNode<T>) -> Self {
+    pub fn from_root(name: &str, root_link: LinkNode<T>) -> Self {
         let expanded_links = root_link
             .iter_descendants()
             .map(|ln| ln.clone())
@@ -421,6 +423,19 @@ impl<T: Real> LinkTree<T> {
             root_link,
             mimics: HashMap::new(),
             expanded_links,
+        }
+    }
+    pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
+        let mut links = end_link
+            .iter_ancestors()
+            .map(|ljn| ljn.clone())
+            .collect::<Vec<_>>();
+        links.reverse();
+        LinkTree {
+            name: name.to_string(),
+            root_link: links[0].clone(),
+            mimics: HashMap::new(),
+            expanded_links: links,
         }
     }
     /// Iterate for all link nodes

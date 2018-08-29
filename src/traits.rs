@@ -48,12 +48,3 @@ where
     /// Get the names of the links
     fn link_names(&self) -> Vec<String>;
 }
-
-/// End transform, which is used for IK
-pub trait EndTransform<T>
-where
-    T: Real,
-{
-    /// Calculate and return the transform of the end of the links
-    fn end_transform(&self) -> Isometry3<T>;
-}
