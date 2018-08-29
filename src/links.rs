@@ -15,6 +15,7 @@
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
 use std::cell::{Ref, RefCell};
+use std::fmt::{self, Display};
 
 use errors::*;
 use joints::*;
@@ -77,6 +78,18 @@ where
     }
     pub(crate) fn world_transform(&self) -> Ref<Option<Isometry3<T>>> {
         self.world_transform_cache.borrow()
+    }
+}
+
+impl<T: Real> Display for Link<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "[({}{}) {}]",
+            self.joint_name(),
+            self.joint.joint_type,
+            self.name
+        )
     }
 }
 

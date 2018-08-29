@@ -15,6 +15,7 @@
  */
 use errors::*;
 use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
+use std::fmt::{self, Display};
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
@@ -31,6 +32,16 @@ pub enum JointType<T: Real> {
         /// axis of the joint
         axis: Unit<Vector3<T>>,
     },
+}
+
+impl<T: Real> Display for JointType<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            JointType::Fixed => write!(f, "[=]"),
+            JointType::Rotational { axis: _ } => write!(f, "[o]"),
+            JointType::Linear { axis: _ } => write!(f, "[/]"),
+        }
+    }
 }
 
 /// min/max range to check the joint position
@@ -71,7 +82,6 @@ where
         val <= self.max && val >= self.min
     }
 }
-
 
 /// Information for copying joint state of other joint
 ///

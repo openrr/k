@@ -15,6 +15,7 @@
  */
 use na::{Isometry3, Real};
 use std::collections::HashMap;
+use std::fmt::{self, Display};
 
 use errors::*;
 use joints::*;
@@ -96,6 +97,10 @@ where
     pub fn joint_angle(&self) -> Option<T> {
         self.borrow().data.joint.angle()
     }
+    /// Copy the type of the joint
+    pub fn joint_type(&self) -> JointType<T> {
+        self.borrow().data.joint.joint_type
+    }
     /// Returns if it has a joint angle. similar to `is_not_fixed()`
     pub fn has_joint_angle(&self) -> bool {
         self.borrow().data.has_joint_angle()
@@ -116,12 +121,17 @@ where
     }
 }
 
+impl<T: Real> Display for LinkNode<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.borrow().data.fmt(f)
+    }
+}
+
 /// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
 #[derive(Debug)]
 pub struct Manipulator<T: Real> {
     pub name: String,
     pub links: Vec<LinkNode<T>>,
-    pub transform: Isometry3<T>,
     pub mimics: HashMap<String, Mimic<T>>,
     links_with_joint_angle: Vec<LinkNode<T>>,
     end_link_name: Option<String>,
@@ -162,7 +172,6 @@ where
             name: name.to_string(),
             links,
             links_with_joint_angle,
-            transform: Isometry3::identity(),
             end_link_name: None,
             mimics: HashMap::new(),
         }
@@ -188,7 +197,7 @@ where
     T: Real,
 {
     fn end_transform(&self) -> Isometry3<T> {
-        let mut end_transform = self.transform.clone();
+        let mut end_transform = Isometry3::identity();
         for link in &self.links {
             end_transform *= link.transform();
             if let Some(ref end_name) = self.end_link_name {
@@ -208,7 +217,7 @@ where
     fn link_transforms(&self) -> Vec<Isometry3<T>> {
         self.links
             .iter()
-            .scan(self.transform, |base, ljn| {
+            .scan(Isometry3::identity(), |base, ljn| {
                 *base *= ljn.transform();
                 Some(*base)
             })
@@ -216,6 +225,15 @@ where
     }
     fn link_names(&self) -> Vec<String> {
         self.links.iter().map(|ljn| ljn.link_name()).collect()
+    }
+}
+
+impl<T: Real> Display for Manipulator<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for l in &self.links {
+            write!(f, "=> {}", l)?;
+        }
+        Ok(())
     }
 }
 
@@ -255,8 +273,7 @@ where
         self.links_with_joint_angle
             .iter()
             .map(|link| {
-                link
-                    .joint_angle()
+                link.joint_angle()
                     .expect("links_with_joint_angle must have joitn angle")
             })
             .collect()
@@ -277,12 +294,96 @@ where
 }
 
 /// Kinematic Tree using `LinkNode`
+///
+/// # Examples
+///
+/// ```
+/// extern crate nalgebra as na;
+/// extern crate k;
+/// use k::prelude::*;
+///
+/// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+///     .name("link0")
+///     .translation(na::Translation3::new(0.0, 0.0, 0.1))
+///     .joint("link_pitch0", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+///     .finalize());
+/// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+///     .name("link1")
+///     .translation(na::Translation3::new(0.0, 0.0, 0.5))
+///     .joint("link_pitch1", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+///     .finalize());
+/// let l2 = k::LinkNode::new(k::LinkBuilder::new()
+///     .name("hand")
+///     .translation(na::Translation3::new(0.0, 0.0, 0.5))
+///     .joint("fixed", k::JointType::Fixed, None)
+///     .finalize());
+///
+/// // Sequencial joints structure
+/// l1.set_parent(&l0);
+/// l2.set_parent(&l1);
+///
+/// let mut tree = k::LinkTree::new("tree0", l0);
+/// assert_eq!(tree.dof(), 2);
+///
+/// // Get joint angles
+/// let angles = tree.joint_angles();
+/// assert_eq!(angles.len(), 2);
+/// assert_eq!(angles[0], 0.0);
+/// assert_eq!(angles[1], 0.0);
+///
+/// // Get the initial link transforms
+/// let transforms = tree.link_transforms();
+/// assert_eq!(transforms.len(), 3);
+/// assert_eq!(transforms[0].translation.vector.z, 0.1);
+/// assert_eq!(transforms[1].translation.vector.z, 0.6);
+/// assert_eq!(transforms[2].translation.vector.z, 1.1);
+/// for t in transforms {
+///     println!("before: {}", t);
+/// }
+///
+/// // Set joint angles
+/// tree.set_joint_angles(&vec![1.0, 2.0]).unwrap();
+/// let angles = tree.joint_angles();
+/// assert_eq!(angles[0], 1.0);
+/// assert_eq!(angles[1], 2.0);
+///
+/// // Get the result of forward kinematics
+/// let transforms = tree.link_transforms();
+/// assert_eq!(transforms.len(), 3);
+/// for t in transforms {
+///     println!("before: {}", t);
+/// }
+/// ```
 #[derive(Debug)]
 pub struct LinkTree<T: Real> {
+    /// Name of this `LinkTree`
     pub name: String,
-    pub root_link: LinkNode<T>,
+    /// Information about mimic joints
     pub mimics: HashMap<String, Mimic<T>>,
+    /// Root of this tree
+    root_link: LinkNode<T>,
     expanded_links: Vec<LinkNode<T>>,
+}
+
+fn fmt_with_indent_level<T: Real>(
+    node: &LinkNode<T>,
+    level: usize,
+    f: &mut fmt::Formatter,
+) -> fmt::Result {
+    for _i in 0..level {
+        write!(f, "    ")?;
+    }
+    write!(f, "{}\n", node)?;
+    for c in &node.borrow().children {
+        fmt_with_indent_level(c, level + 1, f)?
+    }
+    Ok(())
+}
+
+impl<T: Real> Display for LinkTree<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt_with_indent_level(&self.root_link, 0, f)
+    }
 }
 
 impl<T: Real> LinkTree<T> {
@@ -290,7 +391,26 @@ impl<T: Real> LinkTree<T> {
     ///
     /// # Arguments
     ///
-    /// * `root_link` - root node of the links
+    /// * `root_link` - root node of the links.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link1")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// let tree = k::LinkTree::new("tree0", l0);
+    /// ```
     pub fn new(name: &str, root_link: LinkNode<T>) -> Self {
         let expanded_links = root_link
             .iter_descendants()
@@ -303,11 +423,54 @@ impl<T: Real> LinkTree<T> {
             expanded_links,
         }
     }
-    /// iter for all link nodes
+    /// Iterate for all link nodes
+    ///
+    /// The order is from parent to children. You can assume that parent is already iterated.
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Fixed, None)
+    ///     .finalize());
+    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link1")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// let tree = k::LinkTree::new("tree0", l0);
+    /// let names = tree.iter().map(|link| link.link_name()).collect::<Vec<_>>();
+    /// assert_eq!(names.len(), 2);
+    /// assert_eq!(names[0], "link0");
+    /// assert_eq!(names[1], "link1");
+    /// ```
     pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.expanded_links.iter()
     }
     /// Calculate the degree of freedom
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Fixed, None)
+    ///     .finalize());
+    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link1")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// let tree = k::LinkTree::new("tree0", l0);
+    /// assert_eq!(tree.dof(), 1);
+    /// ```
     pub fn dof(&self) -> usize {
         self.iter().filter(|link| link.has_joint_angle()).count()
     }
@@ -482,7 +645,7 @@ fn it_works() {
         .iter_descendants()
         .map(|ljn| ljn.joint_name())
         .collect::<Vec<_>>();
-    println!("{:?}", ljn0);
+    println!("{}", ljn0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
     let angles = ljn0
@@ -589,7 +752,8 @@ fn test_mimic() {
     ljn2.set_parent(&ljn1);
 
     let mut arm = Manipulator::new("chain1", &ljn2);
-    arm.mimics.insert(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
+    arm.mimics
+        .insert(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
 
     assert_eq!(arm.joint_angles().len(), 3);
     println!("{:?}", arm.joint_angles());

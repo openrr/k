@@ -40,7 +40,6 @@ Push below keys to move the end of the manipulator.
 extern crate k;
 
 use k::prelude::*;
-use k::urdf::FromUrdf;
 
 fn main() {
     let robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();

@@ -165,11 +165,7 @@ where
             if let Some(parent_node) = child_ref_map.get(&l.name) {
                 if let Some(child_nodes) = parent_ref_map.get(&l.name) {
                     for child_node in child_nodes.iter() {
-                        info!(
-                            "set paremt = {}, child = {}",
-                            parent_node.joint_name(),
-                            child_node.joint_name()
-                        );
+                        info!("set parent = {}, child = {}", parent_node, child_node);
                         child_node.set_parent(parent_node);
                     }
                 }
@@ -183,6 +179,7 @@ where
             }
         });
         for rjn in root_joint_nodes {
+            info!("set parent = {}, child = {}", root_node, rjn);
             rjn.set_parent(&root_node);
         }
         // create root node..
