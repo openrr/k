@@ -20,14 +20,14 @@ extern crate nalgebra as na;
 
 use glfw::{Action, Key, WindowEvent};
 use k::prelude::*;
-use k::{JacobianIKSolverBuilder, JointType, LinkBuilder, Manipulator};
+use k::{JacobianIKSolverBuilder, JointType, LinkBuilder};
 use kiss3d::camera::ArcBall;
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
-fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
+fn create_joint_with_link_array() -> k::LinkNode<f32> {
     let l0 = LinkBuilder::new()
         .name("shoulder_link1")
         .joint(
@@ -117,7 +117,8 @@ fn create_joint_with_link_array(name: &str) -> Manipulator<f32> {
     n4.set_parent(&n3);
     n5.set_parent(&n4);
     n6.set_parent(&n5);
-    k::Manipulator::new(name, &n6)
+    //n6
+    n0
 }
 
 fn create_ground(window: &mut Window) -> Vec<SceneNode> {
@@ -159,13 +160,12 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
     c5.set_color(0.5, 0.0, 1.0);
     let mut c6 = window.add_cube(0.1, 0.1, 0.1);
     c6.set_color(0.0, 0.5, 0.2);
-    let mut c7 = window.add_cube(0.1, 0.1, 0.1);
-    c7.set_color(0.5, 0.5, 0.2);
-    vec![c0, c1, c2, c3, c4, c5, c6, c7]
+    vec![c0, c1, c2, c3, c4, c5, c6]
 }
 
 fn main() {
-    let mut arm = create_joint_with_link_array("arm");
+    let root = create_joint_with_link_array();
+    let mut arm = k::LinkTree::from_root("arm", root);
 
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
@@ -176,12 +176,13 @@ fn main() {
         Translation3::new(0.0, 0.0, 0.0),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
-    arm.transform = base_rot
+    arm.iter().next().unwrap().set_offset(base_rot
         * Isometry3::from_parts(
             Translation3::new(0.0, 0.0, 0.6),
             UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
-        );
-    let mut target = arm.end_transform();
+        ));
+    let poses = arm.link_transforms();
+    let mut target = poses.last().unwrap().clone();
 
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
@@ -200,7 +201,8 @@ fn main() {
                         Key::Z => {
                             // reset
                             arm.set_joint_angles(&angles).unwrap();
-                            target = arm.end_transform();
+                            let poses = arm.link_transforms();
+                            target = poses.last().unwrap().clone();
                         }
                         Key::F => target.translation.vector[2] += 0.1,
                         Key::B => target.translation.vector[2] -= 0.1,
@@ -215,14 +217,14 @@ fn main() {
                 _ => {}
             }
         }
-        solver.solve(&mut arm, &target).unwrap_or_else(|err| {
+        solver.solve(&mut arm, "wrist_link3", &target).unwrap_or_else(|err| {
             println!("Err: {}", err);
             0.0f32
         });
         c_t.set_local_transformation(target.clone());
-        cubes[0].set_local_transformation(arm.transform);
+        //cubes[0].set_local_transformation(end.transform());
         for (i, trans) in arm.link_transforms().iter().enumerate() {
-            cubes[i + 1].set_local_transformation(trans.clone());
+            cubes[i].set_local_transformation(trans.clone());
         }
     }
 }

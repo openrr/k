@@ -54,6 +54,8 @@ pub enum IKError {
     PreconditionError { error: String },
     #[fail(display = "joint error: {:?}", error)]
     JointOutOfLimit { error: JointError },
+    #[fail(display = "invalid arguments {:?}", error)]
+    InvalidArguments {error: String},
 }
 
 impl From<JointError> for IKError {

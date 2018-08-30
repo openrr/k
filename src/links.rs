@@ -27,8 +27,8 @@ pub struct Link<T: Real> {
     pub name: String,
     /// joint instance
     pub joint: Joint<T>,
-    /// local transfrom of joint
-    pub transform: Isometry3<T>,
+    /// local offset transform of joint
+    pub offset: Isometry3<T>,
     /// cache of world transform
     world_transform_cache: RefCell<Option<Isometry3<T>>>,
 }
@@ -44,7 +44,7 @@ where
         Link {
             name: name.to_string(),
             joint: joint,
-            transform: Isometry3::identity(),
+            offset: Isometry3::identity(),
             world_transform_cache: RefCell::new(None),
         }
     }
@@ -54,7 +54,7 @@ where
     }
     /// Updates and returns the transform of the end of the joint
     pub fn transform(&self) -> Isometry3<T> {
-        self.transform * self.joint.transform()
+        self.offset * self.joint.transform()
     }
     /// Set the angle of the joint
     ///
@@ -111,7 +111,7 @@ impl<T: Real> Display for Link<T> {
 pub struct LinkBuilder<T: Real> {
     name: String,
     joint: Joint<T>,
-    transform: Isometry3<T>,
+    offset: Isometry3<T>,
 }
 
 impl<T> Default for LinkBuilder<T>
@@ -131,7 +131,7 @@ where
         LinkBuilder {
             name: "".to_string(),
             joint: Joint::new("", JointType::Fixed),
-            transform: Isometry3::identity(),
+            offset: Isometry3::identity(),
         }
     }
     /// Set the name of the `Link`
@@ -150,19 +150,19 @@ where
         self.joint.limits = limits;
         self
     }
-    /// Set the transform of this link
-    pub fn transform(mut self, transform: Isometry3<T>) -> LinkBuilder<T> {
-        self.transform = transform;
+    /// Set the offset transform of this link
+    pub fn offset(mut self, offset: Isometry3<T>) -> LinkBuilder<T> {
+        self.offset = offset;
         self
     }
-    /// Set the translation of the transform of this link
+    /// Set the translation of the offset transform of this link
     pub fn translation(mut self, translation: Translation3<T>) -> LinkBuilder<T> {
-        self.transform.translation = translation;
+        self.offset.translation = translation;
         self
     }
-    /// Set the rotation of the transform of this link
+    /// Set the rotation of the offset transform of this link
     pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> LinkBuilder<T> {
-        self.transform.rotation = rotation;
+        self.offset.rotation = rotation;
         self
     }
     /// Create `Link` instance
@@ -170,7 +170,7 @@ where
         Link {
             name: self.name,
             joint: self.joint,
-            transform: self.transform,
+            offset: self.offset,
             world_transform_cache: RefCell::new(None),
         }
     }

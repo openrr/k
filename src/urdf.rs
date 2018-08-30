@@ -183,7 +183,7 @@ where
             rjn.set_parent(&root_node);
         }
         // create root node..
-        let mut tree = LinkTree::new(&robot.name, root_node);
+        let mut tree = LinkTree::from_root(&robot.name, root_node);
         // add mimics
         for (name, mimic) in mimics {
             tree.mimics.insert(name, mimic);

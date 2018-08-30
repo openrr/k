@@ -15,4 +15,4 @@
  */
 //! Load basic trais of `k`
 pub use ik::InverseKinematicsSolver;
-pub use traits::{EndTransform, HasJoints, HasLinks};
+pub use traits::{HasJoints, HasLinks};

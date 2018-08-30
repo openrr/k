@@ -87,6 +87,10 @@ where
     pub fn transform(&self) -> Isometry3<T> {
         self.borrow().data.transform()
     }
+    /// Set the offset transform of the link
+    pub fn set_offset(&self, trans: Isometry3<T>) {
+        self.borrow_mut().data.offset = trans;
+    }
     /// Set the angle of the joint
     ///
     /// If angle is out of limit, it returns Err.
@@ -324,7 +328,7 @@ where
 /// l1.set_parent(&l0);
 /// l2.set_parent(&l1);
 ///
-/// let mut tree = k::LinkTree::new("tree0", l0);
+/// let mut tree = k::LinkTree::from_root("tree0", l0);
 /// assert_eq!(tree.dof(), 2);
 ///
 /// // Get joint angles
@@ -362,8 +366,6 @@ pub struct LinkTree<T: Real> {
     pub name: String,
     /// Information about mimic joints
     pub mimics: HashMap<String, Mimic<T>>,
-    /// Root of this tree
-    root_link: LinkNode<T>,
     expanded_links: Vec<LinkNode<T>>,
 }
 
@@ -384,7 +386,7 @@ fn fmt_with_indent_level<T: Real>(
 
 impl<T: Real> Display for LinkTree<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt_with_indent_level(&self.root_link, 0, f)
+        fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 
@@ -411,7 +413,7 @@ impl<T: Real> LinkTree<T> {
     ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::new("tree0", l0);
+    /// let tree = k::LinkTree::from_root("tree0", l0);
     /// ```
     pub fn from_root(name: &str, root_link: LinkNode<T>) -> Self {
         let expanded_links = root_link
@@ -420,7 +422,6 @@ impl<T: Real> LinkTree<T> {
             .collect::<Vec<_>>();
         LinkTree {
             name: name.to_string(),
-            root_link,
             mimics: HashMap::new(),
             expanded_links,
         }
@@ -433,7 +434,6 @@ impl<T: Real> LinkTree<T> {
         links.reverse();
         LinkTree {
             name: name.to_string(),
-            root_link: links[0].clone(),
             mimics: HashMap::new(),
             expanded_links: links,
         }
@@ -457,7 +457,7 @@ impl<T: Real> LinkTree<T> {
     ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::new("tree0", l0);
+    /// let tree = k::LinkTree::from_root("tree0", l0);
     /// let names = tree.iter().map(|link| link.link_name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "link0");
@@ -483,7 +483,7 @@ impl<T: Real> LinkTree<T> {
     ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::new("tree0", l0);
+    /// let tree = k::LinkTree::from_root("tree0", l0);
     /// assert_eq!(tree.dof(), 1);
     /// ```
     pub fn dof(&self) -> usize {
@@ -698,29 +698,9 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let mut arm = Manipulator::new("chain1", &ljn3);
+    let arm = LinkTree::from_end("chain1", ljn3);
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
-    let real_end = arm.end_transform();
-    assert!(arm.end_link_name().is_none());
-    arm.set_end_link_name("link3").unwrap();
-    assert!(arm.set_end_link_name("linkhoge").is_err());
-    assert!(arm.end_link_name().clone().unwrap() == "link3");
-    // not changed if set same end link name
-    assert_eq!(real_end, arm.end_transform());
-    arm.set_end_link_name("link2").unwrap();
-    assert!(arm.end_link_name().clone().unwrap() == "link2");
-    assert!(real_end != arm.end_transform());
-
-    let tree = LinkTree::new("robo1", ljn0);
-    assert_eq!(tree.dof(), 6);
-
-    let none_chain = Manipulator::from_link_tree("link_nono", &tree);
-    assert!(none_chain.is_none());
-
-    let some_chain = Manipulator::from_link_tree("link3", &tree);
-    assert!(some_chain.is_some());
-    assert_eq!(some_chain.unwrap().joint_angles().len(), 4);
 }
 
 #[test]
@@ -766,7 +746,7 @@ fn test_mimic() {
     ljn1.set_parent(&ljn0);
     ljn2.set_parent(&ljn1);
 
-    let mut arm = Manipulator::new("chain1", &ljn2);
+    let mut arm = LinkTree::from_root("chain1", ljn0);
     arm.mimics
         .insert(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
 
