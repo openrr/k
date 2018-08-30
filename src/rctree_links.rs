@@ -366,7 +366,7 @@ where
     /// Set the angles of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    fn set_joint_angles(&mut self, angles_vec: &[T]) -> Result<(), JointError> {
+    fn set_joint_angles(&self, angles_vec: &[T]) -> Result<(), JointError> {
         let dof = self.iter().filter(|link| link.has_joint_angle()).count();
         if angles_vec.len() != dof {
             return Err(JointError::SizeMisMatch {

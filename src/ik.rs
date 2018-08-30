@@ -13,9 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+use na::{self, DMatrix, Isometry3, Real, Vector6};
+
 use errors::*;
 use math::*;
-use na::{self, DMatrix, Isometry3, Real, Vector6};
+use rctree_links::*;
 use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
@@ -36,14 +38,12 @@ where
     T: Real,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve<K>(
+    fn solve(
         &self,
-        arm: &mut K,
+        arm: &LinkTree<T>,
         target_link_name: &str,
         target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError>
-    where
-        K: HasJoints<T> + HasLinks<T>;
+    ) -> Result<T, IKError>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
@@ -85,15 +85,12 @@ where
             num_max_try: num_max_try,
         }
     }
-    fn solve_one_loop<K>(
+    fn solve_one_loop(
         &self,
-        arm: &mut K,
+        arm: &LinkTree<T>,
         target_link_name: &str,
         target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError>
-    where
-        K: HasJoints<T> + HasLinks<T>,
-    {
+    ) -> Result<T, IKError> {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
         let orig_poses = arm.update_transforms();
@@ -173,15 +170,21 @@ where
     /// solver.solve(&mut arm, target_link_name, &target).unwrap();
     /// println!("solved angles={:?}", arm.joint_angles());
     /// ```
-    fn solve<K>(
+    fn solve(
         &self,
-        arm: &mut K,
+        link_tree: &LinkTree<T>,
         target_link_name: &str,
         target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError>
-    where
-        K: HasLinks<T> + HasJoints<T>,
-    {
+    ) -> Result<T, IKError> {
+        let end_link = link_tree
+            .iter()
+            .find(|link| link.is_link_name(target_link_name))
+            .ok_or(IKError::InvalidArguments {
+                error: format!("{} not found", target_link_name),
+            })?
+            .clone();
+        let arm = LinkTree::from_end("temporal-arm", end_link);
+
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
             println!("support only 6 or more DoF now");
@@ -194,7 +197,7 @@ where
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_distance = self.solve_one_loop(arm, target_link_name, target_pose)?;
+            let target_distance = self.solve_one_loop(&arm, target_link_name, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }

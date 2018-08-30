@@ -25,7 +25,7 @@ where
     /// Set the angles of the joints
     ///
     /// If the angle are out of the limit, it returns error.
-    fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError>;
+    fn set_joint_angles(&self, angles: &[T]) -> Result<(), JointError>;
 
     /// Get the angles of the joints
     fn joint_angles(&self) -> Vec<T>;
