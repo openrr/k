@@ -41,6 +41,8 @@ pub enum JointError {
         /// tried to copy to `to`
         to: String,
     },
+    #[fail(display = "invalid arguments {:?}", error)]
+    InvalidArguments { error: String },
 }
 
 /// The reason of the fail of inverse kinematics
@@ -55,7 +57,7 @@ pub enum IKError {
     #[fail(display = "joint error: {:?}", error)]
     JointOutOfLimit { error: JointError },
     #[fail(display = "invalid arguments {:?}", error)]
-    InvalidArguments {error: String},
+    InvalidArguments { error: String },
 }
 
 impl From<JointError> for IKError {

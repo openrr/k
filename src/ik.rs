@@ -36,7 +36,12 @@ where
     T: Real,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve<K>(&self, arm: &mut K, target_link_name: &str, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    fn solve<K>(
+        &self,
+        arm: &mut K,
+        target_link_name: &str,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError>
     where
         K: HasJoints<T> + HasLinks<T>;
 }
@@ -80,15 +85,25 @@ where
             num_max_try: num_max_try,
         }
     }
-    fn solve_one_loop<K>(&self, arm: &mut K, target_link_name: &str, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    fn solve_one_loop<K>(
+        &self,
+        arm: &mut K,
+        target_link_name: &str,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError>
     where
         K: HasJoints<T> + HasLinks<T>,
     {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
-        let orig_poses = arm.link_transforms();
-        let pose_index = arm.link_names().iter().position(|name| name == target_link_name).ok_or(
-            IKError::InvalidArguments { error: format!("{} not found", target_link_name)} )?;
+        let orig_poses = arm.update_transforms();
+        let pose_index = arm
+            .link_names()
+            .iter()
+            .position(|name| name == target_link_name)
+            .ok_or(IKError::InvalidArguments {
+                error: format!("{} not found", target_link_name),
+            })?;
         let orig_pose6 = calc_vector6_pose(&orig_poses[pose_index]);
         let target_pose6 = calc_vector6_pose(target_pose);
         let mut jacobi_vec = Vec::new();
@@ -96,7 +111,7 @@ where
             let mut small_diff_angles_i = orig_angles.clone();
             small_diff_angles_i[i] += self.jacobian_move_epsilon;
             arm.set_joint_angles(&small_diff_angles_i)?;
-            let small_diff_pose6 = calc_vector6_pose(&arm.link_transforms()[pose_index]);
+            let small_diff_pose6 = calc_vector6_pose(&arm.update_transforms()[pose_index]);
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
@@ -116,7 +131,7 @@ where
             angles_vec[i] += new_angles_diff[i];
         }
         arm.set_joint_angles(&angles_vec)?;
-        let new_pose6 = calc_vector6_pose(&arm.link_transforms()[pose_index]);
+        let new_pose6 = calc_vector6_pose(&arm.update_transforms()[pose_index]);
         Ok((target_pose6 - new_pose6).norm())
     }
 }
@@ -131,34 +146,39 @@ where
     ///
     /// ```
     /// use k::prelude::*;
-    /// 
+    ///
     /// let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     /// // Create sub-`LinkTree` to make it easy to use inverse kinematics
     /// let target_link_name = "r_wrist2";
     /// let r_wrist = robot.iter().find(|link| link.is_link_name(target_link_name)).unwrap().clone();
     /// let mut arm = k::LinkTree::from_end("r-arm", r_wrist.clone());
     /// println!("arm: {}", arm);
-    /// 
+    ///
     /// // Set joint angles of `arm`
     /// let angles = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
     /// arm.set_joint_angles(&angles).unwrap();
     /// println!("initial angles={:?}", arm.joint_angles());
-    /// 
+    ///
     /// // Get the transform of the end of the manipulator (forward kinematics)
-    /// let mut target = arm.link_transforms().last().unwrap().clone();
-    /// 
+    /// let mut target = arm.update_transforms().last().unwrap().clone();
+    ///
     /// println!("initial target pos = {}", target.translation);
     /// println!("move x: -0.1");
     /// target.translation.vector.x -= 0.1;
-    /// 
+    ///
     /// // Create IK solver with default settings
     /// let solver = k::JacobianIKSolverBuilder::new().finalize();
-    /// 
+    ///
     /// // solve and move the manipulator angles
     /// solver.solve(&mut arm, target_link_name, &target).unwrap();
     /// println!("solved angles={:?}", arm.joint_angles());
     /// ```
-    fn solve<K>(&self, arm: &mut K, target_link_name: &str, target_pose: &Isometry3<T>) -> Result<T, IKError>
+    fn solve<K>(
+        &self,
+        arm: &mut K,
+        target_link_name: &str,
+        target_pose: &Isometry3<T>,
+    ) -> Result<T, IKError>
     where
         K: HasLinks<T> + HasJoints<T>,
     {

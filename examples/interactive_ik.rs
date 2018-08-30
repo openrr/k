@@ -117,7 +117,6 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
     n4.set_parent(&n3);
     n5.set_parent(&n4);
     n6.set_parent(&n5);
-    //n6
     n0
 }
 
@@ -176,14 +175,14 @@ fn main() {
         Translation3::new(0.0, 0.0, 0.0),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
-    arm.iter().next().unwrap().set_offset(base_rot
-        * Isometry3::from_parts(
-            Translation3::new(0.0, 0.0, 0.6),
-            UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
-        ));
-    let poses = arm.link_transforms();
-    let mut target = poses.last().unwrap().clone();
-
+    arm.iter().next().unwrap().set_offset(
+        base_rot
+            * Isometry3::from_parts(
+                Translation3::new(0.0, 0.0, 0.6),
+                UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
+            ),
+    );
+    let mut target = arm.update_transform_with_name("wrist_link3").unwrap();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
     let eye = Point3::new(0.5f32, 1.0, 2.0);
@@ -201,8 +200,7 @@ fn main() {
                         Key::Z => {
                             // reset
                             arm.set_joint_angles(&angles).unwrap();
-                            let poses = arm.link_transforms();
-                            target = poses.last().unwrap().clone();
+                            target = arm.update_transform_with_name("wrist_link3").unwrap();
                         }
                         Key::F => target.translation.vector[2] += 0.1,
                         Key::B => target.translation.vector[2] -= 0.1,
@@ -217,13 +215,14 @@ fn main() {
                 _ => {}
             }
         }
-        solver.solve(&mut arm, "wrist_link3", &target).unwrap_or_else(|err| {
-            println!("Err: {}", err);
-            0.0f32
-        });
+        solver
+            .solve(&mut arm, "wrist_link3", &target)
+            .unwrap_or_else(|err| {
+                println!("Err: {}", err);
+                0.0f32
+            });
         c_t.set_local_transformation(target.clone());
-        //cubes[0].set_local_transformation(end.transform());
-        for (i, trans) in arm.link_transforms().iter().enumerate() {
+        for (i, trans) in arm.update_transforms().iter().enumerate() {
             cubes[i].set_local_transformation(trans.clone());
         }
     }

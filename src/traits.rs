@@ -43,7 +43,7 @@ where
     T: Real,
 {
     /// Calculate the transforms of all of the links
-    fn link_transforms(&self) -> Vec<Isometry3<T>>;
+    fn update_transforms(&self) -> Vec<Isometry3<T>>;
 
     /// Get the names of the links
     fn link_names(&self) -> Vec<String>;

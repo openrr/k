@@ -48,7 +48,7 @@ fn bench_rctree(b: &mut test::Bencher) {
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
         robot.set_joint_angles(&angles).unwrap();
-        let _trans = robot.link_transforms();
+        let _trans = robot.update_transforms();
         assert_eq!(_trans.len(), 13);
     });
 }

@@ -53,6 +53,9 @@ where
         &self.joint.name
     }
     /// Updates and returns the transform of the end of the joint
+    /// 
+    /// This is a local transform. It has nothing to do with other
+    /// joint and links.
     pub fn transform(&self) -> Isometry3<T> {
         self.offset * self.joint.transform()
     }

@@ -24,8 +24,12 @@ fn main() {
 
     // Create sub-`LinkTree` to make it easy to use inverse kinematics
     let target_link_name = "r_wrist2";
-    let r_wrist = robot.iter().find(|link| link.is_link_name(target_link_name)).unwrap().clone();
-    let mut arm = k::LinkTree::from_end("r-arm", r_wrist.clone());
+    let r_wrist = robot
+        .iter()
+        .find(|link| link.is_link_name(target_link_name))
+        .unwrap()
+        .clone();
+    let mut arm = k::LinkTree::from_end("r-arm", r_wrist);
     println!("arm: {}", arm);
 
     // Set joint angles of `arm`
@@ -34,8 +38,8 @@ fn main() {
     println!("initial angles={:?}", arm.joint_angles());
 
     // Get the transform of the end of the manipulator (forward kinematics)
-    let mut target = arm.link_transforms().last().unwrap().clone();
-    
+    let mut target = arm.update_transform_with_name(target_link_name).unwrap();
+
     println!("initial target pos = {}", target.translation);
     println!("move x: -0.1");
     target.translation.vector.x -= 0.1;
@@ -47,6 +51,6 @@ fn main() {
     solver.solve(&mut arm, target_link_name, &target).unwrap();
     println!("solved angles={:?}", arm.joint_angles());
 
-    let solved_pose = arm.link_transforms().last().unwrap().clone();
+    let solved_pose = arm.update_transform_with_name(target_link_name).unwrap();
     println!("solved target pos = {}", solved_pose.translation);
 }

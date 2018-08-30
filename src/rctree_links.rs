@@ -131,174 +131,6 @@ impl<T: Real> Display for LinkNode<T> {
     }
 }
 
-/*
-/// Kinematic chain using `Rc<RefCell<LinkNode<T>>>`
-#[derive(Debug)]
-pub struct Manipulator<T: Real> {
-    pub name: String,
-    pub links: Vec<LinkNode<T>>,
-    pub mimics: HashMap<String, Mimic<T>>,
-    links_with_joint_angle: Vec<LinkNode<T>>,
-    end_link_name: Option<String>,
-}
-
-impl<T> Manipulator<T>
-where
-    T: Real,
-{
-    pub fn set_end_link_name(&mut self, name: &str) -> Result<(), String> {
-        if self
-            .links
-            .iter()
-            .find(|&ljn| ljn.is_link_name(name))
-            .is_none()
-        {
-            Err(format!("{} not found", name).to_owned())
-        } else {
-            self.end_link_name = Some(name.to_owned());
-            Ok(())
-        }
-    }
-    pub fn end_link_name<'a>(&'a self) -> &'a Option<String> {
-        &self.end_link_name
-    }
-    pub fn new(name: &str, end: &LinkNode<T>) -> Self {
-        let mut links = end
-            .iter_ancestors()
-            .map(|ljn| ljn.clone())
-            .collect::<Vec<_>>();
-        links.reverse();
-        let links_with_joint_angle = links
-            .iter()
-            .filter(|link| link.has_joint_angle())
-            .map(|link| link.clone())
-            .collect::<Vec<_>>();
-        Manipulator {
-            name: name.to_string(),
-            links,
-            links_with_joint_angle,
-            end_link_name: None,
-            mimics: HashMap::new(),
-        }
-    }
-    pub fn from_link_tree(end_link_name: &str, tree: &LinkTree<T>) -> Option<Self> {
-        tree.iter()
-            .find(|&link| link.is_link_name(end_link_name))
-            .map(|ljn| {
-                let mut chain = Manipulator::new(end_link_name, ljn);
-                let joint_names = chain.joint_names();
-                for (from, mimic) in &tree.mimics {
-                    if joint_names.contains(from) {
-                        chain.mimics.insert(from.to_owned(), mimic.clone());
-                    }
-                }
-                chain
-            })
-    }
-}
-
-impl<T> EndTransform<T> for Manipulator<T>
-where
-    T: Real,
-{
-    fn end_transform(&self) -> Isometry3<T> {
-        let mut end_transform = Isometry3::identity();
-        for link in &self.links {
-            end_transform *= link.transform();
-            if let Some(ref end_name) = self.end_link_name {
-                if link.is_link_name(end_name) {
-                    return end_transform;
-                }
-            }
-        }
-        end_transform
-    }
-}
-
-impl<T> HasLinks<T> for Manipulator<T>
-where
-    T: Real,
-{
-    fn link_transforms(&self) -> Vec<Isometry3<T>> {
-        self.links
-            .iter()
-            .scan(Isometry3::identity(), |base, ljn| {
-                *base *= ljn.transform();
-                Some(*base)
-            })
-            .collect()
-    }
-    fn link_names(&self) -> Vec<String> {
-        self.links.iter().map(|ljn| ljn.link_name()).collect()
-    }
-}
-
-impl<T: Real> Display for Manipulator<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for l in &self.links {
-            write!(f, "=> {}", l)?;
-        }
-        Ok(())
-    }
-}
-
-impl<T> HasJoints<T> for Manipulator<T>
-where
-    T: Real,
-{
-    fn set_joint_angles(&mut self, angles: &[T]) -> Result<(), JointError> {
-        if self.links_with_joint_angle.len() != angles.len() {
-            debug!("size mismatch input angles={:?}", angles);
-            return Err(JointError::SizeMisMatch {
-                input: angles.len(),
-                required: self.links_with_joint_angle.len(),
-            });
-        }
-        for (i, link) in self.links_with_joint_angle.iter_mut().enumerate() {
-            link.set_joint_angle(angles[i])?;
-        }
-        for (to, mimic) in &self.mimics {
-            let from_angle = self
-                .links
-                .iter()
-                .find(|link| link.is_joint_name(&mimic.name))
-                .and_then(|link| link.joint_angle())
-                .ok_or_else(|| JointError::Mimic {
-                    from: mimic.name.clone(),
-                    to: to.to_owned(),
-                })?;
-            self.links
-                .iter_mut()
-                .find(|link| link.is_joint_name(to))
-                .map(|link| link.set_joint_angle(mimic.mimic_angle(from_angle)));
-        }
-        Ok(())
-    }
-    fn joint_angles(&self) -> Vec<T> {
-        self.links_with_joint_angle
-            .iter()
-            .map(|link| {
-                link.joint_angle()
-                    .expect("links_with_joint_angle must have joitn angle")
-            })
-            .collect()
-    }
-    fn joint_limits(&self) -> Vec<Option<Range<T>>> {
-        self.links_with_joint_angle
-            .iter()
-            .map(|link| link.joint_limits())
-            .collect()
-    }
-    /// skip fixed joint
-    fn joint_names(&self) -> Vec<String> {
-        self.links_with_joint_angle
-            .iter()
-            .map(|link| link.joint_name())
-            .collect()
-    }
-}
-*/
-
 /// Kinematic Tree using `LinkNode`
 ///
 /// # Examples
@@ -338,7 +170,7 @@ where
 /// assert_eq!(angles[1], 0.0);
 ///
 /// // Get the initial link transforms
-/// let transforms = tree.link_transforms();
+/// let transforms = tree.update_transforms();
 /// assert_eq!(transforms.len(), 3);
 /// assert_eq!(transforms[0].translation.vector.z, 0.1);
 /// assert_eq!(transforms[1].translation.vector.z, 0.6);
@@ -354,7 +186,7 @@ where
 /// assert_eq!(angles[1], 2.0);
 ///
 /// // Get the result of forward kinematics
-/// let transforms = tree.link_transforms();
+/// let transforms = tree.update_transforms();
 /// assert_eq!(transforms.len(), 3);
 /// for t in transforms {
 ///     println!("before: {}", t);
@@ -426,6 +258,7 @@ impl<T: Real> LinkTree<T> {
             expanded_links,
         }
     }
+    /// Create `LinkTree` from end link
     pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
         let mut links = end_link
             .iter_ancestors()
@@ -488,6 +321,25 @@ impl<T: Real> LinkTree<T> {
     /// ```
     pub fn dof(&self) -> usize {
         self.iter().filter(|link| link.has_joint_angle()).count()
+    }
+
+    /// Calculate the transform of the given link by name
+    pub fn update_transform_with_name(&self, link_name: &str) -> Result<Isometry3<T>, JointError> {
+        let target_link = self
+            .iter()
+            .find(|link| link.is_link_name(link_name))
+            .ok_or(JointError::InvalidArguments {
+                error: "{} not found".to_string(),
+            })?;
+        let links = target_link
+            .iter_ancestors()
+            .map(|ljn| ljn.clone())
+            .collect::<Vec<_>>();
+        let mut end_transform = Isometry3::identity();
+        for link in links.iter().rev() {
+            end_transform *= link.transform();
+        }
+        Ok(end_transform)
     }
 }
 
@@ -559,7 +411,7 @@ impl<T> HasLinks<T> for LinkTree<T>
 where
     T: Real,
 {
-    fn link_transforms(&self) -> Vec<Isometry3<T>> {
+    fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
             .map(|ljn| {
                 let parent_transform = ljn.parent_world_transform().expect("cache must exist");
