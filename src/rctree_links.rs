@@ -201,24 +201,33 @@ pub struct LinkTree<T: Real> {
     expanded_links: Vec<LinkNode<T>>,
 }
 
-fn fmt_with_indent_level<T: Real>(
-    node: &LinkNode<T>,
-    level: usize,
-    f: &mut fmt::Formatter,
-) -> fmt::Result {
-    for _i in 0..level {
-        write!(f, "    ")?;
+impl<T: Real> LinkTree<T> {
+    fn fmt_with_indent_level(
+        &self,
+        node: &LinkNode<T>,
+        level: usize,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result {
+        if self
+            .expanded_links
+            .iter()
+            .find(|link| link == &node)
+            .is_some()
+        {
+            for _i in 0..level {
+                write!(f, "    ")?;
+            }
+            write!(f, "{}\n", node)?;
+        }
+        for c in &node.borrow().children {
+            self.fmt_with_indent_level(c, level + 1, f)?
+        }
+        Ok(())
     }
-    write!(f, "{}\n", node)?;
-    for c in &node.borrow().children {
-        fmt_with_indent_level(c, level + 1, f)?
-    }
-    Ok(())
 }
-
 impl<T: Real> Display for LinkTree<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
+        self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 

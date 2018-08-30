@@ -37,9 +37,9 @@ pub enum JointType<T: Real> {
 impl<T: Real> Display for JointType<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            JointType::Fixed => write!(f, "[Fixed]"),
-            JointType::Rotational { axis: _ } => write!(f, "[Rotate]"),
-            JointType::Linear { axis: _ } => write!(f, "[Linear]"),
+            JointType::Fixed => write!(f, "[⚓]"),
+            JointType::Rotational { axis: _ } => write!(f, "[⚙]"),
+            JointType::Linear { axis: _ } => write!(f, "[↕]"),
         }
     }
 }
@@ -258,5 +258,11 @@ where
                 UnitQuaternion::identity(),
             ),
         }
+    }
+}
+
+impl<T: Real> Display for Joint<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}", self.name, self.joint_type,)
     }
 }

@@ -71,6 +71,12 @@ impl<T> ::std::clone::Clone for Node<T> {
     }
 }
 
+impl<T> PartialEq for Node<T> {
+    fn eq(&self, other: &Node<T>) -> bool {
+        &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
+    }
+}
+
 #[derive(Debug)]
 pub struct Ancestors<T> {
     parent: Option<Node<T>>,

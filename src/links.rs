@@ -53,7 +53,7 @@ where
         &self.joint.name
     }
     /// Updates and returns the transform of the end of the joint
-    /// 
+    ///
     /// This is a local transform. It has nothing to do with other
     /// joint and links.
     pub fn transform(&self) -> Isometry3<T> {
@@ -86,13 +86,7 @@ where
 
 impl<T: Real> Display for Link<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "[({}{}) {}]",
-            self.joint_name(),
-            self.joint.joint_type,
-            self.name
-        )
+        write!(f, "▶[{}] {}", self.joint, self.name)
     }
 }
 
