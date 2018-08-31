@@ -31,9 +31,11 @@ fn main() {
     println!("initial angles={:?}", robot.joint_angles());
 
     let target_link_name = "l_wrist2";
+    let target_link = robot.find_link("l_wrist2").unwrap();
 
     // Get the transform of the end of the manipulator (forward kinematics)
-    let mut target = robot.update_transform_with_name(target_link_name).unwrap();
+    robot.update_transforms();
+    let mut target = target_link.world_transform().unwrap();
 
     println!("initial target pos = {}", target.translation);
     println!("move x: -0.1");
@@ -46,6 +48,7 @@ fn main() {
     solver.solve(&robot, target_link_name, &target).unwrap();
     println!("solved angles={:?}", robot.joint_angles());
 
-    let solved_pose = robot.update_transform_with_name(target_link_name).unwrap();
+    // robot.update_transforms();
+    let solved_pose = target_link.world_transform().unwrap();
     println!("solved target pos = {}", solved_pose.translation);
 }

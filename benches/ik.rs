@@ -13,13 +13,17 @@ fn bench_tree_ik(arm: &k::LinkTree<f64>, target_link: &str, b: &mut test::Benche
         0.5, 0.2, 0.0, -0.5, 0.0, -0.3, 0.5, 0.2, 0.0, -0.5, 0.0, -0.3,
     ];
     arm.set_joint_angles(&angles).unwrap();
-    let mut target = arm.update_transform_with_name(target_link).unwrap();
+    arm.update_transforms();
+    let mut target = arm
+        .find_link(target_link)
+        .unwrap()
+        .world_transform()
+        .unwrap();
     target.translation.vector[0] += 0.02;
 
     let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 1000);
     b.iter(|| {
         solver.solve(arm, target_link, &target).unwrap();
-        let _trans = arm.update_transform_with_name(target_link);
         arm.set_joint_angles(&angles).unwrap();
     });
 }

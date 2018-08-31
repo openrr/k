@@ -164,7 +164,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 
 fn main() {
     let root = create_joint_with_link_array();
-    let mut arm = k::LinkTree::from_root("arm", root);
+    let arm = k::LinkTree::from_root("arm", root);
 
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
@@ -182,7 +182,9 @@ fn main() {
                 UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
             ),
     );
-    let mut target = arm.update_transform_with_name("wrist_link3").unwrap();
+    arm.update_transforms();
+    let end = arm.find_link("wrist_link3").unwrap();
+    let mut target = end.world_transform().unwrap().clone();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
     let eye = Point3::new(0.5f32, 1.0, 2.0);
@@ -200,7 +202,8 @@ fn main() {
                         Key::Z => {
                             // reset
                             arm.set_joint_angles(&angles).unwrap();
-                            target = arm.update_transform_with_name("wrist_link3").unwrap();
+                            arm.update_transforms();
+                            target = end.world_transform().unwrap().clone();
                         }
                         Key::F => target.translation.vector[2] += 0.1,
                         Key::B => target.translation.vector[2] -= 0.1,
@@ -216,7 +219,7 @@ fn main() {
             }
         }
         solver
-            .solve(&mut arm, "wrist_link3", &target)
+            .solve(&arm, "wrist_link3", &target)
             .unwrap_or_else(|err| {
                 println!("Err: {}", err);
                 0.0f32

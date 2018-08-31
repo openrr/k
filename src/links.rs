@@ -14,7 +14,7 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::fmt::{self, Display};
 
 use errors::*;
@@ -63,6 +63,7 @@ where
     ///
     /// If angle is out of limit, it returns Err.
     pub fn set_joint_angle(&mut self, angle: T) -> Result<(), JointError> {
+        self.world_transform_cache.replace(None);
         self.joint.set_angle(angle)
     }
     /// Get the angle of the joint. If it is fixed, it returns None.
@@ -79,8 +80,11 @@ where
     pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
         self.world_transform_cache.replace(Some(world_transform));
     }
-    pub(crate) fn world_transform(&self) -> Ref<Option<Isometry3<T>>> {
-        self.world_transform_cache.borrow()
+    /// Get the result of forward kinematics
+    ///
+    /// The value is updated by `LinkTree::update_transforms`
+    pub fn world_transform(&self) -> Option<Isometry3<T>> {
+        *self.world_transform_cache.borrow()
     }
 }
 

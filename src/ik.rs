@@ -147,7 +147,7 @@ where
     /// let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     /// // Create sub-`LinkTree` to make it easy to use inverse kinematics
     /// let target_link_name = "r_wrist2";
-    /// let r_wrist = robot.iter().find(|link| link.is_link_name(target_link_name)).unwrap().clone();
+    /// let r_wrist = robot.find_link(target_link_name).unwrap().clone();
     /// let mut arm = k::LinkTree::from_end("r-arm", r_wrist.clone());
     /// println!("arm: {}", arm);
     ///
@@ -177,8 +177,7 @@ where
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError> {
         let end_link = link_tree
-            .iter()
-            .find(|link| link.is_link_name(target_link_name))
+            .find_link(target_link_name)
             .ok_or(IKError::InvalidArguments {
                 error: format!("{} not found", target_link_name),
             })?

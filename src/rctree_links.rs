@@ -35,8 +35,6 @@ where
     /// Return the name of the link
     ///
     /// The return value is `String`, not `&str`.
-    /// If you want to check the link name, and don't want to store it,
-    /// try to use `is_link_name()` instead.
     ///
     /// # Examples
     ///
@@ -56,8 +54,6 @@ where
     /// Return the name of the joint
     ///
     /// The return value is `String`, not `&str`.
-    /// If you want to check the joint name, and don't want to store it,
-    /// try to use `is_joint_name()` instead.
     ///
     /// # Examples
     ///
@@ -74,12 +70,7 @@ where
     pub fn joint_name(&self) -> String {
         self.borrow().data.joint_name().to_owned()
     }
-    pub fn is_joint_name(&self, name: &str) -> bool {
-        self.borrow().data.joint_name() == name
-    }
-    pub fn is_link_name(&self, name: &str) -> bool {
-        self.borrow().data.name == name
-    }
+    /// Clone the joint limits
     pub fn joint_limits(&self) -> Option<Range<T>> {
         self.borrow().data.joint.limits.clone()
     }
@@ -114,14 +105,13 @@ where
             Some(ref parent) => {
                 let rc_parent = parent.upgrade().unwrap().clone();
                 let parent_obj = rc_parent.borrow();
-                let cache = parent_obj.data.world_transform();
-                match *cache {
-                    Some(trans) => Some(trans),
-                    None => None,
-                }
+                parent_obj.data.world_transform()
             }
             None => Some(Isometry3::identity()),
         }
+    }
+    pub fn world_transform(&self) -> Option<Isometry3<T>> {
+        self.borrow().data.world_transform()
     }
 }
 
@@ -271,7 +261,7 @@ impl<T: Real> LinkTree<T> {
     pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
         let mut links = end_link
             .iter_ancestors()
-            .map(|ljn| ljn.clone())
+            .map(|link| link.clone())
             .collect::<Vec<_>>();
         links.reverse();
         LinkTree {
@@ -308,7 +298,9 @@ impl<T: Real> LinkTree<T> {
     pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.expanded_links.iter()
     }
+
     /// Calculate the degree of freedom
+    ///
     /// # Examples
     ///
     /// ```
@@ -331,24 +323,60 @@ impl<T: Real> LinkTree<T> {
     pub fn dof(&self) -> usize {
         self.iter().filter(|link| link.has_joint_angle()).count()
     }
-
-    /// Calculate the transform of the given link by name
-    pub fn update_transform_with_name(&self, link_name: &str) -> Result<Isometry3<T>, JointError> {
-        let target_link = self
-            .iter()
-            .find(|link| link.is_link_name(link_name))
-            .ok_or(JointError::InvalidArguments {
-                error: "{} not found".to_string(),
-            })?;
-        let links = target_link
-            .iter_ancestors()
-            .map(|ljn| ljn.clone())
-            .collect::<Vec<_>>();
-        let mut end_transform = Isometry3::identity();
-        for link in links.iter().rev() {
-            end_transform *= link.transform();
-        }
-        Ok(end_transform)
+    /// Find the joint by name
+    ///    
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_fixed", k::JointType::Fixed, None)
+    ///     .finalize());
+    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link1")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let j = tree.find_joint("joint_pitch").unwrap();
+    /// j.set_joint_angle(0.5).unwrap();
+    /// assert_eq!(j.joint_angle().unwrap(), 0.5);
+    /// ```
+    pub fn find_joint(&self, joint_name: &str) -> Option<&LinkNode<T>> {
+        self.iter()
+            .find(|link| link.borrow().data.joint_name() == joint_name)
+    }
+    /// Find the link by name
+    ///    
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link0")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_fixed", k::JointType::Fixed, None)
+    ///     .finalize());
+    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    ///     .name("link1")
+    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// tree.find_link("link1").unwrap().set_joint_angle(0.5).unwrap();
+    /// assert_eq!(tree.find_link("link1").unwrap().joint_angle().unwrap(), 0.5);
+    /// ```
+    pub fn find_link(&self, link_name: &str) -> Option<&LinkNode<T>> {
+        self.iter()
+            .find(|link| link.borrow().data.name == link_name)
     }
 }
 
@@ -383,14 +411,13 @@ where
         }
         for (to, mimic) in &self.mimics {
             let from_angle = self
-                .iter()
-                .find(|link| link.is_joint_name(&mimic.name))
+                .find_joint(&mimic.name)
                 .and_then(|link| link.joint_angle())
                 .ok_or(JointError::Mimic {
                     from: mimic.name.clone(),
                     to: to.to_owned(),
                 })?;
-            match self.iter().find(|link| link.is_joint_name(to)) {
+            match self.find_joint(to) {
                 Some(target) => target.set_joint_angle(mimic.mimic_angle(from_angle))?,
                 None => {
                     return Err(JointError::Mimic {
@@ -422,10 +449,10 @@ where
 {
     fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
-            .map(|ljn| {
-                let parent_transform = ljn.parent_world_transform().expect("cache must exist");
-                let trans = parent_transform * ljn.transform();
-                ljn.borrow_mut().data.set_world_transform(trans);
+            .map(|link| {
+                let parent_transform = link.parent_world_transform().expect("cache must exist");
+                let trans = parent_transform * link.transform();
+                link.borrow_mut().data.set_world_transform(trans);
                 trans
             })
             .collect()
@@ -505,61 +532,61 @@ fn it_works() {
         )
         .finalize();
 
-    let ljn0 = Node::new(l0);
-    let ljn1 = Node::new(l1);
-    let ljn2 = Node::new(l2);
-    let ljn3 = Node::new(l3);
-    let ljn4 = Node::new(l4);
-    let ljn5 = Node::new(l5);
-    ljn1.set_parent(&ljn0);
-    ljn2.set_parent(&ljn1);
-    ljn3.set_parent(&ljn2);
-    ljn4.set_parent(&ljn0);
-    ljn5.set_parent(&ljn4);
+    let link0 = Node::new(l0);
+    let link1 = Node::new(l1);
+    let link2 = Node::new(l2);
+    let link3 = Node::new(l3);
+    let link4 = Node::new(l4);
+    let link5 = Node::new(l5);
+    link1.set_parent(&link0);
+    link2.set_parent(&link1);
+    link3.set_parent(&link2);
+    link4.set_parent(&link0);
+    link5.set_parent(&link4);
 
-    let names = ljn0
+    let names = link0
         .iter_descendants()
-        .map(|ljn| ljn.joint_name())
+        .map(|link| link.joint_name())
         .collect::<Vec<_>>();
-    println!("{}", ljn0);
+    println!("{}", link0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
-    let angles = ljn0
+    let angles = link0
         .iter_descendants()
-        .map(|ljn| ljn.joint_angle())
+        .map(|link| link.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    fn get_z(ljn: &LinkNode<f32>) -> f32 {
-        match ljn.parent_world_transform() {
+    fn get_z(link: &LinkNode<f32>) -> f32 {
+        match link.parent_world_transform() {
             Some(iso) => iso.translation.vector.z,
             None => 0.0f32,
         }
     }
 
-    let poses = ljn0
+    let poses = link0
         .iter_descendants()
-        .map(|ljn| get_z(&ljn))
+        .map(|link| get_z(&link))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let _ = ljn0
+    let _ = link0
         .iter_ancestors()
-        .map(|ljn| ljn.set_joint_angle(-0.5))
+        .map(|link| link.set_joint_angle(-0.5))
         .collect::<Vec<_>>();
-    let angles = ljn0
+    let angles = link0
         .iter_descendants()
-        .map(|ljn| ljn.joint_angle())
+        .map(|link| link.joint_angle())
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    let poses = ljn0
+    let poses = link0
         .iter_descendants()
-        .map(|ljn| get_z(&ljn))
+        .map(|link| get_z(&link))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let arm = LinkTree::from_end("chain1", ljn3);
+    let arm = LinkTree::from_end("chain1", link3);
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
 }
@@ -601,15 +628,15 @@ fn test_mimic() {
         )
         .finalize();
 
-    let ljn0 = Node::new(l0);
-    let ljn1 = Node::new(l1);
-    let ljn2 = Node::new(l2);
-    ljn1.set_parent(&ljn0);
-    ljn2.set_parent(&ljn1);
+    let link0 = Node::new(l0);
+    let link1 = Node::new(l1);
+    let link2 = Node::new(l2);
+    link1.set_parent(&link0);
+    link2.set_parent(&link1);
 
-    let mut arm = LinkTree::from_root("chain1", ljn0);
+    let mut arm = LinkTree::from_root("chain1", link0);
     arm.mimics
-        .insert(ljn2.joint_name(), Mimic::new(ljn1.joint_name(), 2.0, 0.5));
+        .insert(link2.joint_name(), Mimic::new(link1.joint_name(), 2.0, 0.5));
 
     assert_eq!(arm.joint_angles().len(), 3);
     println!("{:?}", arm.joint_angles());
