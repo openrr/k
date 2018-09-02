@@ -128,12 +128,11 @@ where
         let mut ref_nodes = Vec::new();
         let mut child_ref_map = HashMap::new();
         let mut parent_ref_map = HashMap::<&String, Vec<LinkNode<T>>>::new();
-        let root_node = Node::new(
-            LinkBuilder::<T>::new()
-                .joint("root", JointType::Fixed, None)
-                .name(&root_name)
-                .finalize(),
-        );
+        let root_node = LinkBuilder::<T>::new()
+            .joint("root", JointType::Fixed, None)
+            .name(&root_name)
+            .finalize()
+            .into();
         for j in &robot.joints {
             let node = Node::new(j.into());
             child_ref_map.insert(&j.child.link, node.clone());
