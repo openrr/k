@@ -28,7 +28,7 @@ use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
 fn create_joint_with_link_array() -> k::LinkNode<f32> {
-    let l0 = LinkBuilder::new()
+    let l0: k::LinkNode<f32> = LinkBuilder::new()
         .name("shoulder_link1")
         .joint(
             "shoulder_pitch",
@@ -37,8 +37,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             },
             None,
         )
-        .finalize();
-    let l1 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l1: k::LinkNode<f32> = LinkBuilder::new()
         .name("shoulder_link2")
         .joint(
             "shoulder_roll",
@@ -48,8 +49,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.1, 0.0))
-        .finalize();
-    let l2 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l2: k::LinkNode<f32> = LinkBuilder::new()
         .name("shoulder_link3")
         .joint(
             "shoulder_yaw",
@@ -59,8 +61,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.30))
-        .finalize();
-    let l3 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l3: k::LinkNode<f32> = LinkBuilder::new()
         .name("elbow_link1")
         .joint(
             "elbow_pitch",
@@ -70,8 +73,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
-        .finalize();
-    let l4 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l4: k::LinkNode<f32> = LinkBuilder::new()
         .name("wrist_link1")
         .joint(
             "wrist_yaw",
@@ -81,8 +85,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
-        .finalize();
-    let l5 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l5: k::LinkNode<f32> = LinkBuilder::new()
         .name("wrist_link2")
         .joint(
             "wrist_pitch",
@@ -92,8 +97,9 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.15))
-        .finalize();
-    let l6 = LinkBuilder::new()
+        .finalize()
+        .into();
+    let l6: k::LinkNode<f32> = LinkBuilder::new()
         .name("wrist_link3")
         .joint(
             "wrist_roll",
@@ -103,21 +109,15 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             None,
         )
         .translation(Translation3::new(0.0, 0.0, -0.10))
-        .finalize();
-    let n0 = k::Node::new(l0);
-    let n1 = k::Node::new(l1);
-    let n2 = k::Node::new(l2);
-    let n3 = k::Node::new(l3);
-    let n4 = k::Node::new(l4);
-    let n5 = k::Node::new(l5);
-    let n6 = k::Node::new(l6);
-    n1.set_parent(&n0);
-    n2.set_parent(&n1);
-    n3.set_parent(&n2);
-    n4.set_parent(&n3);
-    n5.set_parent(&n4);
-    n6.set_parent(&n5);
-    n0
+        .finalize()
+        .into();
+    l1.set_parent(&l0);
+    l2.set_parent(&l1);
+    l3.set_parent(&l2);
+    l4.set_parent(&l3);
+    l5.set_parent(&l4);
+    l6.set_parent(&l5);
+    l0
 }
 
 fn create_ground(window: &mut Window) -> Vec<SceneNode> {

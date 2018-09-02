@@ -33,19 +33,20 @@ extern crate urdf_rs;
 mod errors;
 mod ik;
 mod joints;
-mod links;
-mod rctree;
-mod rctree_links;
+mod link;
+mod link_node;
+mod link_tree;
 mod traits;
 
 pub mod math;
 pub mod prelude;
+pub mod rctree;
 pub mod urdf;
 
 pub use self::errors::*;
 pub use self::ik::*;
 pub use self::joints::*;
-pub use self::links::*;
-pub use self::rctree::Node;
-pub use self::rctree_links::*;
+pub use self::link::*;
+pub use self::link_node::LinkNode;
+pub use self::link_tree::*;
 pub use self::traits::*;

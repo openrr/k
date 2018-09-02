@@ -22,9 +22,10 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use joints::*;
-use links::*;
+use link::*;
+use link_node::*;
+use link_tree::*;
 use rctree::*;
-use rctree_links::*;
 
 impl<'a, T> From<&'a urdf_rs::Mimic> for Mimic<T>
 where

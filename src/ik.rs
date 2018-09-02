@@ -16,8 +16,8 @@
 use na::{self, DMatrix, Isometry3, Real, Vector6};
 
 use errors::*;
+use link_tree::*;
 use math::*;
-use rctree_links::*;
 use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
