@@ -90,7 +90,7 @@ where
 
 impl<T: Real> Display for Link<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "▶[{}] {}", self.joint, self.name)
+        write!(f, "▶[{} ({})]", self.name, self.joint)
     }
 }
 

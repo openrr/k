@@ -188,7 +188,7 @@ pub struct LinkTree<T: Real> {
     pub name: String,
     /// Information about mimic joints
     pub mimics: HashMap<String, Mimic<T>>,
-    expanded_links: Vec<LinkNode<T>>,
+    contained_links: Vec<LinkNode<T>>,
 }
 
 impl<T: Real> LinkTree<T> {
@@ -199,15 +199,11 @@ impl<T: Real> LinkTree<T> {
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
         if self
-            .expanded_links
+            .contained_links
             .iter()
             .find(|link| link == &node)
-            .is_some()
-        {
-            for _i in 0..level {
-                write!(f, "    ")?;
-            }
-            write!(f, "{}\n", node)?;
+            .is_some() {
+            write!(f, "{}{}\n", "    ".repeat(level), node)?;
         }
         for c in &node.borrow().children {
             self.fmt_with_indent_level(c, level + 1, f)?
@@ -247,17 +243,49 @@ impl<T: Real> LinkTree<T> {
     /// let tree = k::LinkTree::from_root("tree0", l0);
     /// ```
     pub fn from_root(name: &str, root_link: LinkNode<T>) -> Self {
-        let expanded_links = root_link
+        let contained_links = root_link
             .iter_descendants()
             .map(|ln| ln.clone())
             .collect::<Vec<_>>();
         LinkTree {
             name: name.to_string(),
             mimics: HashMap::new(),
-            expanded_links,
+            contained_links,
         }
     }
     /// Create `LinkTree` from end link
+    /// 
+    /// Do not discard root link before create LinkTree.
+    /// 
+    /// # Examples
+    /// 
+    /// Bad case
+    /// 
+    /// ```
+    /// extern crate k;
+    /// 
+    /// fn create_end_and_set_parent() -> k::LinkNode<f64> {
+    ///   let l0 = k::LinkNode::new(k::Link::new("link0", k::Joint::new("fixed0", k::JointType::Fixed)));
+    ///   let l1 = k::LinkNode::new(k::Link::new("link1", k::Joint::new("fixed1", k::JointType::Fixed)));
+    ///   l1.set_parent(&l0);
+    ///   l1
+    /// }
+    /// let end = create_end_and_set_parent();
+    /// // k::LinkTree::from_end("tree0", end); // panic here!
+    /// ```
+    /// 
+    /// Good case
+    /// 
+    /// ```
+    /// use k::*;
+    /// fn create_end_and_set_parent() -> k::LinkTree<f64> {
+    ///   let l0 = LinkNode::new(Link::new("link0", Joint::new("fixed0", JointType::Fixed)));
+    ///   let l1 = LinkNode::new(Link::new("link1", Joint::new("fixed1", JointType::Fixed)));
+    ///   l1.set_parent(&l0);
+    ///   LinkTree::from_end("tree0", l1) // ok, because root is stored in `LinkTree`
+    /// }
+    /// let end = create_end_and_set_parent(); // no problem
+    /// ```
     pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
         let mut links = end_link
             .iter_ancestors()
@@ -267,7 +295,7 @@ impl<T: Real> LinkTree<T> {
         LinkTree {
             name: name.to_string(),
             mimics: HashMap::new(),
-            expanded_links: links,
+            contained_links: links,
         }
     }
     /// Iterate for all link nodes
@@ -276,27 +304,19 @@ impl<T: Real> LinkTree<T> {
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
-    ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Fixed, None)
-    ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
-    ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
-    ///     .finalize());
+    /// use k::*;
+    /// 
+    /// let l0 = LinkNode::new(Link::new("link0", Joint::new("fixed0", JointType::Fixed)));
+    /// let l1 = LinkNode::new(Link::new("link1", Joint::new("fixed1", JointType::Fixed)));
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let tree = LinkTree::<f64>::from_root("tree0", l0);
     /// let names = tree.iter().map(|link| link.link_name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "link0");
     /// assert_eq!(names[1], "link1");
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
-        self.expanded_links.iter()
+        self.contained_links.iter()
     }
 
     /// Calculate the degree of freedom
