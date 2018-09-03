@@ -40,9 +40,9 @@ where
     /// Construct a Link from name and joint instance
     ///
     /// You can use LinkBuilder<T> if you want.
-    pub fn new(name: &str, joint: Joint<T>) -> Link<T> {
+    pub fn new(joint: Joint<T>) -> Link<T> {
         Link {
-            name: name.to_string(),
+            name: "".to_string(),
             joint: joint,
             offset: Isometry3::identity(),
             world_transform_cache: RefCell::new(None),
@@ -100,12 +100,11 @@ impl<T: Real> Display for Link<T> {
 /// # Examples
 ///
 /// ```
-/// extern crate nalgebra as na;
-/// extern crate k;
-/// let l0 = k::LinkBuilder::new()
+/// use k::*;
+/// let l0 = LinkBuilder::new()
 ///     .name("link1")
-///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+///     .translation(Translation3::new(0.0, 0.1, 0.0))
+///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
 ///     .finalize();
 /// println!("{:?}", l0);
 /// ```

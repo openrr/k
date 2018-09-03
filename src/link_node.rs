@@ -58,7 +58,6 @@ where
     /// ```
     /// use k::*;
     /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
@@ -79,7 +78,6 @@ where
     /// use k::*;
     ///
     /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .joint("link_pitch", JointType::Linear{axis: Vector3::z_axis()}, None)
     ///     .finalize());
@@ -131,12 +129,10 @@ where
     /// use k::prelude::*;
     ///
     /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
     ///     .translation(Translation3::new(0.0, 0.0, 0.2))
     ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// let l1 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link1")
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .joint("link_z", JointType::Linear{axis: Vector3::z_axis()}, None)
     ///     .finalize());

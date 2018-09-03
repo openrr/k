@@ -34,12 +34,30 @@ pub enum JointType<T: Real> {
     },
 }
 
+fn axis_to_string<T: Real>(axis: &Unit<Vector3<T>>) -> &str {
+    if *axis == Vector3::x_axis() {
+        "+X"
+    } else if *axis == Vector3::y_axis() {
+        "+Y"
+    } else if *axis == Vector3::z_axis() {
+        "+Z"
+    } else if *axis == -Vector3::x_axis() {
+        "-X"
+    } else if *axis == -Vector3::y_axis() {
+        "-Y"
+    } else if *axis == -Vector3::z_axis() {
+        "-Z"
+    } else {
+        ""
+    }
+}
+
 impl<T: Real> Display for JointType<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             JointType::Fixed => write!(f, "[⚓]"),
-            JointType::Rotational { axis: _ } => write!(f, "[⚙]"),
-            JointType::Linear { axis: _ } => write!(f, "[↕]"),
+            JointType::Rotational { axis } => write!(f, "[⚙{}]", axis_to_string(axis)),
+            JointType::Linear { axis } => write!(f, "[↕{}]", axis_to_string(axis)),
         }
     }
 }

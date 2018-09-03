@@ -27,35 +27,34 @@ use traits::*;
 /// # Examples
 ///
 /// ```
-/// extern crate nalgebra as na;
-/// extern crate k;
+/// use k::*;
 /// use k::prelude::*;
 ///
 /// // Create LinkNode using `into()`
-/// let l0 = k::LinkBuilder::new()
+/// let l0 = LinkBuilder::new()
 ///     .name("link0")
-///     .translation(na::Translation3::new(0.0, 0.0, 0.1))
-///     .joint("link_pitch0", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+///     .translation(Translation3::new(0.0, 0.0, 0.1))
+///     .joint("link_pitch0", JointType::Rotational{axis: Vector3::y_axis()}, None)
 ///     .finalize()
 ///     .into();
-/// let l1 : k::LinkNode<f64> = k::LinkBuilder::new()
+/// let l1 : LinkNode<f64> = LinkBuilder::new()
 ///     .name("link1")
-///     .translation(na::Translation3::new(0.0, 0.0, 0.5))
-///     .joint("link_pitch1", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+///     .translation(Translation3::new(0.0, 0.0, 0.5))
+///     .joint("link_pitch1", JointType::Rotational{axis: Vector3::y_axis()}, None)
 ///     .finalize()
 ///     .into();
 /// // Create LinkNode using `LikNode::new()`
-/// let l2 = k::LinkNode::new(k::LinkBuilder::new()
+/// let l2 = LinkNode::new(LinkBuilder::new()
 ///     .name("hand")
-///     .translation(na::Translation3::new(0.0, 0.0, 0.5))
-///     .joint("fixed", k::JointType::Fixed, None)
+///     .translation(Translation3::new(0.0, 0.0, 0.5))
+///     .joint("fixed", JointType::Fixed, None)
 ///     .finalize());
 ///
 /// // Sequencial joints structure
 /// l1.set_parent(&l0);
 /// l2.set_parent(&l1);
 ///
-/// let mut tree = k::LinkTree::from_root("tree0", l0);
+/// let mut tree = LinkTree::from_root("tree0", l0);
 /// assert_eq!(tree.dof(), 2);
 ///
 /// // Get joint angles
@@ -84,7 +83,7 @@ use traits::*;
 /// let transforms = tree.update_transforms();
 /// assert_eq!(transforms.len(), 3);
 /// for t in transforms {
-///     println!("before: {}", t);
+///     println!("after: {}", t);
 /// }
 /// ```
 #[derive(Debug)]
@@ -126,10 +125,6 @@ impl<T: Real> Display for LinkTree<T> {
 impl<T: Real> LinkTree<T> {
     /// Create LinkTree from root link
     ///
-    /// # Arguments
-    ///
-    /// * `root_link` - root node of the links.
-    ///
     /// # Examples
     ///
     /// ```
@@ -167,30 +162,33 @@ impl<T: Real> LinkTree<T> {
     ///
     /// Bad case
     ///
-    /// ```
-    /// extern crate k;
+    /// ```rust, should_panic
+    /// use k::*;
     ///
-    /// fn create_end_and_set_parent() -> k::LinkNode<f64> {
-    ///   let l0 = k::LinkNode::new(k::Link::new("link0", k::Joint::new("fixed0", k::JointType::Fixed)));
-    ///   let l1 = k::LinkNode::new(k::Link::new("link1", k::Joint::new("fixed1", k::JointType::Fixed)));
+    /// fn create_end_and_set_parent() -> LinkNode<f64> {
+    ///   let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
+    ///   let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
     ///   l1.set_parent(&l0);
     ///   l1
     /// }
+    ///
     /// let end = create_end_and_set_parent();
-    /// // k::LinkTree::from_end("tree0", end); // panic here!
+    /// let tree = LinkTree::from_end("tree0", end); // panic here!
     /// ```
     ///
     /// Good case
     ///
     /// ```
     /// use k::*;
-    /// fn create_end_and_set_parent() -> k::LinkTree<f64> {
-    ///   let l0 = LinkNode::new(Link::new("link0", Joint::new("fixed0", JointType::Fixed)));
-    ///   let l1 = LinkNode::new(Link::new("link1", Joint::new("fixed1", JointType::Fixed)));
+    ///
+    /// fn create_tree_from_end() -> LinkTree<f64> {
+    ///   let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
+    ///   let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
     ///   l1.set_parent(&l0);
     ///   LinkTree::from_end("tree0", l1) // ok, because root is stored in `LinkTree`
     /// }
-    /// let end = create_end_and_set_parent(); // no problem
+    ///
+    /// let tree = create_tree_from_end(); // no problem
     /// ```
     pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
         let mut links = end_link
@@ -207,19 +205,20 @@ impl<T: Real> LinkTree<T> {
     /// Iterate for all link nodes
     ///
     /// The order is from parent to children. You can assume that parent is already iterated.
+    ///
     /// # Examples
     ///
     /// ```
     /// use k::*;
     ///
-    /// let l0 = LinkNode::new(Link::new("link0", Joint::new("fixed0", JointType::Fixed)));
-    /// let l1 = LinkNode::new(Link::new("link1", Joint::new("fixed1", JointType::Fixed)));
+    /// let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
+    /// let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
     /// l1.set_parent(&l0);
     /// let tree = LinkTree::<f64>::from_root("tree0", l0);
-    /// let names = tree.iter().map(|link| link.link_name()).collect::<Vec<_>>();
+    /// let names = tree.iter().map(|link| link.joint_name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
-    /// assert_eq!(names[0], "link0");
-    /// assert_eq!(names[1], "link1");
+    /// assert_eq!(names[0], "fixed0");
+    /// assert_eq!(names[1], "fixed1");
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
         self.contained_links.iter()
@@ -230,20 +229,19 @@ impl<T: Real> LinkTree<T> {
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// use k::*;
+    /// let l0 = k::LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Fixed, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Fixed, None)
     ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l1 = k::LinkNode::new(LinkBuilder::new()
     ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let tree = LinkTree::from_root("tree0", l0);
     /// assert_eq!(tree.dof(), 1);
     /// ```
     pub fn dof(&self) -> usize {
@@ -254,21 +252,20 @@ impl<T: Real> LinkTree<T> {
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use k::*;
     ///
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_fixed", k::JointType::Fixed, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_fixed", JointType::Fixed, None)
     ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l1 = LinkNode::new(LinkBuilder::new()
     ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let tree = LinkTree::from_root("tree0", l0);
     /// let j = tree.find_joint("joint_pitch").unwrap();
     /// j.set_joint_angle(0.5).unwrap();
     /// assert_eq!(j.joint_angle().unwrap(), 0.5);
@@ -282,21 +279,20 @@ impl<T: Real> LinkTree<T> {
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use k::*;
     ///
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_fixed", k::JointType::Fixed, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_fixed", JointType::Fixed, None)
     ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l1 = LinkNode::new(LinkBuilder::new()
     ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("joint_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let tree = LinkTree::from_root("tree0", l0);
     /// tree.find_link("link1").unwrap().set_joint_angle(0.5).unwrap();
     /// assert_eq!(tree.find_link("link1").unwrap().joint_angle().unwrap(), 0.5);
     /// ```

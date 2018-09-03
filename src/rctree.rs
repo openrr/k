@@ -13,6 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
+//! Abstruct tree structure using `Rc<RefCell<T>>`
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::{Rc, Weak};
 
@@ -78,6 +79,7 @@ impl<T> PartialEq for Node<T> {
 }
 
 #[derive(Debug)]
+/// Iterator for parents
 pub struct Ancestors<T> {
     parent: Option<Node<T>>,
 }
@@ -101,6 +103,7 @@ impl<T> Iterator for Ancestors<T> {
 }
 
 #[derive(Debug)]
+/// Iterator for children
 pub struct Descendants<T> {
     stack: Vec<Node<T>>,
 }

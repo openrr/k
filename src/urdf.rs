@@ -53,7 +53,7 @@ where
 }
 
 /// Returns nalgebra::UnitQuaternion from f64 array
-fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
+pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
 where
     T: Real,
 {
@@ -63,7 +63,7 @@ where
 }
 
 /// Returns nalgebra::Translation3 from f64 array
-fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
+pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
 where
     T: Real,
 {
