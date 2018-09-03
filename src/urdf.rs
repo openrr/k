@@ -127,8 +127,8 @@ where
     fn from(robot: &urdf_rs::Robot) -> Self {
         let root_name = get_root_link_name(robot);
         let mut ref_nodes = Vec::new();
-        let mut child_ref_map = HashMap::new();
-        let mut parent_ref_map = HashMap::<&String, Vec<LinkNode<T>>>::new();
+        let mut child_link_name_to_node = HashMap::new();
+        let mut parent_link_name_to_node = HashMap::<&String, Vec<LinkNode<T>>>::new();
         let root_node = LinkBuilder::<T>::new()
             .joint("root", JointType::Fixed, None)
             .name(&root_name)
@@ -136,14 +136,14 @@ where
             .into();
         for j in &robot.joints {
             let node = Node::new(j.into());
-            child_ref_map.insert(&j.child.link, node.clone());
-            if parent_ref_map.get(&j.parent.link).is_some() {
-                parent_ref_map
+            child_link_name_to_node.insert(&j.child.link, node.clone());
+            if parent_link_name_to_node.get(&j.parent.link).is_some() {
+                parent_link_name_to_node
                     .get_mut(&j.parent.link)
                     .unwrap()
                     .push(node.clone());
             } else {
-                parent_ref_map.insert(&j.parent.link, vec![node.clone()]);
+                parent_link_name_to_node.insert(&j.parent.link, vec![node.clone()]);
             }
             ref_nodes.push(node);
         }
@@ -162,8 +162,8 @@ where
 
         for l in &robot.links {
             info!("link={}", l.name);
-            if let Some(parent_node) = child_ref_map.get(&l.name) {
-                if let Some(child_nodes) = parent_ref_map.get(&l.name) {
+            if let Some(parent_node) = child_link_name_to_node.get(&l.name) {
+                if let Some(child_nodes) = parent_link_name_to_node.get(&l.name) {
                     for child_node in child_nodes.iter() {
                         info!("set parent = {}, child = {}", parent_node, child_node);
                         child_node.set_parent(parent_node);

@@ -64,6 +64,7 @@ where
     /// If angle is out of limit, it returns Err.
     pub fn set_joint_angle(&mut self, angle: T) -> Result<(), JointError> {
         self.world_transform_cache.replace(None);
+        // TODO: have to reset decendant `world_transform_cache`
         self.joint.set_angle(angle)
     }
     /// Get the angle of the joint. If it is fixed, it returns None.

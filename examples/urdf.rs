@@ -23,9 +23,7 @@ fn main() {
     println!("robot: {}", robot);
 
     // Set initial joint angles
-    let angles = vec![
-        0.1, 0.2, 0.0, -0.5, 0.0, -0.3, 0.1, 0.2, 0.0, -0.5, 0.0, -0.3,
-    ];
+    let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];
 
     robot.set_joint_angles(&angles).unwrap();
     println!("initial angles={:?}", robot.joint_angles());
@@ -38,8 +36,8 @@ fn main() {
     let mut target = target_link.world_transform().unwrap();
 
     println!("initial target pos = {}", target.translation);
-    println!("move x: -0.1");
-    target.translation.vector.x -= 0.1;
+    println!("move z: +0.1");
+    target.translation.vector.z += 0.1;
 
     // Create IK solver with default settings
     let solver = k::JacobianIKSolverBuilder::new().finalize();

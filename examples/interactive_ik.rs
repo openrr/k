@@ -28,6 +28,12 @@ use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
 fn create_joint_with_link_array() -> k::LinkNode<f32> {
+    let fixed: k::LinkNode<f32> = LinkBuilder::new()
+        .name("base")
+        .joint("fixed", JointType::Fixed, None)
+        .translation(Translation3::new(0.0, 0.0, 0.6))
+        .finalize()
+        .into();
     let l0: k::LinkNode<f32> = LinkBuilder::new()
         .name("shoulder_link1")
         .joint(
@@ -37,6 +43,7 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
             },
             None,
         )
+        .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
     let l1: k::LinkNode<f32> = LinkBuilder::new()
@@ -111,13 +118,14 @@ fn create_joint_with_link_array() -> k::LinkNode<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize()
         .into();
+    l0.set_parent(&fixed);
     l1.set_parent(&l0);
     l2.set_parent(&l1);
     l3.set_parent(&l2);
     l4.set_parent(&l3);
     l5.set_parent(&l4);
     l6.set_parent(&l5);
-    l0
+    fixed
 }
 
 fn create_ground(window: &mut Window) -> Vec<SceneNode> {
@@ -145,6 +153,8 @@ fn create_ground(window: &mut Window) -> Vec<SceneNode> {
 }
 
 fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
+    let mut c_fixed = window.add_cube(0.05, 0.05, 0.05);
+    c_fixed.set_color(0.2, 0.2, 0.2);
     let mut c0 = window.add_cube(0.1, 0.1, 0.1);
     c0.set_color(1.0, 0.0, 1.0);
     let mut c1 = window.add_cube(0.1, 0.1, 0.1);
@@ -159,7 +169,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
     c5.set_color(0.5, 0.0, 1.0);
     let mut c6 = window.add_cube(0.1, 0.1, 0.1);
     c6.set_color(0.0, 0.5, 0.2);
-    vec![c0, c1, c2, c3, c4, c5, c6]
+    vec![c_fixed, c0, c1, c2, c3, c4, c5, c6]
 }
 
 fn main() {
@@ -169,10 +179,10 @@ fn main() {
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
     let mut cubes = create_cubes(&mut window);
-    let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
+    let angles = vec![0.2, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
     arm.set_joint_angles(&angles).unwrap();
     let base_rot = Isometry3::from_parts(
-        Translation3::new(0.0, 0.0, 0.0),
+        Translation3::new(0.0, 0.0, -0.6),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
     arm.iter().next().unwrap().set_offset(

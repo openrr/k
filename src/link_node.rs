@@ -37,12 +37,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// use k::*;
+    ///
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// assert_eq!(l0.link_name(), "link0");
     /// ```
@@ -56,12 +56,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// use k::*;
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// assert_eq!(l0.joint_name(), "link_pitch");
     /// ```
@@ -77,12 +76,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// use k::*;
+    ///
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.0, 1.0))
-    ///     .joint("link_pitch", k::JointType::Linear{axis: na::Vector3::z_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.0, 1.0))
+    ///     .joint("link_pitch", JointType::Linear{axis: Vector3::z_axis()}, None)
     ///     .finalize());
     /// assert_eq!(l0.transform().translation.vector.z, 1.0);
     /// l0.set_joint_angle(0.6).unwrap();
@@ -128,22 +127,21 @@ where
     ///  # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use k::*;
     /// use k::prelude::*;
     ///
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.0, 0.2))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.0, 0.2))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l1 = LinkNode::new(LinkBuilder::new()
     ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.0, 1.0))
-    ///     .joint("link_z", k::JointType::Linear{axis: na::Vector3::z_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.0, 1.0))
+    ///     .joint("link_z", JointType::Linear{axis: Vector3::z_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::<f64>::from_root("tree0", l0);
+    /// let tree = LinkTree::<f64>::from_root("tree0", l0);
     /// tree.set_joint_angles(&vec![3.141592 * 0.5, 0.1]).unwrap();
     /// assert!(l1.world_transform().is_none());
     /// assert!(l1.world_transform().is_none());

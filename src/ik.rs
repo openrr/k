@@ -16,6 +16,7 @@
 use na::{self, DMatrix, Isometry3, Real, Vector6};
 
 use errors::*;
+use link_node::LinkNode;
 use link_tree::*;
 use math::*;
 use traits::*;
@@ -88,27 +89,21 @@ where
     fn solve_one_loop(
         &self,
         arm: &LinkTree<T>,
-        target_link_name: &str,
+        target_link: &LinkNode<T>,
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError> {
         let orig_angles = arm.joint_angles();
         let dof = orig_angles.len();
-        let orig_poses = arm.update_transforms();
-        let pose_index = arm
-            .link_names()
-            .iter()
-            .position(|name| name == target_link_name)
-            .ok_or(IKError::InvalidArguments {
-                error: format!("{} not found", target_link_name),
-            })?;
-        let orig_pose6 = calc_vector6_pose(&orig_poses[pose_index]);
+        arm.update_transforms();
+        let orig_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
         let target_pose6 = calc_vector6_pose(target_pose);
         let mut jacobi_vec = Vec::new();
         for i in 0..dof {
             let mut small_diff_angles_i = orig_angles.clone();
             small_diff_angles_i[i] += self.jacobian_move_epsilon;
             arm.set_joint_angles(&small_diff_angles_i)?;
-            let small_diff_pose6 = calc_vector6_pose(&arm.update_transforms()[pose_index]);
+            arm.update_transforms();
+            let small_diff_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
@@ -128,7 +123,8 @@ where
             angles_vec[i] += new_angles_diff[i];
         }
         arm.set_joint_angles(&angles_vec)?;
-        let new_pose6 = calc_vector6_pose(&arm.update_transforms()[pose_index]);
+        arm.update_transforms();
+        let new_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
         Ok((target_pose6 - new_pose6).norm())
     }
 }
@@ -182,11 +178,10 @@ where
                 error: format!("{} not found", target_link_name),
             })?
             .clone();
-        let arm = LinkTree::from_end("temporal-arm", end_link);
+        let arm = LinkTree::from_end("temporal-arm", end_link.clone());
 
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
-            println!("support only 6 or more DoF now");
             return Err(IKError::PreconditionError {
                 error: format!(
                     "support only 6 or more DoF now, input Dof={}",
@@ -196,7 +191,7 @@ where
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_distance = self.solve_one_loop(&arm, target_link_name, target_pose)?;
+            let target_distance = self.solve_one_loop(&arm, &end_link, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }

@@ -133,20 +133,20 @@ impl<T: Real> LinkTree<T> {
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
-    /// let l0 = k::LinkNode::new(k::LinkBuilder::new()
+    /// use k::*;
+    ///
+    /// let l0 = LinkNode::new(LinkBuilder::new()
     ///     .name("link0")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
-    /// let l1 = k::LinkNode::new(k::LinkBuilder::new()
+    /// let l1 = LinkNode::new(LinkBuilder::new()
     ///     .name("link1")
-    ///     .translation(na::Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", k::JointType::Rotational{axis: na::Vector3::y_axis()}, None)
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = k::LinkTree::from_root("tree0", l0);
+    /// let tree = LinkTree::from_root("tree0", l0);
     /// ```
     pub fn from_root(name: &str, root_link: LinkNode<T>) -> Self {
         let contained_links = root_link

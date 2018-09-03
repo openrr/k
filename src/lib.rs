@@ -50,3 +50,6 @@ pub use self::link::*;
 pub use self::link_node::LinkNode;
 pub use self::link_tree::*;
 pub use self::traits::*;
+
+// re-export
+pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};
