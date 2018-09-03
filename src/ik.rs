@@ -19,7 +19,6 @@ use errors::*;
 use link_node::LinkNode;
 use link_tree::*;
 use math::*;
-use traits::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);

@@ -20,7 +20,6 @@ use std::fmt::{self, Display};
 use errors::*;
 use joints::*;
 use link_node::LinkNode;
-use traits::*;
 
 /// Kinematic Tree using `LinkNode`
 ///
@@ -300,23 +299,18 @@ impl<T: Real> LinkTree<T> {
         self.iter()
             .find(|link| link.borrow().data.name == link_name)
     }
-}
 
-impl<T> HasJoints<T> for LinkTree<T>
-where
-    T: Real,
-{
     /// Get the angles of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
-    fn joint_angles(&self) -> Vec<T> {
+    pub fn joint_angles(&self) -> Vec<T> {
         self.iter().filter_map(|link| link.joint_angle()).collect()
     }
 
     /// Set the angles of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    fn set_joint_angles(&self, angles_vec: &[T]) -> Result<(), JointError> {
+    pub fn set_joint_angles(&self, angles_vec: &[T]) -> Result<(), JointError> {
         let dof = self.iter().filter(|link| link.has_joint_angle()).count();
         if angles_vec.len() != dof {
             return Err(JointError::SizeMisMatch {
@@ -351,25 +345,20 @@ where
         }
         Ok(())
     }
-    fn joint_limits(&self) -> Vec<Option<Range<T>>> {
+    pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.iter()
             .filter(|link| link.has_joint_angle())
             .map(|link| link.joint_limits())
             .collect()
     }
-    fn joint_names(&self) -> Vec<String> {
+    pub fn joint_names(&self) -> Vec<String> {
         self.iter()
             .filter(|link| link.has_joint_angle())
             .map(|link| link.joint_name())
             .collect()
     }
-}
 
-impl<T> HasLinks<T> for LinkTree<T>
-where
-    T: Real,
-{
-    fn update_transforms(&self) -> Vec<Isometry3<T>> {
+    pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
             .map(|link| {
                 let parent_transform = link.parent_world_transform().expect("cache must exist");
@@ -379,7 +368,7 @@ where
             })
             .collect()
     }
-    fn link_names(&self) -> Vec<String> {
+    pub fn link_names(&self) -> Vec<String> {
         self.iter().map(|link| link.link_name()).collect()
     }
 }

@@ -36,7 +36,6 @@ mod joints;
 mod link;
 mod link_node;
 mod link_tree;
-mod traits;
 
 pub mod math;
 pub mod prelude;
@@ -49,7 +48,6 @@ pub use self::joints::*;
 pub use self::link::*;
 pub use self::link_node::LinkNode;
 pub use self::link_tree::*;
-pub use self::traits::*;
 
 // re-export
 pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};
