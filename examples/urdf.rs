@@ -19,9 +19,8 @@ use k::prelude::*;
 
 fn main() {
     // Load urdf file
-    let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let robot = k::Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     println!("robot: {}", robot);
-    println!("robot: {:?}", robot);
 
     // Set initial joint angles
     let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];
@@ -29,8 +28,7 @@ fn main() {
     robot.set_joint_angles(&angles).unwrap();
     println!("initial angles={:?}", robot.joint_angles());
 
-    let target_link_name = "l_wrist2";
-    let target_link = robot.find_link("l_wrist2").unwrap();
+    let target_link = robot.find_joint("l_wrist_pitch").unwrap();
 
     // Get the transform of the end of the manipulator (forward kinematics)
     robot.update_transforms();
@@ -44,7 +42,7 @@ fn main() {
     let solver = k::JacobianIKSolverBuilder::new().finalize();
 
     // solve and move the manipulator angles
-    solver.solve(&robot, target_link_name, &target).unwrap();
+    solver.solve(target_link, &target).unwrap();
     println!("solved angles={:?}", robot.joint_angles());
 
     // robot.update_transforms();

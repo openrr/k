@@ -43,7 +43,7 @@ use k::prelude::*;
 
 fn main() {
     // Load urdf file
-    let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let robot = k::Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     println!("robot: {}", robot);
 
     // Set initial joint angles

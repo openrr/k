@@ -16,9 +16,9 @@
 use na::{self, DMatrix, Isometry3, Real, Vector6};
 
 use errors::*;
-use link_node::LinkNode;
-use link_tree::*;
+use joint_node::JointNode;
 use math::*;
+use robot::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);
@@ -40,8 +40,7 @@ where
     /// Move the end transform of the `arm` to `target_pose`
     fn solve(
         &self,
-        arm: &LinkTree<T>,
-        target_link_name: &str,
+        target_joint_name: &JointNode<T>,
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError>;
 }
@@ -87,8 +86,8 @@ where
     }
     fn solve_one_loop(
         &self,
-        arm: &LinkTree<T>,
-        target_link: &LinkNode<T>,
+        arm: &Robot<T>,
+        target_link: &JointNode<T>,
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError> {
         let orig_angles = arm.joint_angles();
@@ -139,11 +138,11 @@ where
     /// ```
     /// use k::prelude::*;
     ///
-    /// let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-    /// // Create sub-`LinkTree` to make it easy to use inverse kinematics
-    /// let target_link_name = "r_wrist2";
-    /// let r_wrist = robot.find_link(target_link_name).unwrap().clone();
-    /// let mut arm = k::LinkTree::from_end("r-arm", r_wrist.clone());
+    /// let robot = k::Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    /// // Create sub-`Robot` to make it easy to use inverse kinematics
+    /// let target_joint_name = "r_wrist_pitch";
+    /// let r_wrist = robot.find_joint(target_joint_name).unwrap().clone();
+    /// let mut arm = k::Robot::from_end("r-arm", r_wrist.clone());
     /// println!("arm: {}", arm);
     ///
     /// // Set joint angles of `arm`
@@ -162,22 +161,11 @@ where
     /// let solver = k::JacobianIKSolverBuilder::new().finalize();
     ///
     /// // solve and move the manipulator angles
-    /// solver.solve(&mut arm, target_link_name, &target).unwrap();
+    /// solver.solve(&r_wrist, &target).unwrap();
     /// println!("solved angles={:?}", arm.joint_angles());
     /// ```
-    fn solve(
-        &self,
-        link_tree: &LinkTree<T>,
-        target_link_name: &str,
-        target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError> {
-        let end_link = link_tree
-            .find_link(target_link_name)
-            .ok_or(IKError::InvalidArguments {
-                error: format!("{} not found", target_link_name),
-            })?
-            .clone();
-        let arm = LinkTree::from_end("temporal-arm", end_link.clone());
+    fn solve(&self, target_link: &JointNode<T>, target_pose: &Isometry3<T>) -> Result<T, IKError> {
+        let arm = Robot::from_end("temporal-arm", target_link.clone());
 
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {
@@ -190,7 +178,7 @@ where
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_distance = self.solve_one_loop(&arm, &end_link, target_pose)?;
+            let target_distance = self.solve_one_loop(&arm, &target_link, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }

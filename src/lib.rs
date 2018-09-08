@@ -21,7 +21,7 @@
 //! 1. Inverse kinematics
 //! 1. URDF Loader
 //!
-//! See `LinkTree` as the top level interface.
+//! See `Robot` as the top level interface.
 //!
 #[macro_use]
 extern crate failure;
@@ -30,13 +30,11 @@ extern crate log;
 extern crate nalgebra as na;
 extern crate urdf_rs;
 
-mod element;
 mod errors;
 mod ik;
-mod joints;
-mod link;
-mod link_node;
-mod link_tree;
+mod joint;
+mod joint_node;
+mod robot;
 
 pub mod math;
 pub mod prelude;
@@ -45,10 +43,9 @@ pub mod urdf;
 
 pub use self::errors::*;
 pub use self::ik::*;
-pub use self::joints::*;
-pub use self::link::*;
-pub use self::link_node::LinkNode;
-pub use self::link_tree::*;
+pub use self::joint::*;
+pub use self::joint_node::*;
+pub use self::robot::*;
 
 // re-export
 pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};

@@ -20,101 +20,73 @@ extern crate nalgebra as na;
 
 use glfw::{Action, Key, WindowEvent};
 use k::prelude::*;
-use k::{JacobianIKSolverBuilder, JointType, LinkBuilder};
+use k::{JacobianIKSolverBuilder, JointBuilder, JointType};
 use kiss3d::camera::ArcBall;
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
-fn create_joint_with_link_array() -> k::LinkNode<f32> {
-    let fixed: k::LinkNode<f32> = LinkBuilder::new()
-        .name("base")
-        .joint("fixed", JointType::Fixed, None)
+fn create_joint_with_link_array() -> k::JointNode<f32> {
+    let fixed: k::JointNode<f32> = JointBuilder::new()
+        .name("fixed")
+        .joint_type(JointType::Fixed)
         .translation(Translation3::new(0.0, 0.0, 0.6))
         .finalize()
         .into();
-    let l0: k::LinkNode<f32> = LinkBuilder::new()
-        .name("shoulder_link1")
-        .joint(
-            "shoulder_pitch",
-            JointType::Rotational {
-                axis: Vector3::y_axis(),
-            },
-            None,
-        )
+    let l0: k::JointNode<f32> = JointBuilder::new()
+        .name("shoulder_pitch")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::y_axis(),
+        })
         .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l1: k::LinkNode<f32> = LinkBuilder::new()
-        .name("shoulder_link2")
-        .joint(
-            "shoulder_roll",
-            JointType::Rotational {
-                axis: Vector3::x_axis(),
-            },
-            None,
-        )
+    let l1: k::JointNode<f32> = JointBuilder::new()
+        .name("shoulder_roll")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::x_axis(),
+        })
         .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l2: k::LinkNode<f32> = LinkBuilder::new()
-        .name("shoulder_link3")
-        .joint(
-            "shoulder_yaw",
-            JointType::Rotational {
-                axis: Vector3::z_axis(),
-            },
-            None,
-        )
+    let l2: k::JointNode<f32> = JointBuilder::new()
+        .name("shoulder_yaw")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
         .translation(Translation3::new(0.0, 0.0, -0.30))
         .finalize()
         .into();
-    let l3: k::LinkNode<f32> = LinkBuilder::new()
-        .name("elbow_link1")
-        .joint(
-            "elbow_pitch",
-            JointType::Rotational {
-                axis: Vector3::y_axis(),
-            },
-            None,
-        )
+    let l3: k::JointNode<f32> = JointBuilder::new()
+        .name("elbow_pitch")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::y_axis(),
+        })
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l4: k::LinkNode<f32> = LinkBuilder::new()
-        .name("wrist_link1")
-        .joint(
-            "wrist_yaw",
-            JointType::Rotational {
-                axis: Vector3::z_axis(),
-            },
-            None,
-        )
+    let l4: k::JointNode<f32> = JointBuilder::new()
+        .name("wrist_yaw")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l5: k::LinkNode<f32> = LinkBuilder::new()
-        .name("wrist_link2")
-        .joint(
-            "wrist_pitch",
-            JointType::Rotational {
-                axis: Vector3::y_axis(),
-            },
-            None,
-        )
+    let l5: k::JointNode<f32> = JointBuilder::new()
+        .name("wrist_pitch")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::y_axis(),
+        })
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l6: k::LinkNode<f32> = LinkBuilder::new()
-        .name("wrist_link3")
-        .joint(
-            "wrist_roll",
-            JointType::Rotational {
-                axis: Vector3::x_axis(),
-            },
-            None,
-        )
+    let l6: k::JointNode<f32> = JointBuilder::new()
+        .name("wrist_roll")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::x_axis(),
+        })
         .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize()
         .into();
@@ -174,7 +146,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 
 fn main() {
     let root = create_joint_with_link_array();
-    let arm = k::LinkTree::from_root("arm", root);
+    let arm = k::Robot::from_root("arm", root);
 
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
@@ -193,7 +165,7 @@ fn main() {
             ),
     );
     arm.update_transforms();
-    let end = arm.find_link("wrist_link3").unwrap();
+    let end = arm.find_joint("wrist_roll").unwrap();
     let mut target = end.world_transform().unwrap().clone();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
@@ -228,12 +200,10 @@ fn main() {
                 _ => {}
             }
         }
-        solver
-            .solve(&arm, "wrist_link3", &target)
-            .unwrap_or_else(|err| {
-                println!("Err: {}", err);
-                0.0f32
-            });
+        solver.solve(end, &target).unwrap_or_else(|err| {
+            println!("Err: {}", err);
+            0.0f32
+        });
         c_t.set_local_transformation(target.clone());
         for (i, trans) in arm.update_transforms().iter().enumerate() {
             cubes[i].set_local_transformation(trans.clone());

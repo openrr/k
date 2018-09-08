@@ -18,10 +18,10 @@ use std::collections::HashMap;
 use std::fmt::{self, Display};
 
 use errors::*;
-use joints::*;
-use link_node::LinkNode;
+use joint::*;
+use joint_node::JointNode;
 
-/// Kinematic Tree using `LinkNode`
+/// Kinematic Tree using `JointNode`
 ///
 /// # Examples
 ///
@@ -29,31 +29,31 @@ use link_node::LinkNode;
 /// use k::*;
 /// use k::prelude::*;
 ///
-/// // Create LinkNode using `into()`
-/// let l0 = LinkBuilder::new()
-///     .name("link0")
+/// // Create JointNode using `into()`
+/// let l0 = JointBuilder::new()
+///     .name("link_pitch0")
 ///     .translation(Translation3::new(0.0, 0.0, 0.1))
-///     .joint("link_pitch0", JointType::Rotational{axis: Vector3::y_axis()}, None)
+///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .finalize()
 ///     .into();
-/// let l1 : LinkNode<f64> = LinkBuilder::new()
-///     .name("link1")
+/// let l1 : JointNode<f64> = JointBuilder::new()
+///     .name("link_pitch1")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
-///     .joint("link_pitch1", JointType::Rotational{axis: Vector3::y_axis()}, None)
+///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .finalize()
 ///     .into();
-/// // Create LinkNode using `LikNode::new()`
-/// let l2 = LinkNode::new(LinkBuilder::new()
+/// // Create JointNode using `LikNode::new()`
+/// let l2 = JointNode::new(JointBuilder::new()
 ///     .name("hand")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
-///     .joint("fixed", JointType::Fixed, None)
+///     .joint_type(JointType::Fixed)
 ///     .finalize());
 ///
 /// // Sequencial joints structure
 /// l1.set_parent(&l0);
 /// l2.set_parent(&l1);
 ///
-/// let mut tree = LinkTree::from_root("tree0", l0);
+/// let mut tree = Robot::from_root("tree0", l0);
 /// assert_eq!(tree.dof(), 2);
 ///
 /// // Get joint angles
@@ -86,23 +86,23 @@ use link_node::LinkNode;
 /// }
 /// ```
 #[derive(Debug)]
-pub struct LinkTree<T: Real> {
-    /// Name of this `LinkTree`
+pub struct Robot<T: Real> {
+    /// Name of this `Robot`
     pub name: String,
     /// Information about mimic joints
     pub mimics: HashMap<String, Mimic<T>>,
-    contained_links: Vec<LinkNode<T>>,
+    contained_joints: Vec<JointNode<T>>,
 }
 
-impl<T: Real> LinkTree<T> {
+impl<T: Real> Robot<T> {
     fn fmt_with_indent_level(
         &self,
-        node: &LinkNode<T>,
+        node: &JointNode<T>,
         level: usize,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
         if self
-            .contained_links
+            .contained_joints
             .iter()
             .find(|link| link == &node)
             .is_some()
@@ -115,47 +115,47 @@ impl<T: Real> LinkTree<T> {
         Ok(())
     }
 }
-impl<T: Real> Display for LinkTree<T> {
+impl<T: Real> Display for Robot<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 
-impl<T: Real> LinkTree<T> {
-    /// Create LinkTree from root link
+impl<T: Real> Robot<T> {
+    /// Create Robot from root link
     ///
     /// # Examples
     ///
     /// ```
     /// use k::*;
     ///
-    /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
+    /// let l0 = JointNode::new(JointBuilder::new()
+    ///     .name("link_pitch")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
+    ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
-    /// let l1 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link1")
+    /// let l1 = JointNode::new(JointBuilder::new()
+    ///     .name("link_pitch")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
+    ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = LinkTree::from_root("tree0", l0);
+    /// let tree = Robot::from_root("tree0", l0);
     /// ```
-    pub fn from_root(name: &str, root_link: LinkNode<T>) -> Self {
-        let contained_links = root_link
+    pub fn from_root(name: &str, root_link: JointNode<T>) -> Self {
+        let contained_joints = root_link
             .iter_descendants()
             .map(|ln| ln.clone())
             .collect::<Vec<_>>();
-        LinkTree {
+        Robot {
             name: name.to_string(),
             mimics: HashMap::new(),
-            contained_links,
+            contained_joints,
         }
     }
-    /// Create `LinkTree` from end link
+    /// Create `Robot` from end link
     ///
-    /// Do not discard root link before create LinkTree.
+    /// Do not discard root link before create Robot.
     ///
     /// # Examples
     ///
@@ -164,15 +164,15 @@ impl<T: Real> LinkTree<T> {
     /// ```rust, should_panic
     /// use k::*;
     ///
-    /// fn create_end_and_set_parent() -> LinkNode<f64> {
-    ///   let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
-    ///   let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
+    /// fn create_end_and_set_parent() -> JointNode<f64> {
+    ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
+    ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
     ///   l1
     /// }
     ///
     /// let end = create_end_and_set_parent();
-    /// let tree = LinkTree::from_end("tree0", end); // panic here!
+    /// let tree = Robot::from_end("tree0", end); // panic here!
     /// ```
     ///
     /// Good case
@@ -180,25 +180,25 @@ impl<T: Real> LinkTree<T> {
     /// ```
     /// use k::*;
     ///
-    /// fn create_tree_from_end() -> LinkTree<f64> {
-    ///   let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
-    ///   let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
+    /// fn create_tree_from_end() -> Robot<f64> {
+    ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
+    ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
-    ///   LinkTree::from_end("tree0", l1) // ok, because root is stored in `LinkTree`
+    ///   Robot::from_end("tree0", l1) // ok, because root is stored in `Robot`
     /// }
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(name: &str, end_link: LinkNode<T>) -> Self {
+    pub fn from_end(name: &str, end_link: JointNode<T>) -> Self {
         let mut links = end_link
             .iter_ancestors()
             .map(|link| link.clone())
             .collect::<Vec<_>>();
         links.reverse();
-        LinkTree {
+        Robot {
             name: name.to_string(),
             mimics: HashMap::new(),
-            contained_links: links,
+            contained_joints: links,
         }
     }
     /// Iterate for all link nodes
@@ -210,17 +210,17 @@ impl<T: Real> LinkTree<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = LinkNode::new(Link::new(Joint::new("fixed0", JointType::Fixed)));
-    /// let l1 = LinkNode::new(Link::new(Joint::new("fixed1", JointType::Fixed)));
+    /// let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
+    /// let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     /// l1.set_parent(&l0);
-    /// let tree = LinkTree::<f64>::from_root("tree0", l0);
+    /// let tree = Robot::<f64>::from_root("tree0", l0);
     /// let names = tree.iter().map(|link| link.joint_name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "fixed0");
     /// assert_eq!(names[1], "fixed1");
     /// ```
-    pub fn iter(&self) -> impl Iterator<Item = &LinkNode<T>> {
-        self.contained_links.iter()
+    pub fn iter(&self) -> impl Iterator<Item = &JointNode<T>> {
+        self.contained_joints.iter()
     }
 
     /// Calculate the degree of freedom
@@ -229,18 +229,16 @@ impl<T: Real> LinkTree<T> {
     ///
     /// ```
     /// use k::*;
-    /// let l0 = k::LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
-    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", JointType::Fixed, None)
-    ///     .finalize());
-    /// let l1 = k::LinkNode::new(LinkBuilder::new()
-    ///     .name("link1")
-    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("link_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
-    ///     .finalize());
+    /// let l0 = JointBuilder::new()
+    ///     .joint_type(JointType::Fixed)
+    ///     .finalize()
+    ///     .into();
+    /// let l1 : JointNode<f64> = JointBuilder::new()
+    ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
+    ///     .finalize()
+    ///     .into();
     /// l1.set_parent(&l0);
-    /// let tree = LinkTree::from_root("tree0", l0);
+    /// let tree = Robot::from_root("tree0", l0);
     /// assert_eq!(tree.dof(), 1);
     /// ```
     pub fn dof(&self) -> usize {
@@ -253,53 +251,26 @@ impl<T: Real> LinkTree<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
+    /// let l0 = JointNode::new(JointBuilder::new()
+    ///     .name("fixed")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_fixed", JointType::Fixed, None)
+    ///     .joint_type(JointType::Fixed)
     ///     .finalize());
-    /// let l1 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link1")
+    /// let l1 = JointNode::new(JointBuilder::new()
+    ///     .name("pitch1")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
+    ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = LinkTree::from_root("tree0", l0);
-    /// let j = tree.find_joint("joint_pitch").unwrap();
+    /// let tree = Robot::from_root("tree0", l0);
+    /// let j = tree.find_joint("pitch1").unwrap();
     /// j.set_joint_angle(0.5).unwrap();
     /// assert_eq!(j.joint_angle().unwrap(), 0.5);
     /// ```
-    pub fn find_joint(&self, joint_name: &str) -> Option<&LinkNode<T>> {
+    pub fn find_joint(&self, joint_name: &str) -> Option<&JointNode<T>> {
         self.iter()
-            .find(|link| link.borrow().data.joint_name() == joint_name)
+            .find(|link| link.borrow().data.name == joint_name)
     }
-    /// Find the link by name
-    ///    
-    /// # Examples
-    ///
-    /// ```
-    /// use k::*;
-    ///
-    /// let l0 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link0")
-    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_fixed", JointType::Fixed, None)
-    ///     .finalize());
-    /// let l1 = LinkNode::new(LinkBuilder::new()
-    ///     .name("link1")
-    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint("joint_pitch", JointType::Rotational{axis: Vector3::y_axis()}, None)
-    ///     .finalize());
-    /// l1.set_parent(&l0);
-    /// let tree = LinkTree::from_root("tree0", l0);
-    /// tree.find_link("link1").unwrap().set_joint_angle(0.5).unwrap();
-    /// assert_eq!(tree.find_link("link1").unwrap().joint_angle().unwrap(), 0.5);
-    /// ```
-    pub fn find_link(&self, link_name: &str) -> Option<&LinkNode<T>> {
-        self.iter()
-            .find(|link| link.borrow().data.name == link_name)
-    }
-
     /// Get the angles of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
@@ -368,82 +339,55 @@ impl<T: Real> LinkTree<T> {
             })
             .collect()
     }
-    pub fn link_names(&self) -> Vec<String> {
-        self.iter().map(|link| link.link_name()).collect()
-    }
 }
 
 #[test]
 fn it_works() {
-    use super::link::*;
+    use super::joint::*;
     use super::rctree::Node;
     use na;
 
-    let l0 = LinkBuilder::new()
-        .name("link0")
+    let l0 = JointBuilder::new()
+        .name("j0")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
-        .joint(
-            "j0",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l1 = LinkBuilder::new()
-        .name("link1")
+    let l1 = JointBuilder::new()
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j1",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .name("j1")
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l2 = LinkBuilder::new()
-        .name("link2")
+    let l2 = JointBuilder::new()
+        .name("j2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j2",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l3 = LinkBuilder::new()
-        .name("link3")
+    let l3 = JointBuilder::new()
+        .name("j3")
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
-        .joint(
-            "j3",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l4 = LinkBuilder::new()
-        .name("link4")
+    let l4 = JointBuilder::new()
+        .name("j4")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j4",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l5 = LinkBuilder::new()
-        .name("link5")
+    let l5 = JointBuilder::new()
+        .name("j5")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j5",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
 
     let link0 = Node::new(l0);
@@ -471,7 +415,7 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("angles = {:?}", angles);
 
-    fn get_z(link: &LinkNode<f32>) -> f32 {
+    fn get_z(link: &JointNode<f32>) -> f32 {
         match link.parent_world_transform() {
             Some(iso) => iso.translation.vector.z,
             None => 0.0f32,
@@ -500,49 +444,37 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let arm = LinkTree::from_end("chain1", link3);
+    let arm = Robot::from_end("chain1", link3);
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
 }
 
 #[test]
 fn test_mimic() {
-    use super::link::*;
+    use super::joint::*;
     use super::rctree::Node;
     use na;
 
-    let l0 = LinkBuilder::new()
-        .name("link0")
+    let l0 = JointBuilder::new()
+        .name("j0")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
-        .joint(
-            "j0",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l1 = LinkBuilder::new()
+    let l1 = JointBuilder::new()
         .name("link1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j1",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
-    let l2 = LinkBuilder::new()
+    let l2 = JointBuilder::new()
         .name("link2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint(
-            "j2",
-            JointType::Rotational {
-                axis: na::Vector3::y_axis(),
-            },
-            None,
-        )
+        .joint_type(JointType::Rotational {
+            axis: na::Vector3::y_axis(),
+        })
         .finalize();
 
     let link0 = Node::new(l0);
@@ -551,7 +483,7 @@ fn test_mimic() {
     link1.set_parent(&link0);
     link2.set_parent(&link1);
 
-    let mut arm = LinkTree::from_root("chain1", link0);
+    let mut arm = Robot::from_root("chain1", link0);
     arm.mimics
         .insert(link2.joint_name(), Mimic::new(link1.joint_name(), 2.0, 0.5));
 
