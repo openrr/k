@@ -15,6 +15,7 @@
  */
 use errors::*;
 use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
+use std::cell::RefCell;
 use std::fmt::{self, Display};
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
@@ -167,6 +168,10 @@ pub struct Joint<T: Real> {
     angle: T,
     /// Limits of this joint
     pub limits: Option<Range<T>>,
+    /// local offset transform of joint
+    pub offset: Isometry3<T>,
+    /// cache of world transform
+    world_transform_cache: RefCell<Option<Isometry3<T>>>,
 }
 
 impl<T> Joint<T>
@@ -196,6 +201,8 @@ where
             joint_type: joint_type,
             angle: T::zero(),
             limits: None,
+            offset: Isometry3::identity(),
+            world_transform_cache: RefCell::new(None),
         }
     }
     /// Set the angle of the joint
@@ -240,6 +247,8 @@ where
             }
         }
         self.angle = angle;
+        // TODO: have to reset decendant `world_transform_cache`
+        self.world_transform_cache.replace(None);
         Ok(())
     }
     /// Returns the angle (position)
@@ -265,7 +274,7 @@ where
     /// ```
     ///
     pub fn transform(&self) -> Isometry3<T> {
-        match self.joint_type {
+        let joint_transform = match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => Isometry3::from_parts(
                 Translation3::new(T::zero(), T::zero(), T::zero()),
@@ -275,7 +284,17 @@ where
                 Translation3::from_vector(axis.unwrap() * self.angle),
                 UnitQuaternion::identity(),
             ),
-        }
+        };
+        self.offset * joint_transform
+    }
+    pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
+        self.world_transform_cache.replace(Some(world_transform));
+    }
+    /// Get the result of forward kinematics
+    ///
+    /// The value is updated by `LinkTree::update_transforms`
+    pub fn world_transform(&self) -> Option<Isometry3<T>> {
+        *self.world_transform_cache.borrow()
     }
 }
 

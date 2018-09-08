@@ -15,4 +15,3 @@
  */
 //! Load basic trais of `k`
 pub use ik::InverseKinematicsSolver;
-

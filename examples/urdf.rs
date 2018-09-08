@@ -21,6 +21,7 @@ fn main() {
     // Load urdf file
     let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     println!("robot: {}", robot);
+    println!("robot: {:?}", robot);
 
     // Set initial joint angles
     let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];

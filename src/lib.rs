@@ -30,6 +30,7 @@ extern crate log;
 extern crate nalgebra as na;
 extern crate urdf_rs;
 
+mod element;
 mod errors;
 mod ik;
 mod joints;

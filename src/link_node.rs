@@ -16,6 +16,7 @@
 use na::{Isometry3, Real};
 use std::fmt::{self, Display};
 
+use element::*;
 use errors::*;
 use joints::*;
 use link::*;
@@ -89,7 +90,7 @@ where
     }
     /// Set the offset transform of the link
     pub fn set_offset(&self, trans: Isometry3<T>) {
-        self.borrow_mut().data.offset = trans;
+        self.borrow_mut().data.joint.offset = trans;
     }
     /// Set the angle of the joint
     ///
@@ -149,6 +150,12 @@ where
     /// // _poses[1] is as same as l1.world_transform()
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         self.borrow().data.world_transform()
+    }
+    pub fn add_element(&mut self, elm: Element<T>) {
+        self.borrow_mut().data.elements.push(elm)
+    }
+    pub fn elements(&self) -> Vec<Element<T>> {
+        self.borrow().data.elements.clone()
     }
 }
 

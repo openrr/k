@@ -14,9 +14,9 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::RefCell;
 use std::fmt::{self, Display};
 
+use element::*;
 use errors::*;
 use joints::*;
 
@@ -27,10 +27,8 @@ pub struct Link<T: Real> {
     pub name: String,
     /// joint instance
     pub joint: Joint<T>,
-    /// local offset transform of joint
-    pub offset: Isometry3<T>,
-    /// cache of world transform
-    world_transform_cache: RefCell<Option<Isometry3<T>>>,
+    /// Inertial, Visual or Collision
+    pub elements: Vec<Element<T>>,
 }
 
 impl<T> Link<T>
@@ -44,8 +42,7 @@ where
         Link {
             name: "".to_string(),
             joint: joint,
-            offset: Isometry3::identity(),
-            world_transform_cache: RefCell::new(None),
+            elements: Vec::new(),
         }
     }
     /// Return the name of the joint
@@ -57,14 +54,12 @@ where
     /// This is a local transform. It has nothing to do with other
     /// joint and links.
     pub fn transform(&self) -> Isometry3<T> {
-        self.offset * self.joint.transform()
+        self.joint.transform()
     }
     /// Set the angle of the joint
     ///
     /// If angle is out of limit, it returns Err.
     pub fn set_joint_angle(&mut self, angle: T) -> Result<(), JointError> {
-        self.world_transform_cache.replace(None);
-        // TODO: have to reset decendant `world_transform_cache`
         self.joint.set_angle(angle)
     }
     /// Get the angle of the joint. If it is fixed, it returns None.
@@ -79,19 +74,19 @@ where
         }
     }
     pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
-        self.world_transform_cache.replace(Some(world_transform));
+        self.joint.set_world_transform(world_transform)
     }
     /// Get the result of forward kinematics
     ///
     /// The value is updated by `LinkTree::update_transforms`
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
-        *self.world_transform_cache.borrow()
+        self.joint.world_transform()
     }
 }
 
 impl<T: Real> Display for Link<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "▶[{} ({})]", self.name, self.joint)
+        write!(f, "▶[({}) {}]", self.joint, self.name)
     }
 }
 
@@ -168,11 +163,13 @@ where
     }
     /// Create `Link` instance
     pub fn finalize(self) -> Link<T> {
+        let mut joint = self.joint;
+        let offset = self.offset;
+        joint.offset = offset;
         Link {
             name: self.name,
-            joint: self.joint,
-            offset: self.offset,
-            world_transform_cache: RefCell::new(None),
+            joint,
+            elements: vec![],
         }
     }
 }
