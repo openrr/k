@@ -146,13 +146,13 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 
 fn main() {
     let root = create_joint_with_link_array();
-    let arm = k::Robot::from_root("arm", root);
+    let arm = k::Chain::from_root(root);
 
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
     let mut cubes = create_cubes(&mut window);
     let angles = vec![0.2, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
-    arm.set_joint_angles(&angles).unwrap();
+    arm.set_joint_positions(&angles).unwrap();
     let base_rot = Isometry3::from_parts(
         Translation3::new(0.0, 0.0, -0.6),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
@@ -183,7 +183,7 @@ fn main() {
                     match code {
                         Key::Z => {
                             // reset
-                            arm.set_joint_angles(&angles).unwrap();
+                            arm.set_joint_positions(&angles).unwrap();
                             arm.update_transforms();
                             target = end.world_transform().unwrap().clone();
                         }

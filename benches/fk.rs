@@ -28,7 +28,7 @@ test bench_rctree_ik ... bench:      20,425 ns/iter (+/- 139)
 ```
 */
 
-fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::Range<T>>>) -> Vec<T>
+fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
 where
     T: Real,
 {
@@ -43,22 +43,22 @@ where
 
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
-    let robot = k::Robot::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = robot.joint_limits();
+    let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let limits = chain.joint_limits();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
-        robot.set_joint_angles(&angles).unwrap();
-        let _trans = robot.update_transforms();
+        chain.set_joint_angles(&angles).unwrap();
+        let _trans = chain.update_transforms();
         assert_eq!(_trans.len(), 13);
     });
 }
 
 #[bench]
 fn bench_rctree_set_joints(b: &mut test::Bencher) {
-    let robot = k::Robot::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = robot.joint_limits();
+    let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let limits = chain.joint_limits();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
-        robot.set_joint_angles(&angles).unwrap();
+        chain.set_joint_angles(&angles).unwrap();
     });
 }

@@ -21,7 +21,7 @@
 //! 1. Inverse kinematics
 //! 1. URDF Loader
 //!
-//! See `Robot` as the top level interface.
+//! See `Chain` as the top level interface.
 //!
 #[macro_use]
 extern crate failure;
@@ -30,22 +30,22 @@ extern crate log;
 extern crate nalgebra as na;
 extern crate urdf_rs;
 
+mod chain;
 mod errors;
 mod ik;
-mod joint;
 mod joint_node;
-mod robot;
 
+pub mod joint;
 pub mod math;
 pub mod prelude;
 pub mod rctree;
 pub mod urdf;
 
+pub use self::chain::*;
 pub use self::errors::*;
 pub use self::ik::*;
-pub use self::joint::*;
+pub use self::joint::{Joint, JointBuilder, JointType};
 pub use self::joint_node::*;
-pub use self::robot::*;
 
 // re-export
 pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};

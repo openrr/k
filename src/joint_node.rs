@@ -20,9 +20,9 @@ use errors::*;
 use joint::*;
 use rctree::*;
 
-/// Parts of `Robot`
+/// Parts of `Chain`
 ///
-/// It contains joint, link (transform), and parent/children.
+/// It contains joint, joint (transform), and parent/children.
 pub type JointNode<T> = Node<Joint<T>>;
 
 impl<T> JointNode<T>
@@ -37,14 +37,14 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointNode::new(Joint::<f64>::new("link_pitch", JointType::Fixed));
-    /// assert_eq!(l0.joint_name(), "link_pitch");
+    /// let j0 = JointNode::new(Joint::<f64>::new("joint_pitch", JointType::Fixed));
+    /// assert_eq!(j0.name(), "joint_pitch");
     /// ```
-    pub fn joint_name(&self) -> String {
+    pub fn name(&self) -> String {
         self.borrow().data.name.to_owned()
     }
     /// Clone the joint limits
-    pub fn joint_limits(&self) -> Option<Range<T>> {
+    pub fn limits(&self) -> Option<Range<T>> {
         self.borrow().data.limits.clone()
     }
     /// Updates and returns the local transform
@@ -59,31 +59,31 @@ where
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .finalize());
     /// assert_eq!(l0.transform().translation.vector.z, 1.0);
-    /// l0.set_joint_angle(0.6).unwrap();
+    /// l0.set_position(0.6).unwrap();
     /// assert_eq!(l0.transform().translation.vector.z, 1.6);
     pub fn transform(&self) -> Isometry3<T> {
         self.borrow().data.transform()
     }
-    /// Set the offset transform of the link
+    /// Set the offset transform of the joint
     pub fn set_offset(&self, trans: Isometry3<T>) {
         self.borrow_mut().data.offset = trans;
     }
-    /// Set the angle of the joint
+    /// Set the position of the joint
     ///
-    /// If angle is out of limit, it returns Err.
-    pub fn set_joint_angle(&self, angle: T) -> Result<(), JointError> {
-        self.borrow_mut().data.set_angle(angle)
+    /// If position is out of limit, it returns Err.
+    pub fn set_position(&self, position: T) -> Result<(), JointError> {
+        self.borrow_mut().data.set_position(position)
     }
-    /// Get the angle of the joint. If it is fixed, it returns None.
-    pub fn joint_angle(&self) -> Option<T> {
-        self.borrow().data.angle()
+    /// Get the position of the joint. If it is fixed, it returns None.
+    pub fn position(&self) -> Option<T> {
+        self.borrow().data.position()
     }
     /// Copy the type of the joint
     pub fn joint_type(&self) -> JointType<T> {
         self.borrow().data.joint_type
     }
-    /// Returns if it has a joint angle. similar to `is_not_fixed()`
-    pub fn has_joint_angle(&self) -> bool {
+    /// Returns if it has a joint position. similar to `is_not_fixed()`
+    pub fn has_position(&self) -> bool {
         match self.borrow().data.joint_type {
             JointType::Fixed => false,
             _ => true,
@@ -100,7 +100,7 @@ where
         }
     }
     /// Get the calculated world transform.
-    /// Call `Robot::update_transforms()` before using this method.
+    /// Call `Chain::update_transforms()` before using this method.
     ///
     ///  # Examples
     ///
@@ -117,8 +117,8 @@ where
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = Robot::<f64>::from_root("tree0", l0);
-    /// tree.set_joint_angles(&vec![3.141592 * 0.5, 0.1]).unwrap();
+    /// let tree = Chain::<f64>::from_root(l0);
+    /// tree.set_joint_positions(&vec![3.141592 * 0.5, 0.1]).unwrap();
     /// assert!(l1.world_transform().is_none());
     /// assert!(l1.world_transform().is_none());
     /// let _poses = tree.update_transforms();
@@ -142,7 +142,7 @@ impl<T> From<Joint<T>> for JointNode<T>
 where
     T: Real,
 {
-    fn from(link: Joint<T>) -> Self {
-        Self::new(link)
+    fn from(joint: Joint<T>) -> Self {
+        Self::new(joint)
     }
 }

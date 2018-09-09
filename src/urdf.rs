@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-//! Load [URDF](http://wiki.ros.org/urdf) format and create `k::Robot`
+//! Load [URDF](http://wiki.ros.org/urdf) format and create `k::Chain`
 //!
 use urdf_rs;
 
@@ -21,12 +21,12 @@ use na::{self, Isometry3, Real};
 use std::collections::HashMap;
 use std::path::Path;
 
+use chain::*;
 use joint::*;
 use joint_node::*;
 use rctree::*;
-use robot::*;
 
-pub const ROOT_JOINT_NAME : &str = "root";
+pub const ROOT_JOINT_NAME: &str = "root";
 
 pub fn isometry_from<T: Real>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
     Isometry3::from_parts(
@@ -111,16 +111,19 @@ where
     }
 }
 
-impl<'a, T> From<&'a urdf_rs::Robot> for Robot<T>
+impl<'a, T> From<&'a urdf_rs::Robot> for Chain<T>
 where
     T: na::Real,
 {
-    fn from(robot: &urdf_rs::Robot) -> Self {
+    fn from(chain: &urdf_rs::Robot) -> Self {
         let mut ref_nodes = Vec::new();
         let mut child_link_name_to_node = HashMap::new();
         let mut parent_link_name_to_node = HashMap::<&String, Vec<JointNode<T>>>::new();
-        let root_node = JointBuilder::<T>::new().name(ROOT_JOINT_NAME).finalize().into();
-        for j in &robot.joints {
+        let root_node = JointBuilder::<T>::new()
+            .name(ROOT_JOINT_NAME)
+            .finalize()
+            .into();
+        for j in &chain.joints {
             let node = Node::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
             if parent_link_name_to_node.get(&j.parent.link).is_some() {
@@ -133,7 +136,7 @@ where
             }
             ref_nodes.push(node);
         }
-        let mimics = robot
+        let mimics = chain
             .joints
             .iter()
             .filter_map(|j| {
@@ -146,7 +149,7 @@ where
             })
             .collect::<Vec<_>>();
 
-        for l in &robot.links {
+        for l in &chain.links {
             info!("link={}", l.name);
             if let Some(mut parent_node) = child_link_name_to_node.get_mut(&l.name) {
                 if let Some(child_nodes) = parent_link_name_to_node.get(&l.name) {
@@ -169,7 +172,7 @@ where
             rjn.set_parent(&root_node);
         }
         // create root node..
-        let mut tree = Robot::from_root(&robot.name, root_node);
+        let mut tree = Chain::from_root(root_node);
         // add mimics
         for (name, mimic) in mimics {
             tree.mimics.insert(name, mimic);
@@ -178,16 +181,16 @@ where
     }
 }
 
-impl<T> From<urdf_rs::Robot> for Robot<T>
+impl<T> From<urdf_rs::Robot> for Chain<T>
 where
     T: na::Real,
 {
-    fn from(robot: urdf_rs::Robot) -> Self {
-        Self::from(&robot)
+    fn from(chain: urdf_rs::Robot) -> Self {
+        Self::from(&chain)
     }
 }
 
-impl<T> Robot<T>
+impl<T> Chain<T>
 where
     T: na::Real,
 {
@@ -199,24 +202,52 @@ where
     }
 }
 
+/// Useful function to deal about 'Links' of URDF
+///
+/// `k` deals only `Joint`s of URDF. But links is connected
+/// to joint always, it is easily find which joint is the
+/// parent of the link.
+///
+/// # Examples
+///
+/// ```
+/// extern crate urdf_rs;
+/// extern crate k;
+///
+/// let urdf_chain = urdf_rs::read_file("urdf/sample.urdf").unwrap();
+/// let map = k::urdf::link_to_joint_map(&urdf_chain);
+/// assert_eq!(map.get("root_body").unwrap(), k::urdf::ROOT_JOINT_NAME);
+/// assert_eq!(map.get("r_wrist2").unwrap(), "r_wrist_pitch");
+/// assert!(map.get("no_exist_link").is_none());
+/// ```
+pub fn link_to_joint_map(urdf_chain: &urdf_rs::Robot) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    for j in &urdf_chain.joints {
+        map.insert(j.child.link.to_owned(), j.name.to_owned());
+    }
+    for l in &urdf_chain.links {
+        if map.get(&l.name).is_none() {
+            map.insert(l.name.to_owned(), ROOT_JOINT_NAME.to_owned());
+        }
+    }
+    map
+}
+
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
     assert_eq!(robo.name, "robo");
     assert_eq!(robo.links.len(), 1 + 6 + 6);
 
-    let tree = Robot::<f32>::from(&robo);
+    let tree = Chain::<f32>::from(&robo);
     assert_eq!(tree.iter().count(), 13);
 }
 
 #[test]
 fn test_tree_from_file() {
-    let tree = Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let tree = Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
-    let names = tree
-        .iter()
-        .map(|link| link.joint_name())
-        .collect::<Vec<_>>();
+    let names = tree.iter().map(|joint| joint.name()).collect::<Vec<_>>();
     assert_eq!(names.len(), 13);
     println!("{}", names[0]);
     assert_eq!(names[0], "root");

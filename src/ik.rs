@@ -15,10 +15,10 @@
  */
 use na::{self, DMatrix, Isometry3, Real, Vector6};
 
+use chain::*;
 use errors::*;
 use joint_node::JointNode;
 use math::*;
-use robot::*;
 
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);
@@ -86,20 +86,20 @@ where
     }
     fn solve_one_loop(
         &self,
-        arm: &Robot<T>,
+        arm: &Chain<T>,
         target_link: &JointNode<T>,
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError> {
-        let orig_angles = arm.joint_angles();
-        let dof = orig_angles.len();
+        let orig_positions = arm.joint_positions();
+        let dof = orig_positions.len();
         arm.update_transforms();
         let orig_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
         let target_pose6 = calc_vector6_pose(target_pose);
         let mut jacobi_vec = Vec::new();
         for i in 0..dof {
-            let mut small_diff_angles_i = orig_angles.clone();
-            small_diff_angles_i[i] += self.jacobian_move_epsilon;
-            arm.set_joint_angles(&small_diff_angles_i)?;
+            let mut small_diff_positions_i = orig_positions.clone();
+            small_diff_positions_i[i] += self.jacobian_move_epsilon;
+            arm.set_joint_positions(&small_diff_positions_i)?;
             arm.update_transforms();
             let small_diff_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
@@ -115,12 +115,12 @@ where
         } else {
             jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?
         };
-        let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
-        let mut angles_vec = orig_angles.clone();
+        let new_positions_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
+        let mut positions_vec = orig_positions.clone();
         for i in 0..dof {
-            angles_vec[i] += new_angles_diff[i];
+            positions_vec[i] += new_positions_diff[i];
         }
-        arm.set_joint_angles(&angles_vec)?;
+        arm.set_joint_positions(&positions_vec)?;
         arm.update_transforms();
         let new_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
         Ok((target_pose6 - new_pose6).norm())
@@ -131,24 +131,24 @@ impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
 {
-    /// Set joint angles of `arm` to reach the `target_pose`
+    /// Set joint positions of `arm` to reach the `target_pose`
     ///
     /// # Examples
     ///
     /// ```
     /// use k::prelude::*;
     ///
-    /// let robot = k::Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-    /// // Create sub-`Robot` to make it easy to use inverse kinematics
+    /// let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    /// // Create sub-`Chain` to make it easy to use inverse kinematics
     /// let target_joint_name = "r_wrist_pitch";
-    /// let r_wrist = robot.find_joint(target_joint_name).unwrap().clone();
-    /// let mut arm = k::Robot::from_end("r-arm", r_wrist.clone());
+    /// let r_wrist = chain.find_joint(target_joint_name).unwrap();
+    /// let mut arm = k::Chain::from_end(r_wrist);
     /// println!("arm: {}", arm);
     ///
-    /// // Set joint angles of `arm`
-    /// let angles = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
-    /// arm.set_joint_angles(&angles).unwrap();
-    /// println!("initial angles={:?}", arm.joint_angles());
+    /// // Set joint positions of `arm`
+    /// let positions = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
+    /// arm.set_joint_positions(&positions).unwrap();
+    /// println!("initial positions={:?}", arm.joint_positions());
     ///
     /// // Get the transform of the end of the manipulator (forward kinematics)
     /// let mut target = arm.update_transforms().last().unwrap().clone();
@@ -160,19 +160,19 @@ where
     /// // Create IK solver with default settings
     /// let solver = k::JacobianIKSolverBuilder::new().finalize();
     ///
-    /// // solve and move the manipulator angles
+    /// // solve and move the manipulator positions
     /// solver.solve(&r_wrist, &target).unwrap();
-    /// println!("solved angles={:?}", arm.joint_angles());
+    /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
     fn solve(&self, target_link: &JointNode<T>, target_pose: &Isometry3<T>) -> Result<T, IKError> {
-        let arm = Robot::from_end("temporal-arm", target_link);
+        let arm = Chain::from_end(target_link);
 
-        let orig_angles = arm.joint_angles();
-        if orig_angles.len() < 6 {
+        let orig_positions = arm.joint_positions();
+        if orig_positions.len() < 6 {
             return Err(IKError::PreconditionError {
                 error: format!(
                     "support only 6 or more DoF now, input Dof={}",
-                    orig_angles.len()
+                    orig_positions.len()
                 ),
             });
         }
@@ -184,7 +184,7 @@ where
             }
             if let Some(last) = last_target_distance {
                 if last < target_distance {
-                    arm.set_joint_angles(&orig_angles)?;
+                    arm.set_joint_positions(&orig_positions)?;
                     return Err(IKError::NotConverged {
                         error: format!("jacobian did not work"),
                     });
@@ -192,7 +192,7 @@ where
             }
             last_target_distance = Some(target_distance);
         }
-        arm.set_joint_angles(&orig_angles)?;
+        arm.set_joint_positions(&orig_positions)?;
         Err(IKError::NotConverged {
             error: format!(
                 "iteration has not converged: tried {} timed",

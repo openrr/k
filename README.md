@@ -43,20 +43,20 @@ use k::prelude::*;
 
 fn main() {
     // Load urdf file
-    let robot = k::Robot::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-    println!("robot: {}", robot);
+    let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    println!("chain: {}", chain);
 
     // Set initial joint angles
     let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];
 
-    robot.set_joint_angles(&angles).unwrap();
-    println!("initial angles={:?}", robot.joint_angles());
+    chain.set_joint_angles(&angles).unwrap();
+    println!("initial angles={:?}", chain.joint_angles());
 
     let target_link_name = "l_wrist2";
-    let target_link = robot.find_link("l_wrist2").unwrap();
+    let target_link = chain.find_link("l_wrist2").unwrap();
 
     // Get the transform of the end of the manipulator (forward kinematics)
-    robot.update_transforms();
+    chain.update_transforms();
     let mut target = target_link.world_transform().unwrap();
 
     println!("initial target pos = {}", target.translation);
@@ -67,10 +67,10 @@ fn main() {
     let solver = k::JacobianIKSolverBuilder::new().finalize();
 
     // solve and move the manipulator angles
-    solver.solve(&robot, target_link_name, &target).unwrap();
-    println!("solved angles={:?}", robot.joint_angles());
+    solver.solve(&chain, target_link_name, &target).unwrap();
+    println!("solved angles={:?}", chain.joint_angles());
 
-    // robot.update_transforms();
+    // chain.update_transforms();
     let solved_pose = target_link.world_transform().unwrap();
     println!("solved target pos = {}", solved_pose.translation);
 }

@@ -6,7 +6,7 @@ mod tests {
     use super::*;
     use k::prelude::*;
     use na::{Translation3, Vector3};
-    pub fn create_joint_with_link_array6() -> (k::Robot<f64>, k::JointNode<f64>) {
+    pub fn create_joint_with_link_array6() -> (k::Chain<f64>, k::JointNode<f64>) {
         let l0: k::JointNode<f64> = k::JointBuilder::new()
             .name("shoulder_pitch")
             .joint_type(k::JointType::Rotational {
@@ -59,10 +59,10 @@ mod tests {
         l3.set_parent(&l2);
         l4.set_parent(&l3);
         l5.set_parent(&l4);
-        (k::Robot::from_end("arm6", &l5), l5)
+        (k::Chain::from_end(&l5), l5)
     }
 
-    pub fn create_joint_with_link_array7() -> (k::Robot<f32>, k::JointNode<f32>) {
+    pub fn create_joint_with_link_array7() -> (k::Chain<f32>, k::JointNode<f32>) {
         let l0: k::JointNode<f32> = k::JointBuilder::new()
             .name("shoulder_pitch")
             .joint_type(k::JointType::Rotational {
@@ -124,21 +124,19 @@ mod tests {
         l4.set_parent(&l3);
         l5.set_parent(&l4);
         l6.set_parent(&l5);
-        (k::Robot::from_root("arm", l0), l6)
+        (k::Chain::from_root(l0), l6)
     }
 
     #[test]
     pub fn ik_fk7() {
         let (arm, end) = create_joint_with_link_array7();
         let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
-        arm.set_joint_angles(&angles).unwrap();
+        arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
         let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 100);
-        solver
-            .solve(&end, &init_pose)
-            .unwrap();
-        let end_angles = arm.joint_angles();
+        solver.solve(&end, &init_pose).unwrap();
+        let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
         }
@@ -148,17 +146,15 @@ mod tests {
     pub fn ik_fk6() {
         let (arm, end) = create_joint_with_link_array6();
         let angles = vec![0.8, 0.2, 0.0, -1.2, 0.0, 0.1];
-        arm.set_joint_angles(&angles).unwrap();
+        arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
         let solver = k::JacobianIKSolverBuilder::new().finalize();
         // set different angles
-        arm.set_joint_angles(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
+        arm.set_joint_positions(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
             .unwrap();
-        solver
-            .solve(&end, &init_pose)
-            .unwrap();
-        let end_angles = arm.joint_angles();
+        solver.solve(&end, &init_pose).unwrap();
+        let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
         }

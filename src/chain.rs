@@ -31,13 +31,13 @@ use joint_node::JointNode;
 ///
 /// // Create JointNode using `into()`
 /// let l0 = JointBuilder::new()
-///     .name("link_pitch0")
+///     .name("joint_pitch0")
 ///     .translation(Translation3::new(0.0, 0.0, 0.1))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .finalize()
 ///     .into();
 /// let l1 : JointNode<f64> = JointBuilder::new()
-///     .name("link_pitch1")
+///     .name("joint_pitch1")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .finalize()
@@ -53,16 +53,16 @@ use joint_node::JointNode;
 /// l1.set_parent(&l0);
 /// l2.set_parent(&l1);
 ///
-/// let mut tree = Robot::from_root("tree0", l0);
+/// let mut tree = Chain::from_root(l0);
 /// assert_eq!(tree.dof(), 2);
 ///
-/// // Get joint angles
-/// let angles = tree.joint_angles();
-/// assert_eq!(angles.len(), 2);
-/// assert_eq!(angles[0], 0.0);
-/// assert_eq!(angles[1], 0.0);
+/// // Get joint positions
+/// let positions = tree.joint_positions();
+/// assert_eq!(positions.len(), 2);
+/// assert_eq!(positions[0], 0.0);
+/// assert_eq!(positions[1], 0.0);
 ///
-/// // Get the initial link transforms
+/// // Get the initial joint transforms
 /// let transforms = tree.update_transforms();
 /// assert_eq!(transforms.len(), 3);
 /// assert_eq!(transforms[0].translation.vector.z, 0.1);
@@ -72,11 +72,11 @@ use joint_node::JointNode;
 ///     println!("before: {}", t);
 /// }
 ///
-/// // Set joint angles
-/// tree.set_joint_angles(&vec![1.0, 2.0]).unwrap();
-/// let angles = tree.joint_angles();
-/// assert_eq!(angles[0], 1.0);
-/// assert_eq!(angles[1], 2.0);
+/// // Set joint positions
+/// tree.set_joint_positions(&vec![1.0, 2.0]).unwrap();
+/// let positions = tree.joint_positions();
+/// assert_eq!(positions[0], 1.0);
+/// assert_eq!(positions[1], 2.0);
 ///
 /// // Get the result of forward kinematics
 /// let transforms = tree.update_transforms();
@@ -86,15 +86,13 @@ use joint_node::JointNode;
 /// }
 /// ```
 #[derive(Debug)]
-pub struct Robot<T: Real> {
-    /// Name of this `Robot`
-    pub name: String,
+pub struct Chain<T: Real> {
     /// Information about mimic joints
     pub mimics: HashMap<String, Mimic<T>>,
     contained_joints: Vec<JointNode<T>>,
 }
 
-impl<T: Real> Robot<T> {
+impl<T: Real> Chain<T> {
     fn fmt_with_indent_level(
         &self,
         node: &JointNode<T>,
@@ -104,7 +102,7 @@ impl<T: Real> Robot<T> {
         if self
             .contained_joints
             .iter()
-            .find(|link| link == &node)
+            .find(|joint| joint == &node)
             .is_some()
         {
             write!(f, "{}{}\n", "    ".repeat(level), node)?;
@@ -115,14 +113,14 @@ impl<T: Real> Robot<T> {
         Ok(())
     }
 }
-impl<T: Real> Display for Robot<T> {
+impl<T: Real> Display for Chain<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 
-impl<T: Real> Robot<T> {
-    /// Create Robot from root link
+impl<T: Real> Chain<T> {
+    /// Create Chain from root joint
     ///
     /// # Examples
     ///
@@ -130,32 +128,31 @@ impl<T: Real> Robot<T> {
     /// use k::*;
     ///
     /// let l0 = JointNode::new(JointBuilder::new()
-    ///     .name("link_pitch")
+    ///     .name("joint_pitch")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
     /// let l1 = JointNode::new(JointBuilder::new()
-    ///     .name("link_pitch")
+    ///     .name("joint_pitch")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = Robot::from_root("tree0", l0);
+    /// let tree = Chain::from_root(l0);
     /// ```
-    pub fn from_root(name: &str, root_link: JointNode<T>) -> Self {
-        let contained_joints = root_link
+    pub fn from_root(root_joint: JointNode<T>) -> Self {
+        let contained_joints = root_joint
             .iter_descendants()
             .map(|ln| ln.clone())
             .collect::<Vec<_>>();
-        Robot {
-            name: name.to_string(),
+        Chain {
             mimics: HashMap::new(),
             contained_joints,
         }
     }
-    /// Create `Robot` from end link
+    /// Create `Chain` from end joint
     ///
-    /// Do not discard root link before create Robot.
+    /// Do not discard root joint before create Chain.
     ///
     /// # Examples
     ///
@@ -172,7 +169,7 @@ impl<T: Real> Robot<T> {
     /// }
     ///
     /// let end = create_end_and_set_parent();
-    /// let tree = Robot::from_end("tree0", end); // panic here!
+    /// let tree = Chain::from_end(&end); // panic here!
     /// ```
     ///
     /// Good case
@@ -180,28 +177,27 @@ impl<T: Real> Robot<T> {
     /// ```
     /// use k::*;
     ///
-    /// fn create_tree_from_end() -> Robot<f64> {
+    /// fn create_tree_from_end() -> Chain<f64> {
     ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
     ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
-    ///   Robot::from_end("tree0", l1) // ok, because root is stored in `Robot`
+    ///   Chain::from_end(&l1) // ok, because root is stored in `Chain`
     /// }
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(name: &str, end_link: &JointNode<T>) -> Self {
-        let mut links = end_link
+    pub fn from_end(end_joint: &JointNode<T>) -> Self {
+        let mut joints = end_joint
             .iter_ancestors()
-            .map(|link| link.clone())
+            .map(|joint| joint.clone())
             .collect::<Vec<_>>();
-        links.reverse();
-        Robot {
-            name: name.to_string(),
+        joints.reverse();
+        Chain {
             mimics: HashMap::new(),
-            contained_joints: links,
+            contained_joints: joints,
         }
     }
-    /// Iterate for all link nodes
+    /// Iterate for all joint nodes
     ///
     /// The order is from parent to children. You can assume that parent is already iterated.
     ///
@@ -213,8 +209,8 @@ impl<T: Real> Robot<T> {
     /// let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
     /// let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     /// l1.set_parent(&l0);
-    /// let tree = Robot::<f64>::from_root("tree0", l0);
-    /// let names = tree.iter().map(|link| link.joint_name()).collect::<Vec<_>>();
+    /// let tree = Chain::<f64>::from_root(l0);
+    /// let names = tree.iter().map(|joint| joint.name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "fixed0");
     /// assert_eq!(names[1], "fixed1");
@@ -238,11 +234,11 @@ impl<T: Real> Robot<T> {
     ///     .finalize()
     ///     .into();
     /// l1.set_parent(&l0);
-    /// let tree = Robot::from_root("tree0", l0);
+    /// let tree = Chain::from_root(l0);
     /// assert_eq!(tree.dof(), 1);
     /// ```
     pub fn dof(&self) -> usize {
-        self.iter().filter(|link| link.has_joint_angle()).count()
+        self.iter().filter(|joint| joint.has_position()).count()
     }
     /// Find the joint by name
     ///    
@@ -262,50 +258,50 @@ impl<T: Real> Robot<T> {
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize());
     /// l1.set_parent(&l0);
-    /// let tree = Robot::from_root("tree0", l0);
+    /// let tree = Chain::from_root(l0);
     /// let j = tree.find_joint("pitch1").unwrap();
-    /// j.set_joint_angle(0.5).unwrap();
-    /// assert_eq!(j.joint_angle().unwrap(), 0.5);
+    /// j.set_position(0.5).unwrap();
+    /// assert_eq!(j.position().unwrap(), 0.5);
     /// ```
     pub fn find_joint(&self, joint_name: &str) -> Option<&JointNode<T>> {
         self.iter()
-            .find(|link| link.borrow().data.name == joint_name)
+            .find(|joint| joint.borrow().data.name == joint_name)
     }
-    /// Get the angles of the joints
+    /// Get the positions of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
-    pub fn joint_angles(&self) -> Vec<T> {
-        self.iter().filter_map(|link| link.joint_angle()).collect()
+    pub fn joint_positions(&self) -> Vec<T> {
+        self.iter().filter_map(|joint| joint.position()).collect()
     }
 
-    /// Set the angles of the joints
+    /// Set the positions of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    pub fn set_joint_angles(&self, angles_vec: &[T]) -> Result<(), JointError> {
-        let dof = self.iter().filter(|link| link.has_joint_angle()).count();
-        if angles_vec.len() != dof {
+    pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), JointError> {
+        let dof = self.iter().filter(|joint| joint.has_position()).count();
+        if positions_vec.len() != dof {
             return Err(JointError::SizeMisMatch {
-                input: angles_vec.len(),
+                input: positions_vec.len(),
                 required: dof,
             });
         }
-        for (mut link, angle) in self
+        for (mut joint, position) in self
             .iter()
-            .filter(|link| link.has_joint_angle())
-            .zip(angles_vec.iter())
+            .filter(|joint| joint.has_position())
+            .zip(positions_vec.iter())
         {
-            link.set_joint_angle(*angle)?;
+            joint.set_position(*position)?;
         }
         for (to, mimic) in &self.mimics {
-            let from_angle = self
+            let from_position = self
                 .find_joint(&mimic.name)
-                .and_then(|link| link.joint_angle())
+                .and_then(|joint| joint.position())
                 .ok_or(JointError::Mimic {
                     from: mimic.name.clone(),
                     to: to.to_owned(),
                 })?;
             match self.find_joint(to) {
-                Some(target) => target.set_joint_angle(mimic.mimic_angle(from_angle))?,
+                Some(target) => target.set_position(mimic.mimic_position(from_position))?,
                 None => {
                     return Err(JointError::Mimic {
                         from: mimic.name.clone(),
@@ -318,23 +314,23 @@ impl<T: Real> Robot<T> {
     }
     pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.iter()
-            .filter(|link| link.has_joint_angle())
-            .map(|link| link.joint_limits())
+            .filter(|joint| joint.has_position())
+            .map(|joint| joint.limits())
             .collect()
     }
     pub fn joint_names(&self) -> Vec<String> {
         self.iter()
-            .filter(|link| link.has_joint_angle())
-            .map(|link| link.joint_name())
+            .filter(|joint| joint.has_position())
+            .map(|joint| joint.name())
             .collect()
     }
 
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
-            .map(|link| {
-                let parent_transform = link.parent_world_transform().expect("cache must exist");
-                let trans = parent_transform * link.transform();
-                link.borrow_mut().data.set_world_transform(trans);
+            .map(|joint| {
+                let parent_transform = joint.parent_world_transform().expect("cache must exist");
+                let trans = parent_transform * joint.transform();
+                joint.borrow_mut().data.set_world_transform(trans);
                 trans
             })
             .collect()
@@ -390,63 +386,63 @@ fn it_works() {
         })
         .finalize();
 
-    let link0 = Node::new(l0);
-    let link1 = Node::new(l1);
-    let link2 = Node::new(l2);
-    let link3 = Node::new(l3);
-    let link4 = Node::new(l4);
-    let link5 = Node::new(l5);
-    link1.set_parent(&link0);
-    link2.set_parent(&link1);
-    link3.set_parent(&link2);
-    link4.set_parent(&link0);
-    link5.set_parent(&link4);
+    let joint0 = Node::new(l0);
+    let joint1 = Node::new(l1);
+    let joint2 = Node::new(l2);
+    let joint3 = Node::new(l3);
+    let joint4 = Node::new(l4);
+    let joint5 = Node::new(l5);
+    joint1.set_parent(&joint0);
+    joint2.set_parent(&joint1);
+    joint3.set_parent(&joint2);
+    joint4.set_parent(&joint0);
+    joint5.set_parent(&joint4);
 
-    let names = link0
+    let names = joint0
         .iter_descendants()
-        .map(|link| link.joint_name())
+        .map(|joint| joint.name())
         .collect::<Vec<_>>();
-    println!("{}", link0);
+    println!("{}", joint0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
-    let angles = link0
+    let positions = joint0
         .iter_descendants()
-        .map(|link| link.joint_angle())
+        .map(|joint| joint.position())
         .collect::<Vec<_>>();
-    println!("angles = {:?}", angles);
+    println!("positions = {:?}", positions);
 
-    fn get_z(link: &JointNode<f32>) -> f32 {
-        match link.parent_world_transform() {
+    fn get_z(joint: &JointNode<f32>) -> f32 {
+        match joint.parent_world_transform() {
             Some(iso) => iso.translation.vector.z,
             None => 0.0f32,
         }
     }
 
-    let poses = link0
+    let poses = joint0
         .iter_descendants()
-        .map(|link| get_z(&link))
+        .map(|joint| get_z(&joint))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let _ = link0
+    let _ = joint0
         .iter_ancestors()
-        .map(|link| link.set_joint_angle(-0.5))
+        .map(|joint| joint.set_position(-0.5))
         .collect::<Vec<_>>();
-    let angles = link0
+    let positions = joint0
         .iter_descendants()
-        .map(|link| link.joint_angle())
+        .map(|joint| joint.position())
         .collect::<Vec<_>>();
-    println!("angles = {:?}", angles);
+    println!("positions = {:?}", positions);
 
-    let poses = link0
+    let poses = joint0
         .iter_descendants()
-        .map(|link| get_z(&link))
+        .map(|joint| get_z(&joint))
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let arm = Robot::from_end("chain1", &link3);
-    assert_eq!(arm.joint_angles().len(), 4);
-    println!("{:?}", arm.joint_angles());
+    let arm = Chain::from_end(&joint3);
+    assert_eq!(arm.joint_positions().len(), 4);
+    println!("{:?}", arm.joint_positions());
 }
 
 #[test]
@@ -463,36 +459,36 @@ fn test_mimic() {
         })
         .finalize();
     let l1 = JointBuilder::new()
-        .name("link1")
+        .name("joint1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .finalize();
     let l2 = JointBuilder::new()
-        .name("link2")
+        .name("joint2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .finalize();
 
-    let link0 = Node::new(l0);
-    let link1 = Node::new(l1);
-    let link2 = Node::new(l2);
-    link1.set_parent(&link0);
-    link2.set_parent(&link1);
+    let joint0 = Node::new(l0);
+    let joint1 = Node::new(l1);
+    let joint2 = Node::new(l2);
+    joint1.set_parent(&joint0);
+    joint2.set_parent(&joint1);
 
-    let mut arm = Robot::from_root("chain1", link0);
+    let mut arm = Chain::from_root(joint0);
     arm.mimics
-        .insert(link2.joint_name(), Mimic::new(link1.joint_name(), 2.0, 0.5));
+        .insert(joint2.name(), Mimic::new(joint1.name(), 2.0, 0.5));
 
-    assert_eq!(arm.joint_angles().len(), 3);
-    println!("{:?}", arm.joint_angles());
-    let angles = vec![0.1, 0.2, 0.3];
-    arm.set_joint_angles(&angles).unwrap();
-    let angles = arm.joint_angles();
-    assert!(angles[0] == 0.1);
-    assert!(angles[1] == 0.2);
-    assert!(angles[2] == 0.9);
+    assert_eq!(arm.joint_positions().len(), 3);
+    println!("{:?}", arm.joint_positions());
+    let positions = vec![0.1, 0.2, 0.3];
+    arm.set_joint_positions(&positions).unwrap();
+    let positions = arm.joint_positions();
+    assert!(positions[0] == 0.1);
+    assert!(positions[1] == 0.2);
+    assert!(positions[2] == 0.9);
 }

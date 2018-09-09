@@ -44,6 +44,6 @@ fn main() {
     l2.set_parent(&l1);
     l3.set_parent(&l0);
 
-    let tree = k::Robot::from_root("tree0", l0);
+    let tree = k::Chain::from_root(l0);
     println!("{}", tree);
 }
