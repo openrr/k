@@ -292,24 +292,6 @@ impl<T: Real> Chain<T> {
         {
             joint.set_position(*position)?;
         }
-        for (to, mimic) in &self.mimics {
-            let from_position = self
-                .find_joint(&mimic.name)
-                .and_then(|joint| joint.position())
-                .ok_or(JointError::Mimic {
-                    from: mimic.name.clone(),
-                    to: to.to_owned(),
-                })?;
-            match self.find_joint(to) {
-                Some(target) => target.set_position(mimic.mimic_position(from_position))?,
-                None => {
-                    return Err(JointError::Mimic {
-                        from: mimic.name.clone(),
-                        to: to.to_owned(),
-                    })
-                }
-            }
-        }
         Ok(())
     }
     pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
@@ -478,17 +460,16 @@ fn test_mimic() {
     let joint2 = Node::new(l2);
     joint1.set_parent(&joint0);
     joint2.set_parent(&joint1);
+    joint2.set_mimic_parent(&joint1, Mimic::new(2.0, 0.5));
 
-    let mut arm = Chain::from_root(joint0);
-    arm.mimics
-        .insert(joint2.name(), Mimic::new(joint1.name(), 2.0, 0.5));
+    let arm = Chain::from_root(joint0);
 
     assert_eq!(arm.joint_positions().len(), 3);
     println!("{:?}", arm.joint_positions());
     let positions = vec![0.1, 0.2, 0.3];
     arm.set_joint_positions(&positions).unwrap();
     let positions = arm.joint_positions();
-    assert!(positions[0] == 0.1);
-    assert!(positions[1] == 0.2);
-    assert!(positions[2] == 0.9);
+    assert_eq!(positions[0], 0.1);
+    assert_eq!(positions[1], 0.2);
+    assert_eq!(positions[2], 0.9);
 }

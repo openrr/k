@@ -17,77 +17,89 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::{Rc, Weak};
 
-type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
+type WeakNode<T, K> = Weak<RefCell<NodeImpl<T, K>>>;
 
 #[derive(Debug, Clone)]
 /// Generic Node for tree struct
-pub struct NodeImpl<T> {
-    pub parent: Option<WeakNode<T>>,
-    pub children: Vec<Node<T>>,
+pub struct NodeImpl<T, K> {
+    pub parent: Option<WeakNode<T, K>>,
+    pub children: Vec<Node<T, K>>,
     pub data: T,
+    pub sub_parent: Option<WeakNode<T, K>>,
+    pub sub_children: Vec<Node<T, K>>,
+    pub sub_data: Option<K>,
 }
 
 #[derive(Debug)]
 /// Graph Node, which has a parent and children
-pub struct Node<T>(Rc<RefCell<NodeImpl<T>>>);
+pub struct Node<T, K>(Rc<RefCell<NodeImpl<T, K>>>);
 
-impl<T> Node<T> {
+impl<T, K> Node<T, K> {
     pub fn new(obj: T) -> Self {
-        Node::<T>(Rc::new(RefCell::new(NodeImpl {
+        Node::<T, K>(Rc::new(RefCell::new(NodeImpl {
             parent: None,
             children: Vec::new(),
             data: obj,
+            sub_parent: None,
+            sub_children: Vec::new(),
+            sub_data: None,
         })))
     }
-    pub fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T>> {
+    pub fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T, K>> {
         self.0.borrow()
     }
-    pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T>> {
+    pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T, K>> {
         self.0.borrow_mut()
     }
 
     /// iter from the end to root, it contains nodes[id] itsself
-    pub fn iter_ancestors(&self) -> Ancestors<T> {
+    pub fn iter_ancestors(&self) -> Ancestors<T, K> {
         Ancestors {
             parent: Some(self.clone()),
         }
     }
     /// iter to the end, it contains nodes[id] itsself
-    pub fn iter_descendants(&self) -> Descendants<T> {
+    pub fn iter_descendants(&self) -> Descendants<T, K> {
         Descendants {
             stack: vec![self.clone()],
         }
     }
 
     /// Set parent and child relations at same time
-    pub fn set_parent(&self, parent: &Node<T>) {
+    pub fn set_parent(&self, parent: &Node<T, K>) {
         self.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
         parent.borrow_mut().children.push(self.clone());
     }
-}
 
-impl<T> ::std::clone::Clone for Node<T> {
-    fn clone(&self) -> Self {
-        Node::<T>(self.0.clone())
+    /// Set mimic parent
+    pub fn set_sub_parent(&self, parent: &Node<T, K>) {
+        self.borrow_mut().sub_parent = Some(Rc::downgrade(&parent.0));
+        parent.borrow_mut().sub_children.push(self.clone());
     }
 }
 
-impl<T> PartialEq for Node<T> {
-    fn eq(&self, other: &Node<T>) -> bool {
-        &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
+impl<T, K> ::std::clone::Clone for Node<T, K> {
+    fn clone(&self) -> Self {
+        Node::<T, K>(self.0.clone())
+    }
+}
+
+impl<T, K> PartialEq for Node<T, K> {
+    fn eq(&self, other: &Node<T, K>) -> bool {
+        &*self.0 as *const RefCell<NodeImpl<T, K>> == &*other.0 as *const RefCell<NodeImpl<T, K>>
     }
 }
 
 #[derive(Debug)]
 /// Iterator for parents
-pub struct Ancestors<T> {
-    parent: Option<Node<T>>,
+pub struct Ancestors<T, K> {
+    parent: Option<Node<T, K>>,
 }
 
-impl<T> Iterator for Ancestors<T> {
-    type Item = Node<T>;
+impl<T, K> Iterator for Ancestors<T, K> {
+    type Item = Node<T, K>;
 
-    fn next(&mut self) -> Option<Node<T>> {
+    fn next(&mut self) -> Option<Node<T, K>> {
         if self.parent.is_none() {
             return None;
         }
@@ -104,12 +116,12 @@ impl<T> Iterator for Ancestors<T> {
 
 #[derive(Debug)]
 /// Iterator for children
-pub struct Descendants<T> {
-    stack: Vec<Node<T>>,
+pub struct Descendants<T, K> {
+    stack: Vec<Node<T, K>>,
 }
 
-impl<T> Iterator for Descendants<T> {
-    type Item = Node<T>;
+impl<T, K> Iterator for Descendants<T, K> {
+    type Item = Node<T, K>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let node = match self.stack.pop() {
@@ -125,7 +137,7 @@ impl<T> Iterator for Descendants<T> {
 
 #[test]
 fn test() {
-    let n0 = Node::new(0);
+    let n0 = Node::<i32, i32>::new(0);
     let n1 = Node::new(1);
     let n2 = Node::new(2);
     let n3 = Node::new(3);

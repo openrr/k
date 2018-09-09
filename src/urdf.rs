@@ -41,7 +41,6 @@ where
 {
     fn from(urdf_mimic: &urdf_rs::Mimic) -> Self {
         Mimic::new(
-            urdf_mimic.joint.clone(),
             na::convert(urdf_mimic.multiplier),
             na::convert(urdf_mimic.offset),
         )
@@ -115,15 +114,16 @@ impl<'a, T> From<&'a urdf_rs::Robot> for Chain<T>
 where
     T: na::Real,
 {
-    fn from(chain: &urdf_rs::Robot) -> Self {
+    fn from(robot: &urdf_rs::Robot) -> Self {
         let mut ref_nodes = Vec::new();
         let mut child_link_name_to_node = HashMap::new();
+        let mut joint_name_to_node = HashMap::new();
         let mut parent_link_name_to_node = HashMap::<&String, Vec<JointNode<T>>>::new();
         let root_node = JointBuilder::<T>::new()
             .name(ROOT_JOINT_NAME)
             .finalize()
             .into();
-        for j in &chain.joints {
+        for j in &robot.joints {
             let node = Node::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
             if parent_link_name_to_node.get(&j.parent.link).is_some() {
@@ -134,22 +134,10 @@ where
             } else {
                 parent_link_name_to_node.insert(&j.parent.link, vec![node.clone()]);
             }
-            ref_nodes.push(node);
+            ref_nodes.push(node.clone());
+            joint_name_to_node.insert(j.name.clone(), node);
         }
-        let mimics = chain
-            .joints
-            .iter()
-            .filter_map(|j| {
-                if j.mimic.joint != "" {
-                    debug!("mimic found for {}", j.mimic.joint);
-                    Some((j.name.clone(), (&j.mimic).into()))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        for l in &chain.links {
+        for l in &robot.links {
             info!("link={}", l.name);
             if let Some(mut parent_node) = child_link_name_to_node.get_mut(&l.name) {
                 if let Some(child_nodes) = parent_link_name_to_node.get(&l.name) {
@@ -158,6 +146,15 @@ where
                         child_node.set_parent(parent_node);
                     }
                 }
+            }
+        }
+        // add mimics
+        for j in &robot.joints {
+            if j.mimic.joint != "" {
+                debug!("mimic found for {}", j.mimic.joint);
+                let mut child = joint_name_to_node.get_mut(&j.name).unwrap().clone();
+                let parent = joint_name_to_node.get(&j.mimic.joint).unwrap();
+                child.set_mimic_parent(parent, (&j.mimic).into());
             }
         }
         // set root as parent of root joint nodes
@@ -171,13 +168,7 @@ where
             info!("set parent = {}, child = {}", root_node, rjn);
             rjn.set_parent(&root_node);
         }
-        // create root node..
-        let mut tree = Chain::from_root(root_node);
-        // add mimics
-        for (name, mimic) in mimics {
-            tree.mimics.insert(name, mimic);
-        }
-        tree
+        Chain::from_root(root_node)
     }
 }
 
@@ -185,8 +176,8 @@ impl<T> From<urdf_rs::Robot> for Chain<T>
 where
     T: na::Real,
 {
-    fn from(chain: urdf_rs::Robot) -> Self {
-        Self::from(&chain)
+    fn from(robot: urdf_rs::Robot) -> Self {
+        Self::from(&robot)
     }
 }
 
@@ -214,18 +205,18 @@ where
 /// extern crate urdf_rs;
 /// extern crate k;
 ///
-/// let urdf_chain = urdf_rs::read_file("urdf/sample.urdf").unwrap();
-/// let map = k::urdf::link_to_joint_map(&urdf_chain);
+/// let urdf_robot = urdf_rs::read_file("urdf/sample.urdf").unwrap();
+/// let map = k::urdf::link_to_joint_map(&urdf_robot);
 /// assert_eq!(map.get("root_body").unwrap(), k::urdf::ROOT_JOINT_NAME);
 /// assert_eq!(map.get("r_wrist2").unwrap(), "r_wrist_pitch");
 /// assert!(map.get("no_exist_link").is_none());
 /// ```
-pub fn link_to_joint_map(urdf_chain: &urdf_rs::Robot) -> HashMap<String, String> {
+pub fn link_to_joint_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String> {
     let mut map = HashMap::new();
-    for j in &urdf_chain.joints {
+    for j in &urdf_robot.joints {
         map.insert(j.child.link.to_owned(), j.name.to_owned());
     }
-    for l in &urdf_chain.links {
+    for l in &urdf_robot.links {
         if map.get(&l.name).is_none() {
             map.insert(l.name.to_owned(), ROOT_JOINT_NAME.to_owned());
         }

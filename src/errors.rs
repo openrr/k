@@ -40,6 +40,8 @@ pub enum JointError {
         from: String,
         /// tried to copy to `to`
         to: String,
+        /// detail error message
+        message: String,
     },
     #[fail(display = "invalid arguments {:?}", error)]
     InvalidArguments { error: String },

@@ -127,15 +127,13 @@ where
 /// gripper(L). In that case, the code like below will be used.
 ///
 /// ```
-/// let mimic_for_gripper_r = k::joint::Mimic::new("gripper_l".to_owned(), -1.0, 0.0);
+/// let mimic_for_gripper_r = k::joint::Mimic::new(-1.0, 0.0);
 /// ```
 ///
 /// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + offset`
 ///
 #[derive(Debug, Clone)]
 pub struct Mimic<T: Real> {
-    /// Name of the other joint
-    pub name: String,
     pub multiplier: T,
     pub offset: T,
 }
@@ -149,26 +147,22 @@ where
     /// # Examples
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
     /// ```
-    pub fn new(name: String, multiplier: T, offset: T) -> Self {
-        Mimic {
-            name: name,
-            multiplier,
-            offset,
-        }
+    pub fn new(multiplier: T, offset: T) -> Self {
+        Mimic { multiplier, offset }
     }
     /// Calculate the mimic joint position
     ///
     /// # Examples
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new("from".to_owned(), 1.0, 0.5);
+    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
     /// assert_eq!(m.mimic_position(0.2), 0.7); // 0.2 * 1.0 + 0.5
     /// ```
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new("from".to_owned(), -2.0, -0.4);
+    /// let m = k::joint::Mimic::<f64>::new(-2.0, -0.4);
     /// assert_eq!(m.mimic_position(0.2), -0.8); // 0.2 * -2.0 - 0.4
     /// ```
     pub fn mimic_position(&self, from_position: T) -> T {
@@ -378,22 +372,22 @@ where
         self.joint_type = joint_type;
         self
     }
+    /// Set joint limits
     pub fn limits(mut self, limits: Option<Range<T>>) -> JointBuilder<T> {
         self.limits = limits;
         self
     }
-
-    /// Set the offset transform of this link
+    /// Set the offset transform of this joint
     pub fn offset(mut self, offset: Isometry3<T>) -> JointBuilder<T> {
         self.offset = offset;
         self
     }
-    /// Set the translation of the offset transform of this link
+    /// Set the translation of the offset transform of this joint
     pub fn translation(mut self, translation: Translation3<T>) -> JointBuilder<T> {
         self.offset.translation = translation;
         self
     }
-    /// Set the rotation of the offset transform of this link
+    /// Set the rotation of the offset transform of this joint
     pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> JointBuilder<T> {
         self.offset.rotation = rotation;
         self

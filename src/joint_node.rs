@@ -23,7 +23,7 @@ use rctree::*;
 /// Parts of `Chain`
 ///
 /// It contains joint, joint (transform), and parent/children.
-pub type JointNode<T> = Node<Joint<T>>;
+pub type JointNode<T> = Node<Joint<T>, Mimic<T>>;
 
 impl<T> JointNode<T>
 where
@@ -61,6 +61,7 @@ where
     /// assert_eq!(l0.transform().translation.vector.z, 1.0);
     /// l0.set_position(0.6).unwrap();
     /// assert_eq!(l0.transform().translation.vector.z, 1.6);
+    /// ```
     pub fn transform(&self) -> Isometry3<T> {
         self.borrow().data.transform()
     }
@@ -71,8 +72,66 @@ where
     /// Set the position of the joint
     ///
     /// If position is out of limit, it returns Err.
+    ///
+    /// /// # Examples
+    ///
+    /// ```
+    /// use k::*;
+    /// let l0 = JointNode::new(JointBuilder::new()
+    ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
+    ///     .limits(Some((0.0..=2.0).into()))
+    ///     .finalize());
+    /// assert!(l0.set_position(1.0).is_ok());
+    /// assert!(l0.set_position(-1.0).is_err());
+    /// ```
+    ///
+    /// ```
+    /// use k::*;
+    /// let l0 = JointNode::new(JointBuilder::new()
+    ///     .joint_type(JointType::Fixed)
+    ///     .finalize());
+    /// assert!(l0.set_position(0.0).is_err());
+    /// ```
+    ///
+    /// ```
+    /// use k::*;
+    /// let j0 = JointNode::new(JointBuilder::new()
+    ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
+    ///     .limits(Some((0.0..=2.0).into()))
+    ///     .finalize());
+    /// let j1 = JointNode::new(JointBuilder::new()
+    ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
+    ///     .limits(Some((0.0..=2.0).into()))
+    ///     .finalize());
+    /// j1.set_mimic_parent(&j0, k::joint::Mimic::new(1.5, 0.1));
+    /// assert_eq!(j0.position().unwrap(), 0.0);
+    /// assert_eq!(j1.position().unwrap(), 0.0);
+    /// assert!(j0.set_position(1.0).is_ok());
+    /// assert_eq!(j0.position().unwrap(), 1.0);
+    /// assert_eq!(j1.position().unwrap(), 1.6);
+    /// ```
     pub fn set_position(&self, position: T) -> Result<(), JointError> {
-        self.borrow_mut().data.set_position(position)
+        if self.borrow().sub_parent.is_some() {
+            return Ok(());
+        }
+        self.borrow_mut().data.set_position(position)?;
+        for child in &self.borrow().sub_children {
+            let mimic = child.borrow().sub_data.clone();
+            match mimic {
+                Some(m) => child.borrow_mut().data.set_position(m.mimic_position(position))?,
+                None => return Err(JointError::Mimic {
+                    from: self.name(),
+                    to: child.name(),
+                    message: format!(
+                        "set_position for {} -> {} failed. Mimic instance not found. child = {:?}",
+                        self.name(),
+                        child.name(),
+                        child
+                    ),
+                }),
+            };
+        }
+        Ok(())
     }
     /// Get the position of the joint. If it is fixed, it returns None.
     pub fn position(&self) -> Option<T> {
@@ -129,6 +188,10 @@ where
     /// // _poses[1] is as same as l1.world_transform()
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         self.borrow().data.world_transform()
+    }
+    pub fn set_mimic_parent(&self, parent: &JointNode<T>, mimic: Mimic<T>) {
+        self.set_sub_parent(parent);
+        self.borrow_mut().sub_data = Some(mimic);
     }
 }
 
