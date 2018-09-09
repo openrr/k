@@ -165,7 +165,7 @@ where
     /// println!("solved angles={:?}", arm.joint_angles());
     /// ```
     fn solve(&self, target_link: &JointNode<T>, target_pose: &Isometry3<T>) -> Result<T, IKError> {
-        let arm = Robot::from_end("temporal-arm", target_link.clone());
+        let arm = Robot::from_end("temporal-arm", target_link);
 
         let orig_angles = arm.joint_angles();
         if orig_angles.len() < 6 {

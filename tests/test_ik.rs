@@ -59,7 +59,7 @@ mod tests {
         l3.set_parent(&l2);
         l4.set_parent(&l3);
         l5.set_parent(&l4);
-        (k::Robot::from_end("arm6", l5.clone()), l5)
+        (k::Robot::from_end("arm6", &l5), l5)
     }
 
     pub fn create_joint_with_link_array7() -> (k::Robot<f32>, k::JointNode<f32>) {

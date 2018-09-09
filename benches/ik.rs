@@ -14,7 +14,7 @@ fn bench_tree_ik(arm: &k::Robot<f64>, target_link: &str, b: &mut test::Bencher) 
     ];
     arm.set_joint_angles(&angles).unwrap();
     arm.update_transforms();
-    let target_node = arm.find_link(target_link).unwrap();
+    let target_node = arm.find_joint(target_link).unwrap();
     let mut target = target_node.world_transform().unwrap();
     target.translation.vector[0] += 0.02;
 
@@ -28,5 +28,5 @@ fn bench_tree_ik(arm: &k::Robot<f64>, target_link: &str, b: &mut test::Bencher) 
 #[bench]
 fn bench_rctree_ik(b: &mut test::Bencher) {
     let robot = k::Robot::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    bench_tree_ik(&robot, "l_wrist2", b);
+    bench_tree_ik(&robot, "l_wrist_pitch", b);
 }

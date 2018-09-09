@@ -26,6 +26,8 @@ use joint_node::*;
 use rctree::*;
 use robot::*;
 
+pub const ROOT_JOINT_NAME : &str = "root";
+
 pub fn isometry_from<T: Real>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
     Isometry3::from_parts(
         translation_from(&origin_element.xyz),
@@ -117,7 +119,7 @@ where
         let mut ref_nodes = Vec::new();
         let mut child_link_name_to_node = HashMap::new();
         let mut parent_link_name_to_node = HashMap::<&String, Vec<JointNode<T>>>::new();
-        let root_node = JointBuilder::<T>::new().name("root").finalize().into();
+        let root_node = JointBuilder::<T>::new().name(ROOT_JOINT_NAME).finalize().into();
         for j in &robot.joints {
             let node = Node::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());

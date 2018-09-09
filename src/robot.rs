@@ -189,7 +189,7 @@ impl<T: Real> Robot<T> {
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(name: &str, end_link: JointNode<T>) -> Self {
+    pub fn from_end(name: &str, end_link: &JointNode<T>) -> Self {
         let mut links = end_link
             .iter_ancestors()
             .map(|link| link.clone())
@@ -444,7 +444,7 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("poses = {:?}", poses);
 
-    let arm = Robot::from_end("chain1", link3);
+    let arm = Robot::from_end("chain1", &link3);
     assert_eq!(arm.joint_angles().len(), 4);
     println!("{:?}", arm.joint_angles());
 }
