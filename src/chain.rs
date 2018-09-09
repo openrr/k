@@ -21,7 +21,7 @@ use errors::*;
 use joint::*;
 use joint_node::JointNode;
 
-/// Kinematic Tree using `JointNode`
+/// Kinematic Chain using `JointNode`
 ///
 /// # Examples
 ///

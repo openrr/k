@@ -33,9 +33,9 @@ extern crate urdf_rs;
 mod chain;
 mod errors;
 mod ik;
+mod joint;
 mod joint_node;
 
-pub mod joint;
 pub mod math;
 pub mod prelude;
 pub mod rctree;
@@ -44,7 +44,7 @@ pub mod urdf;
 pub use self::chain::*;
 pub use self::errors::*;
 pub use self::ik::*;
-pub use self::joint::{Joint, JointBuilder, JointType};
+pub use self::joint::*;
 pub use self::joint_node::*;
 
 // re-export

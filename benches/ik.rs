@@ -12,7 +12,7 @@ fn bench_tree_ik(arm: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher) 
     let angles = vec![
         0.5, 0.2, 0.0, -0.5, 0.0, -0.3, 0.5, 0.2, 0.0, -0.5, 0.0, -0.3,
     ];
-    arm.set_joint_angles(&angles).unwrap();
+    arm.set_joint_positions(&angles).unwrap();
     arm.update_transforms();
     let target_node = arm.find_joint(target_link).unwrap();
     let mut target = target_node.world_transform().unwrap();
@@ -21,7 +21,7 @@ fn bench_tree_ik(arm: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher) 
     let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 1000);
     b.iter(|| {
         solver.solve(target_node, &target).unwrap();
-        arm.set_joint_angles(&angles).unwrap();
+        arm.set_joint_positions(&angles).unwrap();
     });
 }
 

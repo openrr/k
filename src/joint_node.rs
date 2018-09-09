@@ -69,11 +69,11 @@ where
     pub fn set_offset(&self, trans: Isometry3<T>) {
         self.borrow_mut().data.offset = trans;
     }
-    /// Set the position of the joint
+    /// Set the position (angle) of the joint
     ///
     /// If position is out of limit, it returns Err.
     ///
-    /// /// # Examples
+    /// # Examples
     ///
     /// ```
     /// use k::*;
@@ -85,6 +85,8 @@ where
     /// assert!(l0.set_position(-1.0).is_err());
     /// ```
     ///
+    /// Setting position for Fixed joint is error.
+    ///
     /// ```
     /// use k::*;
     /// let l0 = JointNode::new(JointBuilder::new()
@@ -92,6 +94,8 @@ where
     ///     .finalize());
     /// assert!(l0.set_position(0.0).is_err());
     /// ```
+    ///
+    /// `Mimic` can be used to copy other joint's position.
     ///
     /// ```
     /// use k::*;
@@ -118,17 +122,22 @@ where
         for child in &self.borrow().sub_children {
             let mimic = child.borrow().sub_data.clone();
             match mimic {
-                Some(m) => child.borrow_mut().data.set_position(m.mimic_position(position))?,
-                None => return Err(JointError::Mimic {
-                    from: self.name(),
-                    to: child.name(),
-                    message: format!(
+                Some(m) => child
+                    .borrow_mut()
+                    .data
+                    .set_position(m.mimic_position(position))?,
+                None => {
+                    return Err(JointError::Mimic {
+                        from: self.name(),
+                        to: child.name(),
+                        message: format!(
                         "set_position for {} -> {} failed. Mimic instance not found. child = {:?}",
                         self.name(),
                         child.name(),
                         child
                     ),
-                }),
+                    })
+                }
             };
         }
         Ok(())
