@@ -80,7 +80,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range = k::joint::Range::new(-1.0, 1.0);
+    /// let range = k::Range::new(-1.0, 1.0);
     /// ```
     pub fn new(min: T, max: T) -> Self {
         Range { min, max }
@@ -93,7 +93,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range = k::joint::Range::new(-1.0, 1.0);
+    /// let range = k::Range::new(-1.0, 1.0);
     /// assert!(range.is_valid(0.0));
     /// assert!(range.is_valid(1.0));
     /// assert!(!range.is_valid(1.5));
@@ -110,7 +110,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range : k::joint::Range<f64> = (-1.0..=1.0).into();
+    /// let range : k::Range<f64> = (-1.0..=1.0).into();
     /// assert!(range.is_valid(0.0));
     /// assert!(range.is_valid(1.0));
     /// assert!(!range.is_valid(1.5));
@@ -127,7 +127,7 @@ where
 /// gripper(L). In that case, the code like below will be used.
 ///
 /// ```
-/// let mimic_for_gripper_r = k::joint::Mimic::new(-1.0, 0.0);
+/// let mimic_for_gripper_r = k::Mimic::new(-1.0, 0.0);
 /// ```
 ///
 /// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + offset`
@@ -147,7 +147,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
+    /// let m = k::Mimic::<f64>::new(1.0, 0.5);
     /// ```
     pub fn new(multiplier: T, offset: T) -> Self {
         Mimic { multiplier, offset }
@@ -157,12 +157,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
+    /// let m = k::Mimic::<f64>::new(1.0, 0.5);
     /// assert_eq!(m.mimic_position(0.2), 0.7); // 0.2 * 1.0 + 0.5
     /// ```
     ///
     /// ```
-    /// let m = k::joint::Mimic::<f64>::new(-2.0, -0.4);
+    /// let m = k::Mimic::<f64>::new(-2.0, -0.4);
     /// assert_eq!(m.mimic_position(0.2), -0.8); // 0.2 * -2.0 - 0.4
     /// ```
     pub fn mimic_position(&self, from_position: T) -> T {
@@ -251,7 +251,7 @@ where
                 message: "Joint is Fixed".to_owned(),
             });
         }
-        if let Some(range) = self.limits.clone() {
+        if let Some(ref range) = self.limits {
             if !range.is_valid(position) {
                 return Err(JointError::OutOfLimit {
                     joint_name: self.name.to_string(),
@@ -267,7 +267,11 @@ where
         self.world_transform_cache.replace(None);
         Ok(())
     }
+    pub fn set_position_unchecked(&mut self, position: T) {
+        self.position = position;
+    }
     /// Returns the position (angle)
+    #[inline]
     pub fn position(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
@@ -303,12 +307,14 @@ where
         };
         self.offset * joint_transform
     }
+    #[inline]
     pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
         self.world_transform_cache.replace(Some(world_transform));
     }
     /// Get the result of forward kinematics
     ///
     /// The value is updated by `Chain::update_transforms`
+    #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         *self.world_transform_cache.borrow()
     }

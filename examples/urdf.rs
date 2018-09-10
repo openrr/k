@@ -41,8 +41,10 @@ fn main() {
     // Create IK solver with default settings
     let solver = k::JacobianIKSolverBuilder::new().finalize();
 
+    // Create a set of joints from end joint
+    let arm = k::Chain::from_end(target_link);
     // solve and move the manipulator angles
-    solver.solve(target_link, &target).unwrap();
+    solver.solve(&arm, &target).unwrap();
     println!("solved angles={:?}", chain.joint_positions());
 
     // chain.update_transforms();

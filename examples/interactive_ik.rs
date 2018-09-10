@@ -146,7 +146,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 
 fn main() {
     let root = create_joint_with_link_array();
-    let arm = k::Chain::from_root(root);
+    let arm = k::SerialChain::new_unchecked(k::Chain::from_root(root));
 
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
@@ -200,7 +200,7 @@ fn main() {
                 _ => {}
             }
         }
-        solver.solve(end, &target).unwrap_or_else(|err| {
+        solver.solve(&arm, &target).unwrap_or_else(|err| {
             println!("Err: {}", err);
             0.0f32
         });

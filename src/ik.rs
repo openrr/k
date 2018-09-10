@@ -17,9 +17,9 @@ use na::{self, DMatrix, Isometry3, Real, Vector6};
 
 use chain::*;
 use errors::*;
-use joint_node::JointNode;
 use math::*;
 
+#[inline]
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
     let rpy = to_euler_angles(&pose.rotation);
     Vector6::new(
@@ -38,11 +38,7 @@ where
     T: Real,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve(
-        &self,
-        target_joint_name: &JointNode<T>,
-        target_pose: &Isometry3<T>,
-    ) -> Result<T, IKError>;
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<T, IKError>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
@@ -86,22 +82,19 @@ where
     }
     fn solve_one_loop(
         &self,
-        arm: &Chain<T>,
-        target_link: &JointNode<T>,
+        arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
     ) -> Result<T, IKError> {
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
-        arm.update_transforms();
-        let orig_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
+        let orig_pose6 = calc_vector6_pose(&arm.end_transform());
         let target_pose6 = calc_vector6_pose(target_pose);
-        let mut jacobi_vec = Vec::new();
+        let mut jacobi_vec = Vec::with_capacity(dof);
         for i in 0..dof {
             let mut small_diff_positions_i = orig_positions.clone();
             small_diff_positions_i[i] += self.jacobian_move_epsilon;
-            arm.set_joint_positions(&small_diff_positions_i)?;
-            arm.update_transforms();
-            let small_diff_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
+            arm.set_joint_positions_unchecked(&small_diff_positions_i);
+            let small_diff_pose6 = calc_vector6_pose(&arm.end_transform());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
@@ -121,8 +114,7 @@ where
             positions_vec[i] += new_positions_diff[i];
         }
         arm.set_joint_positions(&positions_vec)?;
-        arm.update_transforms();
-        let new_pose6 = calc_vector6_pose(&target_link.world_transform().unwrap());
+        let new_pose6 = calc_vector6_pose(&arm.end_transform());
         Ok((target_pose6 - new_pose6).norm())
     }
 }
@@ -161,12 +153,10 @@ where
     /// let solver = k::JacobianIKSolverBuilder::new().finalize();
     ///
     /// // solve and move the manipulator positions
-    /// solver.solve(&r_wrist, &target).unwrap();
+    /// solver.solve(&arm, &target).unwrap();
     /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
-    fn solve(&self, target_link: &JointNode<T>, target_pose: &Isometry3<T>) -> Result<T, IKError> {
-        let arm = Chain::from_end(target_link);
-
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<T, IKError> {
         let orig_positions = arm.joint_positions();
         if orig_positions.len() < 6 {
             return Err(IKError::PreconditionError {
@@ -178,7 +168,7 @@ where
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_distance = self.solve_one_loop(&arm, &target_link, target_pose)?;
+            let target_distance = self.solve_one_loop(&arm, target_pose)?;
             if target_distance < self.allowable_target_distance {
                 return Ok(target_distance);
             }

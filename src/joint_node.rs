@@ -40,10 +40,12 @@ where
     /// let j0 = JointNode::new(Joint::<f64>::new("joint_pitch", JointType::Fixed));
     /// assert_eq!(j0.name(), "joint_pitch");
     /// ```
+    #[inline]
     pub fn name(&self) -> String {
         self.borrow().data.name.to_owned()
     }
     /// Clone the joint limits
+    #[inline]
     pub fn limits(&self) -> Option<Range<T>> {
         self.borrow().data.limits.clone()
     }
@@ -62,10 +64,12 @@ where
     /// l0.set_position(0.6).unwrap();
     /// assert_eq!(l0.transform().translation.vector.z, 1.6);
     /// ```
+    #[inline]
     pub fn transform(&self) -> Isometry3<T> {
         self.borrow().data.transform()
     }
     /// Set the offset transform of the joint
+    #[inline]
     pub fn set_offset(&self, trans: Isometry3<T>) {
         self.borrow_mut().data.offset = trans;
     }
@@ -107,7 +111,7 @@ where
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .finalize());
-    /// j1.set_mimic_parent(&j0, k::joint::Mimic::new(1.5, 0.1));
+    /// j1.set_mimic_parent(&j0, k::Mimic::new(1.5, 0.1));
     /// assert_eq!(j0.position().unwrap(), 0.0);
     /// assert_eq!(j1.position().unwrap(), 0.0);
     /// assert!(j0.set_position(1.0).is_ok());
@@ -115,17 +119,16 @@ where
     /// assert_eq!(j1.position().unwrap(), 1.6);
     /// ```
     pub fn set_position(&self, position: T) -> Result<(), JointError> {
-        if self.borrow().sub_parent.is_some() {
+        let mut node = self.borrow_mut();
+        if node.sub_parent.is_some() {
             return Ok(());
         }
-        self.borrow_mut().data.set_position(position)?;
-        for child in &self.borrow().sub_children {
-            let mimic = child.borrow().sub_data.clone();
+        node.data.set_position(position)?;
+        for child in &node.sub_children {
+            let mut child_node = child.borrow_mut();
+            let mimic = child_node.sub_data.clone();
             match mimic {
-                Some(m) => child
-                    .borrow_mut()
-                    .data
-                    .set_position(m.mimic_position(position))?,
+                Some(m) => child_node.data.set_position(m.mimic_position(position))?,
                 None => {
                     return Err(JointError::Mimic {
                         from: self.name(),
@@ -142,15 +145,21 @@ where
         }
         Ok(())
     }
+    pub fn set_position_unchecked(&self, position: T) {
+        self.borrow_mut().data.set_position_unchecked(position);
+    }
     /// Get the position of the joint. If it is fixed, it returns None.
+    #[inline]
     pub fn position(&self) -> Option<T> {
         self.borrow().data.position()
     }
     /// Copy the type of the joint
+    #[inline]
     pub fn joint_type(&self) -> JointType<T> {
         self.borrow().data.joint_type
     }
     /// Returns if it has a joint position. similar to `is_not_fixed()`
+    #[inline]
     pub fn has_position(&self) -> bool {
         match self.borrow().data.joint_type {
             JointType::Fixed => false,
@@ -195,6 +204,7 @@ where
     ///
     /// // _poses[0] is as same as l0.world_transform()
     /// // _poses[1] is as same as l1.world_transform()
+    #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         self.borrow().data.world_transform()
     }

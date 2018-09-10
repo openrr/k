@@ -45,20 +45,24 @@ impl<T, K> Node<T, K> {
             sub_data: None,
         })))
     }
+    #[inline]
     pub fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T, K>> {
         self.0.borrow()
     }
+    #[inline]
     pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T, K>> {
         self.0.borrow_mut()
     }
 
     /// iter from the end to root, it contains nodes[id] itsself
+    #[inline]
     pub fn iter_ancestors(&self) -> Ancestors<T, K> {
         Ancestors {
             parent: Some(self.clone()),
         }
     }
     /// iter to the end, it contains nodes[id] itsself
+    #[inline]
     pub fn iter_descendants(&self) -> Descendants<T, K> {
         Descendants {
             stack: vec![self.clone()],

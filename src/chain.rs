@@ -14,8 +14,8 @@
    limitations under the License.
  */
 use na::{Isometry3, Real};
-use std::collections::HashMap;
 use std::fmt::{self, Display};
+use std::ops::Deref;
 
 use errors::*;
 use joint::*;
@@ -87,8 +87,6 @@ use joint_node::JointNode;
 /// ```
 #[derive(Debug)]
 pub struct Chain<T: Real> {
-    /// Information about mimic joints
-    pub mimics: HashMap<String, Mimic<T>>,
     contained_joints: Vec<JointNode<T>>,
 }
 
@@ -113,6 +111,7 @@ impl<T: Real> Chain<T> {
         Ok(())
     }
 }
+
 impl<T: Real> Display for Chain<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
@@ -143,16 +142,14 @@ impl<T: Real> Chain<T> {
     pub fn from_root(root_joint: JointNode<T>) -> Self {
         let contained_joints = root_joint
             .iter_descendants()
-            .map(|ln| ln.clone())
+            .map(|joint| joint.clone())
             .collect::<Vec<_>>();
-        Chain {
-            mimics: HashMap::new(),
-            contained_joints,
-        }
+        Chain { contained_joints }
     }
-    /// Create `Chain` from end joint
+    /// Create `SerialChain` from end joint
     ///
     /// Do not discard root joint before create Chain.
+    /// If you want to get Chain, `unwrap()` this, it is safe.
     ///
     /// # Examples
     ///
@@ -181,21 +178,20 @@ impl<T: Real> Chain<T> {
     ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
     ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
-    ///   Chain::from_end(&l1) // ok, because root is stored in `Chain`
+    ///   Chain::from_end(&l1).unwrap() // ok, because root is stored in `Chain`
     /// }
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(end_joint: &JointNode<T>) -> Self {
+    pub fn from_end(end_joint: &JointNode<T>) -> SerialChain<T> {
         let mut joints = end_joint
             .iter_ancestors()
             .map(|joint| joint.clone())
             .collect::<Vec<_>>();
         joints.reverse();
-        Chain {
-            mimics: HashMap::new(),
+        SerialChain::new_unchecked(Chain {
             contained_joints: joints,
-        }
+        })
     }
     /// Iterate for all joint nodes
     ///
@@ -294,6 +290,17 @@ impl<T: Real> Chain<T> {
         }
         Ok(())
     }
+    /// Fast, but without check, dangerous `set_joint_positions`
+    #[inline]
+    pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
+        for (mut joint, position) in self
+            .iter()
+            .filter(|joint| joint.has_position())
+            .zip(positions_vec.iter())
+        {
+            joint.set_position_unchecked(*position);
+        }
+    }
     pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.iter()
             .filter(|joint| joint.has_position())
@@ -316,6 +323,59 @@ impl<T: Real> Chain<T> {
                 trans
             })
             .collect()
+    }
+}
+
+#[derive(Debug)]
+pub struct SerialChain<T: Real> {
+    inner: Chain<T>,
+}
+
+impl<T> SerialChain<T>
+where
+    T: Real,
+{
+    pub fn new_unchecked(inner: Chain<T>) -> Self {
+        Self { inner }
+    }
+    pub fn try_new(inner: Chain<T>) -> Option<Self> {
+        {
+            let num = inner.iter().count();
+            let joints = inner.iter().collect::<Vec<_>>();
+            for i in 0..num - 1 {
+                if joints[i].borrow().children.len() != 1 {
+                    return None;
+                }
+            }
+        }
+        Some(Self { inner })
+    }
+    pub fn unwrap(self) -> Chain<T> {
+        self.inner
+    }
+    pub fn end_transform(&self) -> Isometry3<T> {
+        self.iter().fold(Isometry3::identity(), |trans, joint| {
+            trans * joint.transform()
+        })
+    }
+}
+
+impl<T> Display for SerialChain<T>
+where
+    T: Real,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+impl<T> Deref for SerialChain<T>
+where
+    T: Real,
+{
+    type Target = Chain<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 
