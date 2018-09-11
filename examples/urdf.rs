@@ -28,7 +28,7 @@ fn main() {
     chain.set_joint_positions(&angles).unwrap();
     println!("initial angles={:?}", chain.joint_positions());
 
-    let target_link = chain.find_joint("l_wrist_pitch").unwrap();
+    let target_link = chain.find("l_wrist_pitch").unwrap();
 
     // Get the transform of the end of the manipulator (forward kinematics)
     chain.update_transforms();

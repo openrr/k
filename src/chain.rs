@@ -29,25 +29,21 @@ use joint_node::*;
 /// use k::*;
 /// use k::prelude::*;
 ///
-/// // Create JointNode using `into()`
 /// let l0 = JointBuilder::new()
 ///     .name("joint_pitch0")
 ///     .translation(Translation3::new(0.0, 0.0, 0.1))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
-///     .finalize()
-///     .into();
-/// let l1 : JointNode<f64> = JointBuilder::new()
+///     .into_node();
+/// let l1 = JointBuilder::new()
 ///     .name("joint_pitch1")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
-///     .finalize()
-///     .into();
-/// // Create JointNode using `LikNode::new()`
-/// let l2 = JointNode::new(JointBuilder::new()
+///     .into_node();
+/// let l2 = JointBuilder::new()
 ///     .name("hand")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
 ///     .joint_type(JointType::Fixed)
-///     .finalize());
+///     .into_node();
 ///
 /// // Sequencial joints structure
 /// l1.set_parent(&l0);
@@ -126,16 +122,16 @@ impl<T: Real> Chain<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = JointNode::new(JointBuilder::new()
-    ///     .name("joint_pitch")
+    /// let l0 = JointBuilder::new()
+    ///     .name("joint_pitch0")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
-    ///     .finalize());
-    /// let l1 = JointNode::new(JointBuilder::new()
-    ///     .name("joint_pitch")
+    ///     .into_node();
+    /// let l1 = JointBuilder::new()
+    ///     .name("joint_pitch1")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
-    ///     .finalize());
+    ///     .into_node();
     /// l1.set_parent(&l0);
     /// let tree = Chain::from_root(l0);
     /// ```
@@ -255,11 +251,11 @@ impl<T: Real> Chain<T> {
     ///     .finalize());
     /// l1.set_parent(&l0);
     /// let tree = Chain::from_root(l0);
-    /// let j = tree.find_joint("pitch1").unwrap();
+    /// let j = tree.find("pitch1").unwrap();
     /// j.set_position(0.5).unwrap();
     /// assert_eq!(j.position().unwrap(), 0.5);
     /// ```
-    pub fn find_joint(&self, joint_name: &str) -> Option<&JointNode<T>> {
+    pub fn find(&self, joint_name: &str) -> Option<&JointNode<T>> {
         self.iter()
             .find(|joint| joint.borrow().data.name == joint_name)
     }
@@ -276,7 +272,7 @@ impl<T: Real> Chain<T> {
     pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), JointError> {
         let dof = self.iter().filter(|joint| joint.has_position()).count();
         if positions_vec.len() != dof {
-            return Err(JointError::SizeMisMatch {
+            return Err(JointError::SizeMismatchError {
                 input: positions_vec.len(),
                 required: dof,
             });
@@ -301,13 +297,13 @@ impl<T: Real> Chain<T> {
             joint.set_position_unchecked(*position);
         }
     }
-    pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
+    pub fn limits(&self) -> Vec<Option<Range<T>>> {
         self.iter()
             .filter(|joint| joint.has_position())
             .map(|joint| joint.limits())
             .collect()
     }
-    pub fn joint_names(&self) -> Vec<String> {
+    pub fn names(&self) -> Vec<String> {
         self.iter()
             .filter(|joint| joint.has_position())
             .map(|joint| joint.name())

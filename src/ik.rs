@@ -93,7 +93,7 @@ where
         for i in 0..dof {
             let mut small_diff_positions_i = orig_positions.clone();
             small_diff_positions_i[i] += self.jacobian_move_epsilon;
-            arm.set_joint_positions(&small_diff_positions_i)?;
+            arm.set_joint_positions_unchecked(&small_diff_positions_i);
             let small_diff_pose6 = calc_vector6_pose(&arm.end_transform());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
@@ -133,7 +133,7 @@ where
     /// let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     /// // Create sub-`Chain` to make it easy to use inverse kinematics
     /// let target_joint_name = "r_wrist_pitch";
-    /// let r_wrist = chain.find_joint(target_joint_name).unwrap();
+    /// let r_wrist = chain.find(target_joint_name).unwrap();
     /// let mut arm = k::Chain::from_end(r_wrist);
     /// println!("arm: {}", arm);
     ///
@@ -175,7 +175,7 @@ where
             if let Some(last) = last_target_distance {
                 if last < target_distance {
                     arm.set_joint_positions(&orig_positions)?;
-                    return Err(IKError::NotConverged {
+                    return Err(IKError::NotConvergedError {
                         error: format!("jacobian did not work"),
                     });
                 }
@@ -183,7 +183,7 @@ where
             last_target_distance = Some(target_distance);
         }
         arm.set_joint_positions(&orig_positions)?;
-        Err(IKError::NotConverged {
+        Err(IKError::NotConvergedError {
             error: format!(
                 "iteration has not converged: tried {} timed",
                 self.num_max_try

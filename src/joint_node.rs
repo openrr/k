@@ -56,10 +56,10 @@ where
     /// ```
     /// use k::*;
     ///
-    /// let l0 = JointNode::new(JointBuilder::new()
+    /// let l0 = JointBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
-    ///     .finalize());
+    ///     .into_node();
     /// assert_eq!(l0.transform().translation.vector.z, 1.0);
     /// l0.set_position(0.6).unwrap();
     /// assert_eq!(l0.transform().translation.vector.z, 1.6);
@@ -103,14 +103,14 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let j0 = JointNode::new(JointBuilder::new()
+    /// let j0 = JointBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
-    ///     .finalize());
-    /// let j1 = JointNode::new(JointBuilder::new()
+    ///     .into_node();
+    /// let j1 = JointBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
-    ///     .finalize());
+    ///     .into_node();
     /// j1.set_mimic_parent(&j0, k::Mimic::new(1.5, 0.1));
     /// assert_eq!(j0.position().unwrap(), 0.0);
     /// assert_eq!(j1.position().unwrap(), 0.0);
@@ -130,7 +130,7 @@ where
             match mimic {
                 Some(m) => child_node.data.set_position(m.mimic_position(position))?,
                 None => {
-                    return Err(JointError::Mimic {
+                    return Err(JointError::MimicError {
                         from: self.name(),
                         to: child.name(),
                         message: format!(
@@ -230,7 +230,6 @@ where
     }
 }
 
-
 /// Build a `Link<T>`
 ///
 /// # Examples
@@ -303,13 +302,14 @@ where
         self.offset.rotation = rotation;
         self
     }
-    /// Create `Link` instance
+    /// Create `Joint` instance
     pub fn finalize(self) -> Joint<T> {
         let mut joint = Joint::new(&self.name, self.joint_type);
         joint.limits = self.limits;
         joint.offset = self.offset;
         joint
     }
+    /// Create `JointNode` instead of `Joint` as output
     pub fn into_node(self) -> JointNode<T> {
         self.finalize().into()
     }

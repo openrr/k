@@ -19,7 +19,7 @@
 pub enum JointError {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
     #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
-    OutOfLimit {
+    OutOfLimitError {
         /// name of the joint
         joint_name: String,
         /// detail error message
@@ -27,7 +27,7 @@ pub enum JointError {
     },
     /// Gave invalid size of vec as input
     #[fail(display = "size mismatch input = {}, required = {}", input, required)]
-    SizeMisMatch {
+    SizeMismatchError {
         /// size of input
         input: usize,
         /// required size
@@ -35,7 +35,7 @@ pub enum JointError {
     },
     /// Error about mimic
     #[fail(display = "mimic error from {} to {}", from, to)]
-    Mimic {
+    MimicError {
         /// tried to copy from `from`
         from: String,
         /// tried to copy to `to`
@@ -44,26 +44,26 @@ pub enum JointError {
         message: String,
     },
     #[fail(display = "invalid arguments {:?}", error)]
-    InvalidArguments { error: String },
+    InvalidArgumentsError { error: String },
 }
 
 /// The reason of the fail of inverse kinematics
 #[derive(Debug, Fail)]
 pub enum IKError {
     #[fail(display = "ik solve not converged {:?}", error)]
-    NotConverged { error: String },
+    NotConvergedError { error: String },
     #[fail(display = "inverset matrix error")]
     InverseMatrixError,
     #[fail(display = "ik precondition error {:?}", error)]
     PreconditionError { error: String },
     #[fail(display = "joint error: {:?}", error)]
-    JointOutOfLimit { error: JointError },
+    JointOutOfLimitError { error: JointError },
     #[fail(display = "invalid arguments {:?}", error)]
-    InvalidArguments { error: String },
+    InvalidArgumentsError { error: String },
 }
 
 impl From<JointError> for IKError {
     fn from(error: JointError) -> IKError {
-        IKError::JointOutOfLimit { error }
+        IKError::JointOutOfLimitError { error }
     }
 }

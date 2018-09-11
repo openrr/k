@@ -165,7 +165,7 @@ fn main() {
             ),
     );
     arm.update_transforms();
-    let end = arm.find_joint("wrist_roll").unwrap();
+    let end = arm.find("wrist_roll").unwrap();
     let mut target = end.world_transform().unwrap().clone();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);

@@ -246,14 +246,14 @@ where
     ///
     pub fn set_position(&mut self, position: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
-            return Err(JointError::OutOfLimit {
+            return Err(JointError::OutOfLimitError {
                 joint_name: self.name.to_string(),
                 message: "Joint is Fixed".to_owned(),
             });
         }
         if let Some(ref range) = self.limits {
             if !range.is_valid(position) {
-                return Err(JointError::OutOfLimit {
+                return Err(JointError::OutOfLimitError {
                     joint_name: self.name.to_string(),
                     message: format!(
                         "Joint is out of range: input={}, range={:?}",

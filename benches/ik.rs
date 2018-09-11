@@ -8,7 +8,7 @@ extern crate test;
 use k::prelude::*;
 
 fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher) {
-    let target_node = robot.find_joint(target_link).unwrap();
+    let target_node = robot.find(target_link).unwrap();
     let arm = k::Chain::from_end(&target_node);
     // set joint angles
     let angles = vec![0.5, 0.2, 0.0, -0.5, 0.0, -0.3];
