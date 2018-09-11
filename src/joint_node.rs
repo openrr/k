@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{Isometry3, Real};
+use na::{Isometry3, Real, Translation3, UnitQuaternion};
 use std::fmt::{self, Display};
 
 use errors::*;
@@ -81,10 +81,10 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointNode::new(JointBuilder::new()
+    /// let l0 = JointBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
-    ///     .finalize());
+    ///     .into_node();
     /// assert!(l0.set_position(1.0).is_ok());
     /// assert!(l0.set_position(-1.0).is_err());
     /// ```
@@ -93,9 +93,9 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointNode::new(JointBuilder::new()
+    /// let l0 = JointBuilder::new()
     ///     .joint_type(JointType::Fixed)
-    ///     .finalize());
+    ///     .into_node();
     /// assert!(l0.set_position(0.0).is_err());
     /// ```
     ///
@@ -145,6 +145,7 @@ where
         }
         Ok(())
     }
+    #[inline]
     pub fn set_position_unchecked(&self, position: T) {
         self.borrow_mut().data.set_position_unchecked(position);
     }
@@ -185,14 +186,14 @@ where
     /// use k::*;
     /// use k::prelude::*;
     ///
-    /// let l0 = JointNode::new(JointBuilder::new()
+    /// let l0 = JointBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 0.2))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
-    ///     .finalize());
-    /// let l1 = JointNode::new(JointBuilder::new()
+    ///     .into_node();
+    /// let l1 = JointBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
-    ///     .finalize());
+    ///     .into_node();
     /// l1.set_parent(&l0);
     /// let tree = Chain::<f64>::from_root(l0);
     /// tree.set_joint_positions(&vec![3.141592 * 0.5, 0.1]).unwrap();
@@ -226,5 +227,90 @@ where
 {
     fn from(joint: Joint<T>) -> Self {
         Self::new(joint)
+    }
+}
+
+
+/// Build a `Link<T>`
+///
+/// # Examples
+///
+/// ```
+/// use k::*;
+/// let l0 = JointBuilder::new()
+///     .name("link_pitch")
+///     .translation(Translation3::new(0.0, 0.1, 0.0))
+///     .joint_type( JointType::Rotational{axis: Vector3::y_axis()})
+///     .finalize();
+/// println!("{:?}", l0);
+/// ```
+#[derive(Debug, Clone)]
+pub struct JointBuilder<T: Real> {
+    name: String,
+    joint_type: JointType<T>,
+    limits: Option<Range<T>>,
+    offset: Isometry3<T>,
+}
+
+impl<T> Default for JointBuilder<T>
+where
+    T: Real,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> JointBuilder<T>
+where
+    T: Real,
+{
+    pub fn new() -> JointBuilder<T> {
+        JointBuilder {
+            name: "".to_string(),
+            joint_type: JointType::Fixed,
+            limits: None,
+            offset: Isometry3::identity(),
+        }
+    }
+    /// Set the name of the `Link`
+    pub fn name(mut self, name: &str) -> JointBuilder<T> {
+        self.name = name.to_string();
+        self
+    }
+    /// Set the joint which is connected to this link
+    pub fn joint_type(mut self, joint_type: JointType<T>) -> JointBuilder<T> {
+        self.joint_type = joint_type;
+        self
+    }
+    /// Set joint limits
+    pub fn limits(mut self, limits: Option<Range<T>>) -> JointBuilder<T> {
+        self.limits = limits;
+        self
+    }
+    /// Set the offset transform of this joint
+    pub fn offset(mut self, offset: Isometry3<T>) -> JointBuilder<T> {
+        self.offset = offset;
+        self
+    }
+    /// Set the translation of the offset transform of this joint
+    pub fn translation(mut self, translation: Translation3<T>) -> JointBuilder<T> {
+        self.offset.translation = translation;
+        self
+    }
+    /// Set the rotation of the offset transform of this joint
+    pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> JointBuilder<T> {
+        self.offset.rotation = rotation;
+        self
+    }
+    /// Create `Link` instance
+    pub fn finalize(self) -> Joint<T> {
+        let mut joint = Joint::new(&self.name, self.joint_type);
+        joint.limits = self.limits;
+        joint.offset = self.offset;
+        joint
+    }
+    pub fn into_node(self) -> JointNode<T> {
+        self.finalize().into()
     }
 }

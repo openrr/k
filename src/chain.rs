@@ -19,7 +19,7 @@ use std::ops::Deref;
 
 use errors::*;
 use joint::*;
-use joint_node::JointNode;
+use joint_node::*;
 
 /// Kinematic Chain using `JointNode`
 ///

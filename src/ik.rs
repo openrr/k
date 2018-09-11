@@ -93,7 +93,7 @@ where
         for i in 0..dof {
             let mut small_diff_positions_i = orig_positions.clone();
             small_diff_positions_i[i] += self.jacobian_move_epsilon;
-            arm.set_joint_positions_unchecked(&small_diff_positions_i);
+            arm.set_joint_positions(&small_diff_positions_i)?;
             let small_diff_pose6 = calc_vector6_pose(&arm.end_transform());
             jacobi_vec.push(small_diff_pose6 - orig_pose6);
         }
