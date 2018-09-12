@@ -194,7 +194,7 @@ where
 
 /// Build `jacobianIKSolverBuilder`
 ///
-/// This builder allow initialation of `JacobianIKSolver`
+/// This builder allow initialization of `JacobianIKSolver`
 /// without any parameters.
 ///
 #[derive(Debug, Clone)]
@@ -215,14 +215,14 @@ where
     const DEFAULT_JACOBIAN_MOVE_EPSILON: f64 = 0.0001;
     const DEFAULT_MOVE_EPSILON: f64 = 0.0001;
     const DEFAULT_ALLOWABLE_TARGET_DISTANCE: f64 = 0.001;
-    const DEAULT_NUM_MAX_TRY: usize = 1000;
+    const DEFAULT_NUM_MAX_TRY: usize = 1000;
 
     pub fn new() -> Self {
         JacobianIKSolverBuilder {
             jacobian_move_epsilon: na::convert(Self::DEFAULT_JACOBIAN_MOVE_EPSILON),
             move_epsilon: na::convert(Self::DEFAULT_MOVE_EPSILON),
             allowable_target_distance: na::convert(Self::DEFAULT_ALLOWABLE_TARGET_DISTANCE),
-            num_max_try: Self::DEAULT_NUM_MAX_TRY,
+            num_max_try: Self::DEFAULT_NUM_MAX_TRY,
         }
     }
     pub fn jacobian_move_epsilon(&mut self, jacobian_epsilon: T) -> &mut Self {

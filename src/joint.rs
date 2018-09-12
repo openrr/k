@@ -263,7 +263,7 @@ where
             }
         }
         self.position = position;
-        // TODO: have to reset decendant `world_transform_cache`
+        // TODO: have to reset descendent `world_transform_cache`
         self.world_transform_cache.replace(None);
         Ok(())
     }
@@ -322,6 +322,6 @@ where
 
 impl<T: Real> Display for Joint<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.name, self.joint_type)
+        write!(f, "➡{} {}", self.name, self.joint_type)
     }
 }

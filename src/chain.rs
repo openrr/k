@@ -46,7 +46,7 @@ use joint_node::*;
 ///     .joint_type(JointType::Fixed)
 ///     .into_node();
 ///
-/// // Sequencial joints structure
+/// // Sequential joints structure
 /// connect![l0 => l1 => l2];
 ///
 /// let mut tree = Chain::from_root(l0);
@@ -319,7 +319,7 @@ impl<T: Real> Chain<T> {
 #[derive(Debug)]
 /// Kinematic chain without any branch.
 ///
-/// All joints are connected sequencially.
+/// All joints are connected sequentially.
 pub struct SerialChain<T: Real> {
     inner: Chain<T>,
 }

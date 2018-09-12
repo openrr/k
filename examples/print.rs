@@ -1,4 +1,3 @@
-/// extern crate k;
 extern crate k;
 extern crate nalgebra as na;
 

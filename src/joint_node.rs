@@ -67,12 +67,12 @@ where
         self.0.borrow_mut()
     }
 
-    /// iter from the end to root, it contains nodes[id] itsself
+    /// iter from the end to root, it contains nodes[id] itself
     #[inline]
     pub fn iter_ancestors(&self) -> Ancestors<T> {
         Ancestors::new(Some(self.clone()))
     }
-    /// iter to the end, it contains nodes[id] itsself
+    /// iter to the end, it contains nodes[id] itself
     #[inline]
     pub fn iter_descendants(&self) -> Descendants<T> {
         Descendants::new(vec![self.clone()])
