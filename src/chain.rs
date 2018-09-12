@@ -179,15 +179,15 @@ impl<T: Real> Chain<T> {
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(end_joint: &JointNode<T>) -> SerialChain<T> {
+    pub fn from_end(end_joint: &JointNode<T>) -> Chain<T> {
         let mut joints = end_joint
             .iter_ancestors()
             .map(|joint| joint.clone())
             .collect::<Vec<_>>();
         joints.reverse();
-        SerialChain::new_unchecked(Chain {
+        Chain {
             contained_joints: joints,
-        })
+        }
     }
     /// Iterate for all joint nodes
     ///
@@ -241,8 +241,6 @@ impl<T: Real> Chain<T> {
     ///
     /// let l0 = JointNode::new(JointBuilder::new()
     ///     .name("fixed")
-    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
-    ///     .joint_type(JointType::Fixed)
     ///     .finalize());
     /// let l1 = JointNode::new(JointBuilder::new()
     ///     .name("pitch1")
@@ -323,6 +321,9 @@ impl<T: Real> Chain<T> {
 }
 
 #[derive(Debug)]
+/// Kinematic chain without any branch.
+/// 
+/// All joints are connected sequencially.
 pub struct SerialChain<T: Real> {
     inner: Chain<T>,
 }
@@ -331,9 +332,34 @@ impl<T> SerialChain<T>
 where
     T: Real,
 {
+    /// Convert Chain into SerialChain without any check
+    /// 
+    /// If the input Chain has any branches it causes serious bugs.
+    /// 
     pub fn new_unchecked(inner: Chain<T>) -> Self {
         Self { inner }
     }
+    /// Convert Chain into SerialChain
+    /// 
+    /// If the input Chain has any branches it fails.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let node = k::JointBuilder::<f32>::new().into_node();
+    /// let chain = k::Chain::from_root(node);
+    /// assert!(k::SerialChain::try_new(chain).is_some());
+    /// ```
+    /// 
+    /// ```
+    /// let node0 = k::JointBuilder::<f32>::new().into_node();
+    /// let node1 = k::JointBuilder::new().into_node();
+    /// let node2 = k::JointBuilder::new().into_node();
+    /// node1.set_parent(&node0);
+    /// node2.set_parent(&node0);
+    /// let chain = k::Chain::from_root(node0);
+    /// assert!(k::SerialChain::try_new(chain).is_none());
+    /// ```
     pub fn try_new(inner: Chain<T>) -> Option<Self> {
         {
             let num = inner.iter().count();
@@ -346,9 +372,22 @@ where
         }
         Some(Self { inner })
     }
+    /// Create SerialChain from the end `JointNode`
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// let node = k::JointBuilder::<f32>::new().into_node();
+    /// let s_chain = k::SerialChain::from_end(&node);
+    /// ```
+    pub fn from_end(end_joint: &JointNode<T>) -> SerialChain<T> {
+        SerialChain { inner: Chain::from_end(end_joint) }
+    }
+    /// Safely unwrap and returns inner `Chain` instance
     pub fn unwrap(self) -> Chain<T> {
         self.inner
     }
+    /// Calculate transform of the end joint
     pub fn end_transform(&self) -> Isometry3<T> {
         self.iter().fold(Isometry3::identity(), |trans, joint| {
             trans * joint.transform()
