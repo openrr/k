@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate k;
 extern crate nalgebra as na;
 
@@ -54,11 +55,7 @@ mod tests {
             .translation(Translation3::new(0.0, 0.0, -0.15))
             .finalize()
             .into();
-        l1.set_parent(&l0);
-        l2.set_parent(&l1);
-        l3.set_parent(&l2);
-        l4.set_parent(&l3);
-        l5.set_parent(&l4);
+        connect![l0 => l1 => l2 => l3 => l4 => l5];
         k::SerialChain::from_end(&l5)
     }
 
@@ -118,12 +115,7 @@ mod tests {
             .translation(Translation3::new(0.0, 0.0, -0.10))
             .finalize()
             .into();
-        l1.set_parent(&l0);
-        l2.set_parent(&l1);
-        l3.set_parent(&l2);
-        l4.set_parent(&l3);
-        l5.set_parent(&l4);
-        l6.set_parent(&l5);
+        connect![l0 => l1 => l2 => l3 => l4 => l5 => l6];
         k::SerialChain::new_unchecked(k::Chain::from_root(l0))
     }
 

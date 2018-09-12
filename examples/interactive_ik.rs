@@ -14,6 +14,7 @@
    limitations under the License.
  */
 extern crate glfw;
+#[macro_use]
 extern crate k;
 extern crate kiss3d;
 extern crate nalgebra as na;
@@ -90,13 +91,7 @@ fn create_joint_with_link_array() -> k::JointNode<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize()
         .into();
-    l0.set_parent(&fixed);
-    l1.set_parent(&l0);
-    l2.set_parent(&l1);
-    l3.set_parent(&l2);
-    l4.set_parent(&l3);
-    l5.set_parent(&l4);
-    l6.set_parent(&l5);
+    connect![fixed => l0 => l1 => l2 => l3 => l4 => l5 => l6];
     fixed
 }
 

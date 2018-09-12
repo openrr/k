@@ -15,7 +15,7 @@ mod tests {
         assert!(all_names[0] == "root");
         assert!(all_names[1] == "r_shoulder_yaw");
 
-        let names = tree.names();
+        let names = tree.joint_names();
         assert!(names.len() == 12);
         println!("{}", names[0]);
         assert!(names[0] == "r_shoulder_yaw");

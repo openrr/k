@@ -89,7 +89,7 @@ where
     /// ```
     /// use k::*;
     ///
-    /// let l0 = k::JointBuilder::new().into_node();
+    /// let l0 = k::JointBuilder::<f32>::new().into_node();
     /// let l1 = k::JointBuilder::new().into_node();
     /// l1.set_parent(&l0);
     /// assert!(l0.is_root());
@@ -102,7 +102,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let l0 = k::JointBuilder::new().into_node();
+    /// let l0 = k::JointBuilder::<f64>::new().into_node();
     /// let l1 = k::JointBuilder::new().into_node();
     /// l1.set_parent(&l0);
     /// assert!(!l0.is_end());
@@ -420,4 +420,35 @@ where
     pub fn into_node(self) -> JointNode<T> {
         self.finalize().into()
     }
+}
+
+/// set parents easily
+/// 
+/// ```
+/// #[macro_use] extern crate k;
+/// # fn main() {
+/// let l0 = k::JointBuilder::<f64>::new().into_node();
+/// let l1 = k::JointBuilder::new().into_node();
+/// let l2 = k::JointBuilder::new().into_node();
+/// 
+/// // This is the same as below
+/// // l1.set_parent(&l0);
+/// // l2.set_parent(&l1);
+/// connect![l0 => l1 => l2];
+/// 
+/// assert!(l0.is_root());
+/// assert!(!l1.is_root());
+/// assert!(!l1.is_end());
+/// assert!(l2.is_end());
+/// # }
+/// ```
+#[macro_export]
+macro_rules! connect {
+    ($x:expr => $y:expr) => {
+        $y.set_parent(&$x);
+    };
+    ($x:expr => $y:expr => $($rest:tt)+) => {
+        $y.set_parent(&$x);
+        connect!($y => $($rest)*);
+    };
 }

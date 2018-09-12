@@ -26,6 +26,7 @@ use joint_node::*;
 /// # Examples
 ///
 /// ```
+/// #[macro_use]
 /// use k::*;
 /// use k::prelude::*;
 ///
@@ -46,8 +47,7 @@ use joint_node::*;
 ///     .into_node();
 ///
 /// // Sequencial joints structure
-/// l1.set_parent(&l0);
-/// l2.set_parent(&l1);
+/// connect![l0 => l1 => l2];
 ///
 /// let mut tree = Chain::from_root(l0);
 /// assert_eq!(tree.dof(), 2);
@@ -125,12 +125,12 @@ impl<T: Real> Chain<T> {
     /// # Examples
     ///
     /// ```
-    /// use k::*;
+    /// use k;
     ///
-    /// let l0 = JointBuilder::new().into_node();
-    /// let l1 = JointBuilder::new().into_node();
+    /// let l0 = k::JointBuilder::new().into_node();
+    /// let l1 = k::JointBuilder::new().into_node();
     /// l1.set_parent(&l0);
-    /// let tree = Chain::from_root(l0);
+    /// let tree = k::Chain::<f32>::from_root(l0);
     /// ```
     pub fn from_root(root_joint: JointNode<T>) -> Self {
         let contained_joints = root_joint
@@ -197,7 +197,7 @@ impl<T: Real> Chain<T> {
     /// let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     /// l1.set_parent(&l0);
     /// let tree = Chain::<f64>::from_root(l0);
-    /// let names = tree.iter().map(|joint| joint.name()).collect::<Vec<_>>();
+    /// let names = tree.iter().map(|node| node.name()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "fixed0");
     /// assert_eq!(names[1], "fixed1");
@@ -289,13 +289,15 @@ impl<T: Real> Chain<T> {
             joint.set_position_unchecked(*position);
         }
     }
-    pub fn limits(&self) -> Vec<Option<Range<T>>> {
+    /// Returns the limits which is not fixed joint
+    pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
         self.iter()
             .filter(|joint| joint.is_movable())
             .map(|joint| joint.limits())
             .collect()
     }
-    pub fn names(&self) -> Vec<String> {
+    /// Returns the names which is not fixed joint
+    pub fn joint_names(&self) -> Vec<String> {
         self.iter()
             .filter(|joint| joint.is_movable())
             .map(|joint| joint.name())
