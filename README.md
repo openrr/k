@@ -49,11 +49,10 @@ fn main() {
     // Set initial joint angles
     let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];
 
-    chain.set_joint_angles(&angles).unwrap();
-    println!("initial angles={:?}", chain.joint_angles());
+    chain.set_joint_positions(&angles).unwrap();
+    println!("initial angles={:?}", chain.joint_positions());
 
-    let target_link_name = "l_wrist2";
-    let target_link = chain.find_link("l_wrist2").unwrap();
+    let target_link = chain.find("l_wrist_pitch").unwrap();
 
     // Get the transform of the end of the manipulator (forward kinematics)
     chain.update_transforms();
@@ -66,9 +65,11 @@ fn main() {
     // Create IK solver with default settings
     let solver = k::JacobianIKSolverBuilder::new().finalize();
 
+    // Create a set of joints from end joint
+    let arm = k::SerialChain::from_end(target_link);
     // solve and move the manipulator angles
-    solver.solve(&chain, target_link_name, &target).unwrap();
-    println!("solved angles={:?}", chain.joint_angles());
+    solver.solve(&arm, &target).unwrap();
+    println!("solved angles={:?}", chain.joint_positions());
 
     // chain.update_transforms();
     let solved_pose = target_link.world_transform().unwrap();
