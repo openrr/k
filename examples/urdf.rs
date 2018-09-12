@@ -42,7 +42,7 @@ fn main() {
     let solver = k::JacobianIKSolverBuilder::new().finalize();
 
     // Create a set of joints from end joint
-    let arm = k::Chain::from_end(target_link);
+    let arm = k::SerialChain::from_end(target_link);
     // solve and move the manipulator angles
     solver.solve(&arm, &target).unwrap();
     println!("solved angles={:?}", chain.joint_positions());

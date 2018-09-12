@@ -24,7 +24,6 @@ use std::path::Path;
 use chain::*;
 use joint::*;
 use joint_node::*;
-use rctree::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
 
@@ -124,7 +123,7 @@ where
             .finalize()
             .into();
         for j in &robot.joints {
-            let node = Node::new(j.into());
+            let node = JointNode::<T>::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
             if parent_link_name_to_node.get(&j.parent.link).is_some() {
                 parent_link_name_to_node

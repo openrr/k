@@ -59,7 +59,7 @@ mod tests {
         l3.set_parent(&l2);
         l4.set_parent(&l3);
         l5.set_parent(&l4);
-        k::Chain::from_end(&l5)
+        k::SerialChain::from_end(&l5)
     }
 
     pub fn create_joint_with_link_array7() -> k::SerialChain<f32> {

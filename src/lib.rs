@@ -38,8 +38,8 @@ mod joint_node;
 
 pub mod math;
 pub mod prelude;
-pub mod rctree;
 pub mod urdf;
+pub mod iterator;
 
 pub use self::chain::*;
 pub use self::errors::*;

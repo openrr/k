@@ -14,16 +14,122 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
+use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{self, Display};
+use std::rc::{Rc, Weak};
 
 use errors::*;
 use joint::*;
-use rctree::*;
+use iterator::*;
+
+type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
+
+#[derive(Debug, Clone)]
+/// Node for joint tree struct
+pub(crate) struct NodeImpl<T>
+where
+    T: Real,
+{
+    pub parent: Option<WeakNode<T>>,
+    pub children: Vec<JointNode<T>>,
+    pub joint: Joint<T>,
+    pub mimic_parent: Option<WeakNode<T>>,
+    pub mimic_children: Vec<JointNode<T>>,
+    pub mimic: Option<Mimic<T>>,
+}
 
 /// Parts of `Chain`
 ///
 /// It contains joint, joint (transform), and parent/children.
-pub type JointNode<T> = Node<Joint<T>, Mimic<T>>;
+#[derive(Debug)]
+pub struct JointNode<T: Real>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
+
+impl<T> JointNode<T>
+where
+    T: Real,
+{
+    pub fn new(joint: Joint<T>) -> Self {
+        JointNode::<T>(Rc::new(RefCell::new(NodeImpl {
+            parent: None,
+            children: Vec::new(),
+            joint: joint,
+            mimic_parent: None,
+            mimic_children: Vec::new(),
+            mimic: None,
+        })))
+    }
+    #[inline]
+    pub(crate) fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T>> {
+        self.0.borrow()
+    }
+    #[inline]
+    pub(crate) fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T>> {
+        self.0.borrow_mut()
+    }
+
+    /// iter from the end to root, it contains nodes[id] itsself
+    #[inline]
+    pub fn iter_ancestors(&self) -> Ancestors<T> {
+        Ancestors::new(Some(self.clone()))
+    }
+    /// iter to the end, it contains nodes[id] itsself
+    #[inline]
+    pub fn iter_descendants(&self) -> Descendants<T> {
+        Descendants::new(vec![self.clone()])
+    }
+
+    /// Set parent and child relations at same time
+    pub fn set_parent(&self, parent: &JointNode<T>) {
+        self.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
+        parent.borrow_mut().children.push(self.clone());
+    }
+
+    /// # Examples
+    ///
+    /// ```
+    /// use k::*;
+    ///
+    /// let l0 = k::JointBuilder::new().into_node();
+    /// let l1 = k::JointBuilder::new().into_node();
+    /// l1.set_parent(&l0);
+    /// assert!(l0.is_root());
+    /// assert!(!l1.is_root());
+    /// ```
+    pub fn is_root(&self) -> bool {
+        self.borrow().parent.is_none()
+    }
+
+    /// # Examples
+    ///
+    /// ```
+    /// let l0 = k::JointBuilder::new().into_node();
+    /// let l1 = k::JointBuilder::new().into_node();
+    /// l1.set_parent(&l0);
+    /// assert!(!l0.is_end());
+    /// assert!(l1.is_end());
+    /// ```
+    pub fn is_end(&self) -> bool {
+        self.borrow().children.is_empty()
+    }
+}
+
+impl<T> ::std::clone::Clone for JointNode<T>
+where
+    T: Real,
+{
+    fn clone(&self) -> Self {
+        JointNode::<T>(self.0.clone())
+    }
+}
+
+impl<T> PartialEq for JointNode<T>
+where
+    T: Real,
+{
+    fn eq(&self, other: &JointNode<T>) -> bool {
+        &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
+    }
+}
 
 impl<T> JointNode<T>
 where
@@ -42,12 +148,12 @@ where
     /// ```
     #[inline]
     pub fn name(&self) -> String {
-        self.borrow().data.name.to_owned()
+        self.borrow().joint.name.to_owned()
     }
     /// Clone the joint limits
     #[inline]
     pub fn limits(&self) -> Option<Range<T>> {
-        self.borrow().data.limits.clone()
+        self.borrow().joint.limits.clone()
     }
     /// Updates and returns the local transform
     ///
@@ -66,12 +172,12 @@ where
     /// ```
     #[inline]
     pub fn transform(&self) -> Isometry3<T> {
-        self.borrow().data.transform()
+        self.borrow().joint.transform()
     }
     /// Set the offset transform of the joint
     #[inline]
     pub fn set_offset(&self, trans: Isometry3<T>) {
-        self.borrow_mut().data.offset = trans;
+        self.borrow_mut().joint.offset = trans;
     }
     /// Set the position (angle) of the joint
     ///
@@ -120,15 +226,15 @@ where
     /// ```
     pub fn set_position(&self, position: T) -> Result<(), JointError> {
         let mut node = self.borrow_mut();
-        if node.sub_parent.is_some() {
+        if node.mimic_parent.is_some() {
             return Ok(());
         }
-        node.data.set_position(position)?;
-        for child in &node.sub_children {
+        node.joint.set_position(position)?;
+        for child in &node.mimic_children {
             let mut child_node = child.borrow_mut();
-            let mimic = child_node.sub_data.clone();
+            let mimic = child_node.mimic.clone();
             match mimic {
-                Some(m) => child_node.data.set_position(m.mimic_position(position))?,
+                Some(m) => child_node.joint.set_position(m.mimic_position(position))?,
                 None => {
                     return Err(JointError::MimicError {
                         from: self.name(),
@@ -147,22 +253,22 @@ where
     }
     #[inline]
     pub fn set_position_unchecked(&self, position: T) {
-        self.borrow_mut().data.set_position_unchecked(position);
+        self.borrow_mut().joint.set_position_unchecked(position);
     }
     /// Get the position of the joint. If it is fixed, it returns None.
     #[inline]
     pub fn position(&self) -> Option<T> {
-        self.borrow().data.position()
+        self.borrow().joint.position()
     }
     /// Copy the type of the joint
     #[inline]
     pub fn joint_type(&self) -> JointType<T> {
-        self.borrow().data.joint_type
+        self.borrow().joint.joint_type
     }
     /// Returns if it has a joint position. similar to `is_not_fixed()`
     #[inline]
-    pub fn has_position(&self) -> bool {
-        match self.borrow().data.joint_type {
+    pub fn is_movable(&self) -> bool {
+        match self.borrow().joint.joint_type {
             JointType::Fixed => false,
             _ => true,
         }
@@ -172,7 +278,7 @@ where
             Some(ref parent) => {
                 let rc_parent = parent.upgrade().unwrap().clone();
                 let parent_obj = rc_parent.borrow();
-                parent_obj.data.world_transform()
+                parent_obj.joint.world_transform()
             }
             None => Some(Isometry3::identity()),
         }
@@ -207,17 +313,18 @@ where
     /// // _poses[1] is as same as l1.world_transform()
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
-        self.borrow().data.world_transform()
+        self.borrow().joint.world_transform()
     }
     pub fn set_mimic_parent(&self, parent: &JointNode<T>, mimic: Mimic<T>) {
-        self.set_sub_parent(parent);
-        self.borrow_mut().sub_data = Some(mimic);
+        self.borrow_mut().mimic_parent = Some(Rc::downgrade(&parent.0));
+        parent.borrow_mut().mimic_children.push(self.clone());
+        self.borrow_mut().mimic = Some(mimic);
     }
 }
 
 impl<T: Real> Display for JointNode<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.borrow().data.fmt(f)
+        self.borrow().joint.fmt(f)
     }
 }
 

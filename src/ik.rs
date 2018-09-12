@@ -134,7 +134,7 @@ where
     /// // Create sub-`Chain` to make it easy to use inverse kinematics
     /// let target_joint_name = "r_wrist_pitch";
     /// let r_wrist = chain.find(target_joint_name).unwrap();
-    /// let mut arm = k::Chain::from_end(r_wrist);
+    /// let mut arm = k::SerialChain::from_end(r_wrist);
     /// println!("arm: {}", arm);
     ///
     /// // Set joint positions of `arm`
