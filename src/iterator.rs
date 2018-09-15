@@ -14,8 +14,8 @@
    limitations under the License.
  */
 //! Iterators to iterate descendants and ancestors
-use na::Real;
 use joint_node::*;
+use na::Real;
 
 #[derive(Debug)]
 /// Iterator for parents
@@ -26,12 +26,12 @@ where
     parent: Option<JointNode<T>>,
 }
 
-
-impl<T> Ancestors<T> where T:Real {
+impl<T> Ancestors<T>
+where
+    T: Real,
+{
     pub fn new(parent: Option<JointNode<T>>) -> Self {
-        Self {
-            parent
-        }
+        Self { parent }
     }
 }
 
@@ -65,11 +65,12 @@ where
     stack: Vec<JointNode<T>>,
 }
 
-impl<T> Descendants<T> where T:Real {
+impl<T> Descendants<T>
+where
+    T: Real,
+{
     pub fn new(stack: Vec<JointNode<T>>) -> Self {
-        Self {
-            stack
-        }
+        Self { stack }
     }
 }
 

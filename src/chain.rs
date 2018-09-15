@@ -18,7 +18,6 @@ use std::fmt::{self, Display};
 use std::ops::Deref;
 
 use errors::*;
-use joint::*;
 use joint_node::*;
 
 /// Kinematic Chain using `JointNode`
@@ -84,6 +83,7 @@ use joint_node::*;
 #[derive(Debug)]
 pub struct Chain<T: Real> {
     contained_joints: Vec<JointNode<T>>,
+    movable_joints: Vec<JointNode<T>>,
     dof: usize,
 }
 
@@ -115,10 +115,6 @@ impl<T: Real> Display for Chain<T> {
     }
 }
 
-fn calculate_dof<T: Real>(joints: &[JointNode<T>]) -> usize {
-    joints.iter().filter(|joint| joint.is_movable()).count()
-}
-
 impl<T: Real> Chain<T> {
     /// Create Chain from root joint
     ///
@@ -137,7 +133,16 @@ impl<T: Real> Chain<T> {
             .iter_descendants()
             .map(|joint| joint.clone())
             .collect::<Vec<_>>();
-        Chain { dof: calculate_dof(&contained_joints), contained_joints}
+        let movable_joints = contained_joints
+            .iter()
+            .filter(|joint| joint.is_movable())
+            .map(|node| node.clone())
+            .collect::<Vec<_>>();
+        Chain {
+            dof: movable_joints.len(),
+            contained_joints,
+            movable_joints,
+        }
     }
     /// Create `Chain` from end joint. It has any branches.
     ///
@@ -182,7 +187,16 @@ impl<T: Real> Chain<T> {
             .map(|joint| joint.clone())
             .collect::<Vec<_>>();
         contained_joints.reverse();
-        Chain { dof: calculate_dof(&contained_joints), contained_joints}
+        let movable_joints = contained_joints
+            .iter()
+            .filter(|joint| joint.is_movable())
+            .map(|node| node.clone())
+            .collect::<Vec<_>>();
+        Chain {
+            dof: movable_joints.len(),
+            movable_joints,
+            contained_joints,
+        }
     }
     /// Iterate for all joint nodes
     ///
@@ -204,6 +218,11 @@ impl<T: Real> Chain<T> {
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &JointNode<T>> {
         self.contained_joints.iter()
+    }
+
+    /// Iterate for movable joints
+    pub fn iter_joints(&self) -> impl Iterator<Item = &JointNode<T>> {
+        self.movable_joints.iter()
     }
 
     /// Calculate the degree of freedom
@@ -256,7 +275,9 @@ impl<T: Real> Chain<T> {
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     pub fn joint_positions(&self) -> Vec<T> {
-        self.iter().filter_map(|joint| joint.position()).collect()
+        self.iter_joints()
+            .map(|joint| joint.position().expect("movable joint must has position"))
+            .collect()
     }
 
     /// Set the positions of the joints
@@ -269,39 +290,18 @@ impl<T: Real> Chain<T> {
                 required: self.dof,
             });
         }
-        for (mut joint, position) in self
-            .iter()
-            .filter(|joint| joint.is_movable())
-            .zip(positions_vec.iter())
-        {
+        for (mut joint, position) in self.iter_joints().zip(positions_vec.iter()) {
             joint.set_position(*position)?;
         }
         Ok(())
     }
+
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
-        for (mut joint, position) in self
-            .iter()
-            .filter(|joint| joint.is_movable())
-            .zip(positions_vec.iter())
-        {
+        for (mut joint, position) in self.iter_joints().zip(positions_vec.iter()) {
             joint.set_position_unchecked(*position);
         }
-    }
-    /// Returns the limits which is not fixed joint
-    pub fn joint_limits(&self) -> Vec<Option<Range<T>>> {
-        self.iter()
-            .filter(|joint| joint.is_movable())
-            .map(|joint| joint.limits())
-            .collect()
-    }
-    /// Returns the names which is not fixed joint
-    pub fn joint_names(&self) -> Vec<String> {
-        self.iter()
-            .filter(|joint| joint.is_movable())
-            .map(|joint| joint.name())
-            .collect()
     }
 
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {

@@ -17,18 +17,15 @@ use na::{self, DMatrix, Isometry3, Real, Vector6};
 
 use chain::*;
 use errors::*;
-use math::*;
 
 #[inline]
 fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
-    let rpy = to_euler_angles(&pose.rotation);
+    let (r, p, y) = pose.rotation.to_euler_angles();
     Vector6::new(
         pose.translation.vector[0],
         pose.translation.vector[1],
         pose.translation.vector[2],
-        rpy[0],
-        rpy[1],
-        rpy[2],
+        r, p, y
     )
 }
 

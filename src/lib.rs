@@ -36,10 +36,9 @@ mod ik;
 mod joint;
 mod joint_node;
 
-pub mod math;
+pub mod iterator;
 pub mod prelude;
 pub mod urdf;
-pub mod iterator;
 
 pub use self::chain::*;
 pub use self::errors::*;

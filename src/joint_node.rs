@@ -19,8 +19,8 @@ use std::fmt::{self, Display};
 use std::rc::{Rc, Weak};
 
 use errors::*;
-use joint::*;
 use iterator::*;
+use joint::*;
 
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 
@@ -111,30 +111,7 @@ where
     pub fn is_end(&self) -> bool {
         self.borrow().children.is_empty()
     }
-}
 
-impl<T> ::std::clone::Clone for JointNode<T>
-where
-    T: Real,
-{
-    fn clone(&self) -> Self {
-        JointNode::<T>(self.0.clone())
-    }
-}
-
-impl<T> PartialEq for JointNode<T>
-where
-    T: Real,
-{
-    fn eq(&self, other: &JointNode<T>) -> bool {
-        &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
-    }
-}
-
-impl<T> JointNode<T>
-where
-    T: Real,
-{
     /// Return the name of the joint
     ///
     /// The return value is `String`, not `&str`.
@@ -322,6 +299,24 @@ where
     }
 }
 
+impl<T> ::std::clone::Clone for JointNode<T>
+where
+    T: Real,
+{
+    fn clone(&self) -> Self {
+        JointNode::<T>(self.0.clone())
+    }
+}
+
+impl<T> PartialEq for JointNode<T>
+where
+    T: Real,
+{
+    fn eq(&self, other: &JointNode<T>) -> bool {
+        &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
+    }
+}
+
 impl<T: Real> Display for JointNode<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.borrow().joint.fmt(f)
@@ -423,19 +418,19 @@ where
 }
 
 /// set parents easily
-/// 
+///
 /// ```
 /// #[macro_use] extern crate k;
 /// # fn main() {
 /// let l0 = k::JointBuilder::<f64>::new().into_node();
 /// let l1 = k::JointBuilder::new().into_node();
 /// let l2 = k::JointBuilder::new().into_node();
-/// 
+///
 /// // This is the same as below
 /// // l1.set_parent(&l0);
 /// // l2.set_parent(&l1);
 /// connect![l0 => l1 => l2];
-/// 
+///
 /// assert!(l0.is_root());
 /// assert!(!l1.is_root());
 /// assert!(!l1.is_end());

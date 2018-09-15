@@ -223,6 +223,19 @@ pub fn link_to_joint_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
     map
 }
 
+pub fn joint_to_link_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    for j in &urdf_robot.joints {
+        map.insert(j.name.to_owned(), j.child.link.to_owned());
+    }
+    for l in &urdf_robot.links {
+        if map.get(&l.name).is_none() {
+            map.insert(ROOT_JOINT_NAME.to_owned(), l.name.to_owned());
+        }
+    }
+    map
+}
+
 #[test]
 fn test_tree() {
     let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
