@@ -14,16 +14,15 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::any::Any;
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
 use std::ops::Deref;
 use std::rc::{Rc, Weak};
-use urdf_rs;
 
 use errors::*;
 use iterator::*;
 use joint::*;
+use link::*;
 
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 
@@ -39,7 +38,7 @@ where
     pub mimic_parent: Option<WeakNode<T>>,
     pub mimic_children: Vec<JointNode<T>>,
     pub mimic: Option<Mimic<T>>,
-    pub child_link: Option<Box<Any>>,
+    pub child_link: Option<Link<T>>,
 }
 
 /// Parts of `Chain`
@@ -265,7 +264,7 @@ where
         self.0.borrow_mut().mimic = Some(mimic);
     }
 
-    pub fn set_child_link(&self, link: Option<Box<Any>>) {
+    pub fn set_child_link(&self, link: Option<Link<T>>) {
         self.0.borrow_mut().child_link = link;
     }
 
@@ -300,9 +299,7 @@ impl<T: Real> Display for JointNode<T> {
         inner.joint.fmt(f)?;
 
         if let Some(l) = &inner.child_link {
-            if let Some(urdf_link) = l.downcast_ref::<urdf_rs::Link>() {
-                write!(f, " => /{}/", urdf_link.name)?;
-            }
+            write!(f, " => /{}/", l.name)?;
         }
         Ok(())
     }
@@ -339,7 +336,7 @@ macro_rules! def_ref_guard {
 }
 
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
-def_ref_guard!(ChildLinkRefGuard, Option<Box<Any>>, child_link);
+def_ref_guard!(ChildLinkRefGuard, Option<Link<T>>, child_link);
 def_ref_guard!(ChildrenRefGuard, Vec<JointNode<T>>, children);
 def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
 

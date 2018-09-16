@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{Isometry3, Real};
+use na::{Isometry3, Real, Vector3};
 use std::fmt::{self, Display};
 use std::ops::Deref;
 
@@ -304,6 +304,37 @@ impl<T: Real> Chain<T> {
                 trans
             }).collect()
     }
+    /// ```
+    /// use k::*;
+    ///
+    /// let j0 = JointBuilder::new()
+    ///     .translation(Translation3::new(0.0, 1.0, 0.0))
+    ///     .into_node();
+    /// let j1 = JointBuilder::new()
+    ///     .translation(Translation3::new(0.0, 0.0, 1.0))
+    ///     .into_node();
+    /// j0.set_child_link(Some(Link::new("l0", k::link::Inertial::new(1.0))));
+    /// j1.set_child_link(Some(Link::new("l1", k::link::Inertial::new(4.0))));
+    /// j1.set_parent(&j0);
+    /// let tree = Chain::from_root(j0);
+    /// let com1 = tree.update_center_of_mass();
+    /// ```
+    pub fn update_center_of_mass(&self) -> Vector3<T> {
+        let mut total_mass = T::zero();
+        let mut com = Vector3::zeros();
+
+        self.update_transforms();
+        self.iter().for_each(|joint| {
+            if let Some(trans) = joint.joint().world_transform() {
+                if let Some(ref link) = *joint.child_link() {
+                    let inertia_trans = trans * link.inertial.origin.translation;
+                    com += inertia_trans.translation.vector * link.inertial.mass;
+                    total_mass += link.inertial.mass;
+                }
+            }
+        });
+        com / total_mass
+    }
 }
 
 #[derive(Debug)]
@@ -534,4 +565,35 @@ fn test_mimic() {
     assert_eq!(positions[0], 0.1);
     assert_eq!(positions[1], 0.2);
     assert_eq!(positions[2], 0.9);
+}
+
+#[test]
+fn test_update_center_of_mass() {
+    use super::joint::*;
+    use super::joint_node::*;
+    use super::link::*;
+    use na::*;
+    let j0 = JointBuilder::new()
+        .translation(Translation3::new(0.0, 1.0, 0.0))
+        .into_node();
+    let j1 = JointBuilder::new()
+        .translation(Translation3::new(0.0, 0.0, 1.0))
+        .joint_type(JointType::Rotational {
+            axis: Vector3::y_axis(),
+        }).into_node();
+    j0.set_child_link(Some(Link::new("l0", Inertial::new(1.0))));
+    let mut i1 = Inertial::new(4.0);
+    i1.origin.translation.vector.z = 1.0;
+    j1.set_child_link(Some(Link::new("l1", i1)));
+    j1.set_parent(&j0);
+    let tree = Chain::from_root(j0);
+    let com1 = tree.update_center_of_mass();
+    assert_eq!(com1.x, 0.0);
+    assert_eq!(com1.y, 1.0);
+    assert_eq!(com1.z, 1.6);
+    j1.set_position(0.5).unwrap();
+    let com2 = tree.update_center_of_mass();
+    assert!((com2.x - 0.383540).abs() < 0.0001);
+    assert_eq!(com2.y, 1.0);
+    assert!((com2.z - 1.502066).abs() < 0.0001);
 }

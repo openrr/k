@@ -17,21 +17,161 @@
 //!
 use urdf_rs;
 
-use na::{self, Isometry3, Real};
+use na::{self, Isometry3, Matrix3, Real};
 use std::collections::HashMap;
 use std::path::Path;
 
 use chain::*;
 use joint::*;
 use joint_node::*;
+use link::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
+
+impl<'a, T> From<&'a urdf_rs::Color> for Color<T>
+where
+    T: Real,
+{
+    fn from(urdf_color: &urdf_rs::Color) -> Self {
+        Color {
+            r: na::convert(urdf_color.rgba[0]),
+            g: na::convert(urdf_color.rgba[1]),
+            b: na::convert(urdf_color.rgba[2]),
+            a: na::convert(urdf_color.rgba[3]),
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Color> for Color<T>
+where
+    T: Real,
+{
+    fn from(urdf_color: urdf_rs::Color) -> Self {
+        (&urdf_color).into()
+    }
+}
+
+impl From<urdf_rs::Texture> for Texture {
+    fn from(urdf_texture: urdf_rs::Texture) -> Self {
+        Texture {
+            filename: urdf_texture.filename,
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Material> for Material<T>
+where
+    T: Real,
+{
+    fn from(urdf_material: urdf_rs::Material) -> Self {
+        Material {
+            name: urdf_material.name,
+            color: urdf_material.color.into(),
+            texture: urdf_material.texture.into(),
+        }
+    }
+}
 
 pub fn isometry_from<T: Real>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
     Isometry3::from_parts(
         translation_from(&origin_element.xyz),
         quaternion_from(&origin_element.rpy),
     )
+}
+
+impl<T> From<urdf_rs::Inertial> for Inertial<T>
+where
+    T: Real,
+{
+    fn from(urdf_inertial: urdf_rs::Inertial) -> Self {
+        let i = urdf_inertial.inertia;
+        Inertial {
+            mass: na::convert(urdf_inertial.mass.value),
+            origin: isometry_from(&urdf_inertial.origin),
+            inertia: Matrix3::new(
+                na::convert(i.ixx),
+                na::convert(i.ixy),
+                na::convert(i.ixz),
+                na::convert(i.ixy),
+                na::convert(i.iyy),
+                na::convert(i.iyz),
+                na::convert(i.ixz),
+                na::convert(i.iyz),
+                na::convert(i.izz),
+            ),
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Visual> for Visual<T>
+where
+    T: Real,
+{
+    fn from(urdf_visual: urdf_rs::Visual) -> Self {
+        Visual {
+            name: urdf_visual.name,
+            origin: isometry_from(&urdf_visual.origin),
+            geometry: urdf_visual.geometry.into(),
+            material: urdf_visual.material.into(),
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Collision> for Collision<T>
+where
+    T: Real,
+{
+    fn from(urdf_collision: urdf_rs::Collision) -> Self {
+        Collision {
+            name: urdf_collision.name,
+            origin: isometry_from(&urdf_collision.origin),
+            geometry: urdf_collision.geometry.into(),
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Geometry> for Geometry<T>
+where
+    T: Real,
+{
+    fn from(urdf_geometry: urdf_rs::Geometry) -> Self {
+        match urdf_geometry {
+            urdf_rs::Geometry::Box { size } => Geometry::Box {
+                depth: na::convert(size[0]),
+                width: na::convert(size[1]),
+                height: na::convert(size[2]),
+            },
+            urdf_rs::Geometry::Cylinder { radius, length } => Geometry::Cylinder {
+                radius: na::convert(radius),
+                length: na::convert(length),
+            },
+            urdf_rs::Geometry::Sphere { radius } => Geometry::Sphere {
+                radius: na::convert(radius),
+            },
+            urdf_rs::Geometry::Mesh { filename, scale } => Geometry::Mesh {
+                filename,
+                scale: na::Vector3::new(
+                    na::convert(scale[0]),
+                    na::convert(scale[1]),
+                    na::convert(scale[2]),
+                ),
+            },
+        }
+    }
+}
+
+impl<T> From<urdf_rs::Link> for Link<T>
+where
+    T: Real,
+{
+    fn from(urdf_link: urdf_rs::Link) -> Self {
+        Link {
+            name: urdf_link.name,
+            inertial: urdf_link.inertial.into(),
+            visuals: urdf_link.visual.into_iter().map(|v| v.into()).collect(),
+            collisions: urdf_link.collision.into_iter().map(|v| v.into()).collect(),
+        }
+    }
 }
 
 impl<'a, T> From<&'a urdf_rs::Mimic> for Mimic<T>
@@ -141,10 +281,10 @@ where
                         child_node.set_parent(parent_node);
                     }
                 }
-                parent_node.set_child_link(Some(Box::new(l.clone())));
+                parent_node.set_child_link(Some(l.clone().into()));
             } else {
                 info!("root={}", l.name);
-                root_node.set_child_link(Some(Box::new(l.clone())));
+                root_node.set_child_link(Some(l.clone().into()));
             }
         }
         // add mimics
@@ -240,11 +380,11 @@ pub fn joint_to_link_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
 
 #[test]
 fn test_tree() {
-    let robo = urdf_rs::read_file("urdf/sample.urdf").unwrap();
-    assert_eq!(robo.name, "robo");
-    assert_eq!(robo.links.len(), 1 + 6 + 6);
+    let robot = urdf_rs::read_file("urdf/sample.urdf").unwrap();
+    assert_eq!(robot.name, "robo");
+    assert_eq!(robot.links.len(), 1 + 6 + 6);
 
-    let tree = Chain::<f32>::from(&robo);
+    let tree = Chain::<f32>::from(&robot);
     assert_eq!(tree.iter().count(), 13);
 }
 
