@@ -36,14 +36,16 @@ where
         .map(|range| match *range {
             Some(ref range) => (range.max - range.min) * na::convert(rand::random()) + range.min,
             None => na::convert::<f64, T>(rand::random::<f64>() - 0.5) * na::convert(2.0 * PI),
-        })
-        .collect()
+        }).collect()
 }
 
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
     let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = chain.iter_joints().map(|j| j.limits()).collect();
+    let limits = chain
+        .iter_joints()
+        .map(|j| j.joint().limits.clone())
+        .collect();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
         chain.set_joint_positions(&angles).unwrap();
@@ -55,7 +57,10 @@ fn bench_rctree(b: &mut test::Bencher) {
 #[bench]
 fn bench_rctree_set_joints(b: &mut test::Bencher) {
     let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = chain.iter_joints().map(|j| j.limits()).collect();
+    let limits = chain
+        .iter_joints()
+        .map(|j| j.joint().limits.clone())
+        .collect();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
         chain.set_joint_positions(&angles).unwrap();

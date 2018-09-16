@@ -80,7 +80,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range = k::Range::new(-1.0, 1.0);
+    /// let range = k::joint::Range::new(-1.0, 1.0);
     /// ```
     pub fn new(min: T, max: T) -> Self {
         Range { min, max }
@@ -93,7 +93,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range = k::Range::new(-1.0, 1.0);
+    /// let range = k::joint::Range::new(-1.0, 1.0);
     /// assert!(range.is_valid(0.0));
     /// assert!(range.is_valid(1.0));
     /// assert!(!range.is_valid(1.5));
@@ -110,7 +110,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let range : k::Range<f64> = (-1.0..=1.0).into();
+    /// let range : k::joint::Range<f64> = (-1.0..=1.0).into();
     /// assert!(range.is_valid(0.0));
     /// assert!(range.is_valid(1.0));
     /// assert!(!range.is_valid(1.5));
@@ -127,7 +127,7 @@ where
 /// gripper(L). In that case, the code like below will be used.
 ///
 /// ```
-/// let mimic_for_gripper_r = k::Mimic::new(-1.0, 0.0);
+/// let mimic_for_gripper_r = k::joint::Mimic::new(-1.0, 0.0);
 /// ```
 ///
 /// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + offset`
@@ -147,7 +147,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let m = k::Mimic::<f64>::new(1.0, 0.5);
+    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
     /// ```
     pub fn new(multiplier: T, offset: T) -> Self {
         Mimic { multiplier, offset }
@@ -157,12 +157,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// let m = k::Mimic::<f64>::new(1.0, 0.5);
+    /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
     /// assert_eq!(m.mimic_position(0.2), 0.7); // 0.2 * 1.0 + 0.5
     /// ```
     ///
     /// ```
-    /// let m = k::Mimic::<f64>::new(-2.0, -0.4);
+    /// let m = k::joint::Mimic::<f64>::new(-2.0, -0.4);
     /// assert_eq!(m.mimic_position(0.2), -0.8); // 0.2 * -2.0 - 0.4
     /// ```
     pub fn mimic_position(&self, from_position: T) -> T {
@@ -211,7 +211,7 @@ where
     pub fn new(name: &str, joint_type: JointType<T>) -> Joint<T> {
         Joint {
             name: name.to_string(),
-            joint_type: joint_type,
+            joint_type,
             position: T::zero(),
             limits: None,
             offset: Isometry3::identity(),
@@ -318,10 +318,18 @@ where
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         *self.world_transform_cache.borrow()
     }
+
+    #[inline]
+    pub fn is_movable(&self) -> bool {
+        match self.joint_type {
+            JointType::Fixed => false,
+            _ => true,
+        }
+    }
 }
 
 impl<T: Real> Display for Joint<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "➡{} {}", self.name, self.joint_type)
+        write!(f, "{} {}", self.name, self.joint_type)
     }
 }

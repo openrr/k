@@ -10,6 +10,8 @@
 
 See [Document](http://docs.rs/k) and examples/ for more details.
 
+API is unstable. 
+
 ## Requirements to build examples
 
 ```bash

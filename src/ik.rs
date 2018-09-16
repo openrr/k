@@ -25,7 +25,9 @@ fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
         pose.translation.vector[0],
         pose.translation.vector[1],
         pose.translation.vector[2],
-        r, p, y
+        r,
+        p,
+        y,
     )
 }
 
@@ -71,10 +73,10 @@ where
         num_max_try: usize,
     ) -> JacobianIKSolver<T> {
         JacobianIKSolver {
-            jacobian_move_epsilon: jacobian_move_epsilon,
-            move_epsilon: move_epsilon,
-            allowable_target_distance: allowable_target_distance,
-            num_max_try: num_max_try,
+            jacobian_move_epsilon,
+            move_epsilon,
+            allowable_target_distance,
+            num_max_try,
         }
     }
     fn solve_one_loop(
@@ -173,7 +175,7 @@ where
                 if last < target_distance {
                     arm.set_joint_positions(&orig_positions)?;
                     return Err(IKError::NotConvergedError {
-                        error: format!("jacobian did not work"),
+                        error: "jacobian did not work".to_owned(),
                     });
                 }
             }

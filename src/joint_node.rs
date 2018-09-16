@@ -14,9 +14,12 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::{Ref, RefCell, RefMut};
+use std::any::Any;
+use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
+use std::ops::Deref;
 use std::rc::{Rc, Weak};
+use urdf_rs;
 
 use errors::*;
 use iterator::*;
@@ -24,9 +27,9 @@ use joint::*;
 
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 /// Node for joint tree struct
-pub(crate) struct NodeImpl<T>
+pub struct NodeImpl<T>
 where
     T: Real,
 {
@@ -36,35 +39,51 @@ where
     pub mimic_parent: Option<WeakNode<T>>,
     pub mimic_children: Vec<JointNode<T>>,
     pub mimic: Option<Mimic<T>>,
+    pub child_link: Option<Box<Any>>,
 }
 
 /// Parts of `Chain`
 ///
 /// It contains joint, joint (transform), and parent/children.
 #[derive(Debug)]
-pub struct JointNode<T: Real>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
+pub struct JointNode<T: Real>(Rc<RefCell<NodeImpl<T>>>);
 
 impl<T> JointNode<T>
 where
     T: Real,
 {
+    pub(crate) fn from_rc(rc: Rc<RefCell<NodeImpl<T>>>) -> Self {
+        JointNode(rc)
+    }
+
     pub fn new(joint: Joint<T>) -> Self {
         JointNode::<T>(Rc::new(RefCell::new(NodeImpl {
             parent: None,
             children: Vec::new(),
-            joint: joint,
+            joint,
             mimic_parent: None,
             mimic_children: Vec::new(),
             mimic: None,
+            child_link: None,
         })))
     }
-    #[inline]
-    pub(crate) fn borrow<'a>(&'a self) -> Ref<'a, NodeImpl<T>> {
-        self.0.borrow()
+
+    pub fn joint(&self) -> JointRefGuard<T> {
+        JointRefGuard {
+            guard: self.0.borrow(),
+        }
     }
-    #[inline]
-    pub(crate) fn borrow_mut<'a>(&'a self) -> RefMut<'a, NodeImpl<T>> {
-        self.0.borrow_mut()
+
+    pub fn parent(&self) -> ParentRefGuard<T> {
+        ParentRefGuard {
+            guard: self.0.borrow(),
+        }
+    }
+
+    pub fn children(&self) -> ChildrenRefGuard<T> {
+        ChildrenRefGuard {
+            guard: self.0.borrow(),
+        }
     }
 
     /// iter from the end to root, it contains nodes[id] itself
@@ -80,8 +99,8 @@ where
 
     /// Set parent and child relations at same time
     pub fn set_parent(&self, parent: &JointNode<T>) {
-        self.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
-        parent.borrow_mut().children.push(self.clone());
+        self.0.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
+        parent.0.borrow_mut().children.push(self.clone());
     }
 
     /// # Examples
@@ -96,7 +115,7 @@ where
     /// assert!(!l1.is_root());
     /// ```
     pub fn is_root(&self) -> bool {
-        self.borrow().parent.is_none()
+        self.0.borrow().parent.is_none()
     }
 
     /// # Examples
@@ -109,53 +128,15 @@ where
     /// assert!(l1.is_end());
     /// ```
     pub fn is_end(&self) -> bool {
-        self.borrow().children.is_empty()
+        self.0.borrow().children.is_empty()
     }
 
-    /// Return the name of the joint
-    ///
-    /// The return value is `String`, not `&str`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use k::*;
-    /// let j0 = JointNode::new(Joint::<f64>::new("joint_pitch", JointType::Fixed));
-    /// assert_eq!(j0.name(), "joint_pitch");
-    /// ```
-    #[inline]
-    pub fn name(&self) -> String {
-        self.borrow().joint.name.to_owned()
-    }
-    /// Clone the joint limits
-    #[inline]
-    pub fn limits(&self) -> Option<Range<T>> {
-        self.borrow().joint.limits.clone()
-    }
-    /// Updates and returns the local transform
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use k::*;
-    ///
-    /// let l0 = JointBuilder::new()
-    ///     .translation(Translation3::new(0.0, 0.0, 1.0))
-    ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
-    ///     .into_node();
-    /// assert_eq!(l0.transform().translation.vector.z, 1.0);
-    /// l0.set_position(0.6).unwrap();
-    /// assert_eq!(l0.transform().translation.vector.z, 1.6);
-    /// ```
-    #[inline]
-    pub fn transform(&self) -> Isometry3<T> {
-        self.borrow().joint.transform()
-    }
     /// Set the offset transform of the joint
     #[inline]
     pub fn set_offset(&self, trans: Isometry3<T>) {
-        self.borrow_mut().joint.offset = trans;
+        self.0.borrow_mut().joint.offset = trans;
     }
+
     /// Set the position (angle) of the joint
     ///
     /// If position is out of limit, it returns Err.
@@ -182,7 +163,7 @@ where
     /// assert!(l0.set_position(0.0).is_err());
     /// ```
     ///
-    /// `Mimic` can be used to copy other joint's position.
+    /// `k::joint::Mimic` can be used to copy other joint's position.
     ///
     /// ```
     /// use k::*;
@@ -194,35 +175,37 @@ where
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
-    /// j1.set_mimic_parent(&j0, k::Mimic::new(1.5, 0.1));
-    /// assert_eq!(j0.position().unwrap(), 0.0);
-    /// assert_eq!(j1.position().unwrap(), 0.0);
+    /// j1.set_mimic_parent(&j0, k::joint::Mimic::new(1.5, 0.1));
+    /// assert_eq!(j0.joint().position().unwrap(), 0.0);
+    /// assert_eq!(j1.joint().position().unwrap(), 0.0);
     /// assert!(j0.set_position(1.0).is_ok());
-    /// assert_eq!(j0.position().unwrap(), 1.0);
-    /// assert_eq!(j1.position().unwrap(), 1.6);
+    /// assert_eq!(j0.joint().position().unwrap(), 1.0);
+    /// assert_eq!(j1.joint().position().unwrap(), 1.6);
     /// ```
     pub fn set_position(&self, position: T) -> Result<(), JointError> {
-        let mut node = self.borrow_mut();
+        let mut node = self.0.borrow_mut();
         if node.mimic_parent.is_some() {
             return Ok(());
         }
         node.joint.set_position(position)?;
         for child in &node.mimic_children {
-            let mut child_node = child.borrow_mut();
+            let mut child_node = child.0.borrow_mut();
             let mimic = child_node.mimic.clone();
             match mimic {
                 Some(m) => child_node.joint.set_position(m.mimic_position(position))?,
                 None => {
+                    let from = self.joint().name.to_owned();
+                    let to = child.joint().name.to_owned();
                     return Err(JointError::MimicError {
-                        from: self.name(),
-                        to: child.name(),
+                        from: from.clone(),
+                        to: to.clone(),
                         message: format!(
                         "set_position for {} -> {} failed. Mimic instance not found. child = {:?}",
-                        self.name(),
-                        child.name(),
+                        from,
+                        to,
                         child
                     ),
-                    })
+                    });
                 }
             };
         }
@@ -230,28 +213,11 @@ where
     }
     #[inline]
     pub fn set_position_unchecked(&self, position: T) {
-        self.borrow_mut().joint.set_position_unchecked(position);
+        self.0.borrow_mut().joint.set_position_unchecked(position);
     }
-    /// Get the position of the joint. If it is fixed, it returns None.
-    #[inline]
-    pub fn position(&self) -> Option<T> {
-        self.borrow().joint.position()
-    }
-    /// Copy the type of the joint
-    #[inline]
-    pub fn joint_type(&self) -> JointType<T> {
-        self.borrow().joint.joint_type
-    }
-    /// Returns if it has a joint position. similar to `is_not_fixed()`
-    #[inline]
-    pub fn is_movable(&self) -> bool {
-        match self.borrow().joint.joint_type {
-            JointType::Fixed => false,
-            _ => true,
-        }
-    }
+
     pub(crate) fn parent_world_transform(&self) -> Option<Isometry3<T>> {
-        match self.borrow().parent {
+        match self.0.borrow().parent {
             Some(ref parent) => {
                 let rc_parent = parent.upgrade().unwrap().clone();
                 let parent_obj = rc_parent.borrow();
@@ -290,12 +256,23 @@ where
     /// // _poses[1] is as same as l1.world_transform()
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
-        self.borrow().joint.world_transform()
+        self.0.borrow().joint.world_transform()
     }
+
     pub fn set_mimic_parent(&self, parent: &JointNode<T>, mimic: Mimic<T>) {
-        self.borrow_mut().mimic_parent = Some(Rc::downgrade(&parent.0));
-        parent.borrow_mut().mimic_children.push(self.clone());
-        self.borrow_mut().mimic = Some(mimic);
+        self.0.borrow_mut().mimic_parent = Some(Rc::downgrade(&parent.0));
+        parent.0.borrow_mut().mimic_children.push(self.clone());
+        self.0.borrow_mut().mimic = Some(mimic);
+    }
+
+    pub fn set_child_link(&self, link: Option<Box<Any>>) {
+        self.0.borrow_mut().child_link = link;
+    }
+
+    pub fn child_link(&self) -> ChildLinkRefGuard<T> {
+        ChildLinkRefGuard {
+            guard: self.0.borrow(),
+        }
     }
 }
 
@@ -319,7 +296,15 @@ where
 
 impl<T: Real> Display for JointNode<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.borrow().joint.fmt(f)
+        let inner = self.0.borrow();
+        inner.joint.fmt(f)?;
+
+        if let Some(l) = &inner.child_link {
+            if let Some(urdf_link) = l.downcast_ref::<urdf_rs::Link>() {
+                write!(f, " => /{}/", urdf_link.name)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -331,6 +316,32 @@ where
         Self::new(joint)
     }
 }
+
+macro_rules! def_ref_guard {
+    ($guard_struct:ident, $target:ty, $member:ident) => {
+        pub struct $guard_struct<'a, T>
+        where
+            T: Real,
+        {
+            guard: Ref<'a, NodeImpl<T>>,
+        }
+
+        impl<'a, T> Deref for $guard_struct<'a, T>
+        where
+            T: Real,
+        {
+            type Target = $target;
+            fn deref(&self) -> &Self::Target {
+                &self.guard.$member
+            }
+        }
+    };
+}
+
+def_ref_guard!(JointRefGuard, Joint<T>, joint);
+def_ref_guard!(ChildLinkRefGuard, Option<Box<Any>>, child_link);
+def_ref_guard!(ChildrenRefGuard, Vec<JointNode<T>>, children);
+def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
 
 /// Build a `Link<T>`
 ///

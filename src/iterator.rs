@@ -46,12 +46,12 @@ where
             return None;
         }
         let next = self.parent.clone().unwrap();
-        match next.borrow().parent {
-            None => self.parent = None,
-            Some(ref parent) => {
-                self.parent = Some(JointNode(parent.upgrade().expect("failed to get parent")))
-            }
-        }
+        self.parent = match *next.parent() {
+            None => None,
+            Some(ref parent) => Some(JointNode::from_rc(
+                parent.upgrade().expect("failed to get parent"),
+            )),
+        };
         Some(next)
     }
 }
@@ -87,7 +87,7 @@ where
                 return None;
             }
         };
-        self.stack.extend(node.borrow().children.clone());
+        self.stack.extend(node.children().clone());
         Some(node)
     }
 }

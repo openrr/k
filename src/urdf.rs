@@ -101,8 +101,7 @@ where
                     axis: axis_from(joint.axis.xyz),
                 },
                 _ => JointType::Fixed,
-            })
-            .limits(limit)
+            }).limits(limit)
             .rotation(quaternion_from(&joint.origin.rpy))
             .translation(translation_from(&joint.origin.xyz))
             .finalize()
@@ -118,10 +117,7 @@ where
         let mut child_link_name_to_node = HashMap::new();
         let mut joint_name_to_node = HashMap::new();
         let mut parent_link_name_to_node = HashMap::<&String, Vec<JointNode<T>>>::new();
-        let root_node = JointBuilder::<T>::new()
-            .name(ROOT_JOINT_NAME)
-            .finalize()
-            .into();
+        let root_node = JointBuilder::<T>::new().name(ROOT_JOINT_NAME).into_node();
         for j in &robot.joints {
             let node = JointNode::<T>::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
@@ -145,24 +141,30 @@ where
                         child_node.set_parent(parent_node);
                     }
                 }
+                parent_node.set_child_link(Some(Box::new(l.clone())));
+            } else {
+                info!("root={}", l.name);
+                root_node.set_child_link(Some(Box::new(l.clone())));
             }
         }
         // add mimics
         for j in &robot.joints {
             if j.mimic.joint != "" {
                 debug!("mimic found for {}", j.mimic.joint);
-                let mut child = joint_name_to_node.get_mut(&j.name).unwrap().clone();
-                let parent = joint_name_to_node.get(&j.mimic.joint).unwrap();
+                let mut child = joint_name_to_node[&j.name].clone();
+                let parent = joint_name_to_node
+                    .get(&j.mimic.joint)
+                    .unwrap_or_else(|| panic!("{} not found, mimic not found", &j.mimic.joint));
                 child.set_mimic_parent(parent, (&j.mimic).into());
             }
         }
         // set root as parent of root joint nodes
-        let root_joint_nodes = ref_nodes.iter().filter_map(|ref_node| {
-            match ref_node.borrow().parent {
+        let root_joint_nodes = ref_nodes
+            .iter()
+            .filter_map(|ref_node| match *ref_node.parent() {
                 None => Some(ref_node),
                 Some(_) => None,
-            }
-        });
+            });
         for rjn in root_joint_nodes {
             info!("set parent = {}, child = {}", root_node, rjn);
             rjn.set_parent(&root_node);
@@ -250,7 +252,10 @@ fn test_tree() {
 fn test_tree_from_file() {
     let tree = Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
     assert_eq!(tree.dof(), 12);
-    let names = tree.iter().map(|joint| joint.name()).collect::<Vec<_>>();
+    let names = tree
+        .iter()
+        .map(|joint| joint.joint().name.clone())
+        .collect::<Vec<_>>();
     assert_eq!(names.len(), 13);
     println!("{}", names[0]);
     assert_eq!(names[0], "root");

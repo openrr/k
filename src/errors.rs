@@ -18,7 +18,11 @@
 #[derive(Debug, Clone, Fail)]
 pub enum JointError {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
-    #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
+    #[fail(
+        display = "joint: {} is out of limit: {}",
+        joint_name,
+        message
+    )]
     OutOfLimitError {
         /// name of the joint
         joint_name: String,
@@ -26,7 +30,11 @@ pub enum JointError {
         message: String,
     },
     /// Gave invalid size of vec as input
-    #[fail(display = "size mismatch input = {}, required = {}", input, required)]
+    #[fail(
+        display = "size mismatch input = {}, required = {}",
+        input,
+        required
+    )]
     SizeMismatchError {
         /// size of input
         input: usize,

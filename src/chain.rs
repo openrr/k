@@ -94,15 +94,10 @@ impl<T: Real> Chain<T> {
         level: usize,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        if self
-            .contained_joints
-            .iter()
-            .find(|joint| joint == &node)
-            .is_some()
-        {
-            write!(f, "{}{}\n", "    ".repeat(level), node)?;
+        if self.contained_joints.iter().any(|joint| joint == node) {
+            writeln!(f, "{}{}", "    ".repeat(level), node)?;
         }
-        for c in &node.borrow().children {
+        for c in node.children().iter() {
             self.fmt_with_indent_level(c, level + 1, f)?
         }
         Ok(())
@@ -129,14 +124,11 @@ impl<T: Real> Chain<T> {
     /// let tree = k::Chain::<f32>::from_root(l0);
     /// ```
     pub fn from_root(root_joint: JointNode<T>) -> Self {
-        let contained_joints = root_joint
-            .iter_descendants()
-            .map(|joint| joint.clone())
-            .collect::<Vec<_>>();
+        let contained_joints = root_joint.iter_descendants().collect::<Vec<_>>();
         let movable_joints = contained_joints
             .iter()
-            .filter(|joint| joint.is_movable())
-            .map(|node| node.clone())
+            .filter(|joint| joint.joint().is_movable())
+            .cloned()
             .collect::<Vec<_>>();
         Chain {
             dof: movable_joints.len(),
@@ -182,15 +174,12 @@ impl<T: Real> Chain<T> {
     /// let tree = create_tree_from_end(); // no problem
     /// ```
     pub fn from_end(end_joint: &JointNode<T>) -> Chain<T> {
-        let mut contained_joints = end_joint
-            .iter_ancestors()
-            .map(|joint| joint.clone())
-            .collect::<Vec<_>>();
+        let mut contained_joints = end_joint.iter_ancestors().collect::<Vec<_>>();
         contained_joints.reverse();
         let movable_joints = contained_joints
             .iter()
-            .filter(|joint| joint.is_movable())
-            .map(|node| node.clone())
+            .filter(|joint| joint.joint().is_movable())
+            .cloned()
             .collect::<Vec<_>>();
         Chain {
             dof: movable_joints.len(),
@@ -211,7 +200,7 @@ impl<T: Real> Chain<T> {
     /// let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
     /// l1.set_parent(&l0);
     /// let tree = Chain::<f64>::from_root(l0);
-    /// let names = tree.iter().map(|node| node.name()).collect::<Vec<_>>();
+    /// let names = tree.iter().map(|node| node.joint().name.to_owned()).collect::<Vec<_>>();
     /// assert_eq!(names.len(), 2);
     /// assert_eq!(names[0], "fixed0");
     /// assert_eq!(names[1], "fixed1");
@@ -265,19 +254,21 @@ impl<T: Real> Chain<T> {
     /// let tree = Chain::from_root(l0);
     /// let j = tree.find("pitch1").unwrap();
     /// j.set_position(0.5).unwrap();
-    /// assert_eq!(j.position().unwrap(), 0.5);
+    /// assert_eq!(j.joint().position().unwrap(), 0.5);
     /// ```
     pub fn find(&self, joint_name: &str) -> Option<&JointNode<T>> {
-        self.iter()
-            .find(|joint| joint.borrow().joint.name == joint_name)
+        self.iter().find(|joint| joint.joint().name == joint_name)
     }
     /// Get the positions of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     pub fn joint_positions(&self) -> Vec<T> {
         self.iter_joints()
-            .map(|joint| joint.position().expect("movable joint must has position"))
-            .collect()
+            .map(|node| {
+                node.joint()
+                    .position()
+                    .expect("movable joint must has position")
+            }).collect()
     }
 
     /// Set the positions of the joints
@@ -308,11 +299,10 @@ impl<T: Real> Chain<T> {
         self.iter()
             .map(|joint| {
                 let parent_transform = joint.parent_world_transform().expect("cache must exist");
-                let trans = parent_transform * joint.transform();
-                joint.borrow_mut().joint.set_world_transform(trans);
+                let trans = parent_transform * joint.joint().transform();
+                joint.joint().set_world_transform(trans);
                 trans
-            })
-            .collect()
+            }).collect()
     }
 }
 
@@ -359,9 +349,8 @@ where
     pub fn try_new(inner: Chain<T>) -> Option<Self> {
         {
             let num = inner.iter().count();
-            let joints = inner.iter().collect::<Vec<_>>();
-            for i in 0..num - 1 {
-                if joints[i].borrow().children.len() != 1 {
+            for node in inner.iter().take(num - 1) {
+                if node.children().len() != 1 {
                     return None;
                 }
             }
@@ -388,7 +377,7 @@ where
     /// Calculate transform of the end joint
     pub fn end_transform(&self) -> Isometry3<T> {
         self.iter().fold(Isometry3::identity(), |trans, joint| {
-            trans * joint.transform()
+            trans * joint.joint().transform()
         })
     }
 }
@@ -423,43 +412,37 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint1 = JointBuilder::new()
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .name("j1")
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint2 = JointBuilder::new()
         .name("j2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint3 = JointBuilder::new()
         .name("j3")
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint4 = JointBuilder::new()
         .name("j4")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint5 = JointBuilder::new()
         .name("j5")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     joint1.set_parent(&joint0);
     joint2.set_parent(&joint1);
     joint3.set_parent(&joint2);
@@ -468,14 +451,14 @@ fn it_works() {
 
     let names = joint0
         .iter_descendants()
-        .map(|joint| joint.name())
+        .map(|joint| joint.joint().name.clone())
         .collect::<Vec<_>>();
     println!("{}", joint0);
     assert_eq!(names.len(), 6);
     println!("names = {:?}", names);
     let positions = joint0
         .iter_descendants()
-        .map(|joint| joint.position())
+        .map(|joint| joint.joint().position())
         .collect::<Vec<_>>();
     println!("positions = {:?}", positions);
 
@@ -498,7 +481,7 @@ fn it_works() {
         .collect::<Vec<_>>();
     let positions = joint0
         .iter_descendants()
-        .map(|joint| joint.position())
+        .map(|joint| joint.joint().position())
         .collect::<Vec<_>>();
     println!("positions = {:?}", positions);
 
@@ -524,22 +507,19 @@ fn test_mimic() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint1 = JointBuilder::new()
         .name("joint1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     let joint2 = JointBuilder::new()
         .name("joint2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        })
-        .into_node();
+        }).into_node();
     joint1.set_parent(&joint0);
     joint2.set_parent(&joint1);
     joint2.set_mimic_parent(&joint1, Mimic::new(2.0, 0.5));
