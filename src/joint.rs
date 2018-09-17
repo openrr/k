@@ -179,6 +179,8 @@ pub struct Joint<T: Real> {
     pub joint_type: JointType<T>,
     /// position (angle) of this joint
     position: T,
+    /// velicity of this joint
+    velocity: T,
     /// Limits of this joint
     pub limits: Option<Range<T>>,
     /// local offset transform of joint
@@ -213,6 +215,7 @@ where
             name: name.to_string(),
             joint_type,
             position: T::zero(),
+            velocity: T::zero(),
             limits: None,
             offset: Isometry3::identity(),
             world_transform_cache: RefCell::new(None),
@@ -278,6 +281,27 @@ where
             _ => Some(self.position),
         }
     }
+
+    pub fn set_velocity(&mut self, velocity: T) -> Result<(), JointError> {
+        if let JointType::Fixed = self.joint_type {
+            return Err(JointError::OutOfLimitError {
+                joint_name: self.name.to_string(),
+                message: "Joint is Fixed".to_owned(),
+            });
+        }
+        self.velocity= velocity;
+        Ok(())
+    }
+
+    /// Returns the velocity
+    #[inline]
+    pub fn velocity(&self) -> Option<T> {
+        match self.joint_type {
+            JointType::Fixed => None,
+            _ => Some(self.velocity),
+        }
+    }
+    
     /// Calculate and returns the transform of the end of this joint
     ///
     /// # Examples
