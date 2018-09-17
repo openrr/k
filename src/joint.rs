@@ -179,7 +179,7 @@ pub struct Joint<T: Real> {
     pub joint_type: JointType<T>,
     /// position (angle) of this joint
     position: T,
-    /// velicity of this joint
+    /// velocity of this joint
     velocity: T,
     /// Limits of this joint
     pub limits: Option<Range<T>>,

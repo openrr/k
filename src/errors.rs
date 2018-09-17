@@ -60,7 +60,7 @@ pub enum JointError {
 pub enum IKError {
     #[fail(display = "ik solve not converged {:?}", error)]
     NotConvergedError { error: String },
-    #[fail(display = "inverset matrix error")]
+    #[fail(display = "inverse matrix error")]
     InverseMatrixError,
     #[fail(display = "ik precondition error {:?}", error)]
     PreconditionError { error: String },
