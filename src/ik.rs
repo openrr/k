@@ -27,7 +27,7 @@ where
     let a = (r[(0, 0)] + r[(1, 1)] + r[(2, 2)] - T::one()) * na::convert(0.5);
     if a < -T::one() || a > T::one() {
         return Vector3::zeros();
-    }     
+    }
     let theta = a.acos();
     let theta_sin = theta.sin();
     if theta_sin == T::zero() {
@@ -43,7 +43,10 @@ where
 }
 
 /// From 'Humanoid Robot (Kajita)' P.64
-fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T> where T:Real {
+fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
+where
+    T: Real,
+{
     let p_diff = a.translation.vector - b.translation.vector;
     let b_rot = b.rotation.to_rotation_matrix();
     let r_diff = b_rot.transpose() * a.rotation.to_rotation_matrix();
@@ -70,7 +73,7 @@ pub struct JacobianIKSolver<T: Real> {
     /// Weight for rotation
     pub allowable_target_angle: T,
     /// multiplier for jacobian
-    pub jacobian_multiplier: T, 
+    pub jacobian_multiplier: T,
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
 }
@@ -91,7 +94,7 @@ where
     pub fn new(
         allowable_target_distance: T,
         allowable_target_angle: T,
-        jacobian_multiplier:T,
+        jacobian_multiplier: T,
         num_max_try: usize,
     ) -> JacobianIKSolver<T> {
         JacobianIKSolver {
@@ -217,7 +220,9 @@ where
         Err(IKError::NotConvergedError {
             error: format!(
                 "iteration has not converged: tried {} timed, diff = {}, {}",
-                self.num_max_try, last_target_distance.unwrap().0, last_target_distance.unwrap().1,
+                self.num_max_try,
+                last_target_distance.unwrap().0,
+                last_target_distance.unwrap().1,
             ),
         })
     }
@@ -228,6 +233,6 @@ where
     T: Real,
 {
     fn default() -> Self {
-        Self::new(na::convert(0.001), na::convert(0.005),na::convert(0.8), 10)
+        Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)
     }
 }
