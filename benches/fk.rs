@@ -27,7 +27,7 @@ test bench_rctree_ik ... bench:      20,425 ns/iter (+/- 139)
 ```
 */
 
-fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::Range<T>>>) -> Vec<T>
+fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
 where
     T: Real,
 {

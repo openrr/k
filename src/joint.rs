@@ -184,7 +184,7 @@ pub struct Joint<T: Real> {
     /// Limits of this joint
     pub limits: Option<Range<T>>,
     /// local offset transform of joint
-    pub offset: Isometry3<T>,
+    offset: Isometry3<T>,
     /// cache of world transform
     world_transform_cache: RefCell<Option<Isometry3<T>>>,
 }
@@ -282,6 +282,17 @@ where
         }
     }
 
+    #[inline]
+    pub fn offset(&self) -> &Isometry3<T> {
+        &self.offset
+    }
+
+    #[inline]
+    pub fn set_offset(&mut self, offset: Isometry3<T>) {
+        self.offset = offset;
+        self.world_transform_cache.replace(None);
+    }
+
     pub fn set_velocity(&mut self, velocity: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimitError {
@@ -289,7 +300,7 @@ where
                 message: "Joint is Fixed".to_owned(),
             });
         }
-        self.velocity= velocity;
+        self.velocity = velocity;
         Ok(())
     }
 
@@ -301,7 +312,7 @@ where
             _ => Some(self.velocity),
         }
     }
-    
+
     /// Calculate and returns the transform of the end of this joint
     ///
     /// # Examples

@@ -297,10 +297,17 @@ impl<T: Real> Chain<T> {
 
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
-            .map(|joint| {
-                let parent_transform = joint.parent_world_transform().expect("cache must exist");
-                let trans = parent_transform * joint.joint().transform();
-                joint.joint().set_world_transform(trans);
+            .map(|node| {
+                let trans = match node.world_transform() {
+                    None => {
+                        let parent_transform =
+                            node.parent_world_transform().expect("cache must exist");
+                        let trans = parent_transform * node.joint().transform();
+                        node.joint().set_world_transform(trans);
+                        trans
+                    }
+                    Some(trans) => trans,
+                };
                 trans
             }).collect()
     }

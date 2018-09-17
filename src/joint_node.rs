@@ -133,7 +133,7 @@ where
     /// Set the offset transform of the joint
     #[inline]
     pub fn set_offset(&self, trans: Isometry3<T>) {
-        self.0.borrow_mut().joint.offset = trans;
+        self.0.borrow_mut().joint.set_offset(trans);
     }
 
     /// Set the position (angle) of the joint
@@ -415,8 +415,8 @@ where
     /// Create `Joint` instance
     pub fn finalize(self) -> Joint<T> {
         let mut joint = Joint::new(&self.name, self.joint_type);
+        joint.set_offset(self.offset);
         joint.limits = self.limits;
-        joint.offset = self.offset;
         joint
     }
     /// Create `JointNode` instead of `Joint` as output

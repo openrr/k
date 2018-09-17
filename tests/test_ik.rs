@@ -113,7 +113,7 @@ mod tests {
         arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
-        let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.001, 100);
+        let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.5, 1000);
         solver.solve(&arm, &init_pose).unwrap();
         let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
@@ -128,12 +128,13 @@ mod tests {
         arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
-        let solver = k::JacobianIKSolverBuilder::new().finalize();
+        let solver = k::JacobianIKSolver::default();
         // set different angles
         arm.set_joint_positions(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
             .unwrap();
         solver.solve(&arm, &init_pose).unwrap();
         let end_angles = arm.joint_positions();
+        println!("{:?}", end_angles);
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
         }

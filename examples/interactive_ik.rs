@@ -21,7 +21,7 @@ extern crate nalgebra as na;
 
 use glfw::{Action, Key, WindowEvent};
 use k::prelude::*;
-use k::{JacobianIKSolverBuilder, JointBuilder, JointType};
+use k::{JacobianIKSolver, JointBuilder, JointType};
 use kiss3d::camera::ArcBall;
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
@@ -160,7 +160,7 @@ fn main() {
     let at = Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
 
-    let solver = JacobianIKSolverBuilder::new().finalize();
+    let solver = JacobianIKSolver::default();
     let _ = create_ground(&mut window);
 
     while window.render_with_camera(&mut arc_ball) {
@@ -189,7 +189,6 @@ fn main() {
         }
         solver.solve(&arm, &target).unwrap_or_else(|err| {
             println!("Err: {}", err);
-            0.0f32
         });
         c_t.set_local_transformation(target.clone());
         for (i, trans) in arm.update_transforms().iter().enumerate() {
