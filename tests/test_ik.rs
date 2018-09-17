@@ -136,7 +136,7 @@ mod tests {
         let end_angles = arm.joint_positions();
         println!("{:?}", end_angles);
         for (init, end) in angles.iter().zip(end_angles.iter()) {
-            assert!((init - end).abs() < 0.001);
+            assert!((init - end).abs() < 0.002);
         }
     }
 }

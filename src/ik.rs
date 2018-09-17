@@ -3,7 +3,7 @@
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
-   You may obta_in a copy of the License at
+   You may obtain a copy of the License at
 
        http://www.apache.org/licenses/LICENSE-2.0
 
@@ -86,7 +86,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let solver = k::JacobianIKSolver::new(0.01, 0.1, 100);
+    /// let solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
     /// ```
     pub fn new(
         allowable_target_distance: T,
@@ -228,6 +228,6 @@ where
     T: Real,
 {
     fn default() -> Self {
-        Self::new(na::convert(0.001), na::convert(0.001),na::convert(0.8), 100)
+        Self::new(na::convert(0.001), na::convert(0.005),na::convert(0.8), 10)
     }
 }
