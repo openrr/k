@@ -13,34 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{self, DMatrix, Isometry3, Matrix3, Real, Vector3, Vector6};
+use na::{self, DMatrix, Isometry3, Real, Vector3, Vector6};
 
 use chain::*;
 use errors::*;
 use joint::*;
-
-/// From 'Humanoid Robot (Kajita)' P.35
-fn rot2omega<T>(r: &Matrix3<T>) -> Vector3<T>
-where
-    T: Real,
-{
-    let a = (r[(0, 0)] + r[(1, 1)] + r[(2, 2)] - T::one()) * na::convert(0.5);
-    if a < -T::one() || a > T::one() {
-        return Vector3::zeros();
-    }
-    let theta = a.acos();
-    let theta_sin = theta.sin();
-    if theta_sin == T::zero() {
-        Vector3::zeros()
-    } else {
-        let a: T = theta / (theta_sin * na::convert(2.0));
-        Vector3::<T>::new(
-            a * (r[(2, 1)] - r[(1, 2)]),
-            a * (r[(0, 2)] - r[(2, 0)]),
-            a * (r[(1, 0)] - r[(0, 1)]),
-        )
-    }
-}
 
 /// From 'Humanoid Robot (Kajita)' P.64
 fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
@@ -48,9 +25,7 @@ where
     T: Real,
 {
     let p_diff = a.translation.vector - b.translation.vector;
-    let b_rot = b.rotation.to_rotation_matrix();
-    let r_diff = b_rot.transpose() * a.rotation.to_rotation_matrix();
-    let w_diff = b_rot * rot2omega(r_diff.matrix());
+    let w_diff = b.rotation.rotation_to(&a.rotation).scaled_axis();
     Vector6::new(
         p_diff[0], p_diff[1], p_diff[2], w_diff[0], w_diff[1], w_diff[2],
     )
