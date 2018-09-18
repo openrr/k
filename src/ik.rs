@@ -104,6 +104,14 @@ where
             num_max_try,
         }
     }
+    fn add_positions_with_multiplier(&self, input: &[T], add_values: &[T]) -> Vec<T> {
+        input
+            .iter()
+            .zip(add_values.iter())
+            .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
+            .collect()
+    }
+
     fn solve_one_loop(
         &self,
         arm: &SerialChain<T>,
@@ -131,21 +139,24 @@ where
         // Pi: a_i x (p_n - Pi)
         // wi: a_i
         let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
-        let j_inv = if dof > 6 {
-            let jacobi_ref = &jacobi;
-            // use pseudo inverse
-            match (jacobi_ref * jacobi_ref.transpose()).try_inverse() {
-                Some(mat) => jacobi_ref.transpose() * mat,
-                None => return Err(IKError::InverseMatrixError),
-            }
+        let positions_vec = if dof > 6 {
+            self.add_positions_with_multiplier(
+                &orig_positions,
+                jacobi
+                    .svd(true, true)
+                    .solve(&err, na::convert(0.0001))
+                    .as_slice(),
+            )
         } else {
-            jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?
+            self.add_positions_with_multiplier(
+                &orig_positions,
+                &jacobi
+                    .lu()
+                    .solve(&err)
+                    .ok_or(IKError::InverseMatrixError)?
+                    .as_slice(),
+            )
         };
-        let new_positions_diff = j_inv * err;
-        let mut positions_vec = orig_positions.clone();
-        for i in 0..dof {
-            positions_vec[i] += self.jacobian_multiplier * new_positions_diff[i];
-        }
         arm.set_joint_positions(&positions_vec)?;
         Ok(calc_pose_diff(target_pose, &arm.end_transform()))
     }
