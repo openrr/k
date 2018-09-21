@@ -35,7 +35,7 @@ mod errors;
 mod ik;
 pub mod iterator;
 pub mod joint;
-pub mod joint_node;
+pub mod node;
 pub mod link;
 pub mod prelude;
 pub mod urdf;
@@ -44,7 +44,7 @@ pub use self::chain::*;
 pub use self::errors::*;
 pub use self::ik::*;
 pub use self::joint::{Joint, JointType};
-pub use self::joint_node::{JointBuilder, JointNode};
+pub use self::node::{JointBuilder, Node};
 pub use self::link::Link;
 
 // re-export

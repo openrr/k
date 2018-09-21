@@ -2,7 +2,7 @@ extern crate k;
 extern crate nalgebra as na;
 
 fn main() {
-    let l0 = k::JointNode::new(
+    let l0 = k::Node::new(
         k::JointBuilder::new()
             .name("link_pitch0")
             .translation(na::Translation3::new(0.0, 0.0, 0.1))
@@ -10,7 +10,7 @@ fn main() {
                 axis: na::Vector3::y_axis(),
             }).finalize(),
     );
-    let l1 = k::JointNode::new(
+    let l1 = k::Node::new(
         k::JointBuilder::new()
             .name("link_pitch1")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))
@@ -19,7 +19,7 @@ fn main() {
             }).finalize(),
     );
 
-    let l2 = k::JointNode::new(
+    let l2 = k::Node::new(
         k::JointBuilder::new()
             .name("link_fixed")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))
@@ -27,7 +27,7 @@ fn main() {
             .finalize(),
     );
 
-    let l3 = k::JointNode::new(
+    let l3 = k::Node::new(
         k::JointBuilder::new()
             .name("link_pitch2")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))

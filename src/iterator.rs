@@ -14,7 +14,7 @@
    limitations under the License.
  */
 //! Iterators to iterate descendants and ancestors
-use joint_node::*;
+use node::*;
 use na::Real;
 
 #[derive(Debug)]
@@ -23,14 +23,14 @@ pub struct Ancestors<T>
 where
     T: Real,
 {
-    parent: Option<JointNode<T>>,
+    parent: Option<Node<T>>,
 }
 
 impl<T> Ancestors<T>
 where
     T: Real,
 {
-    pub fn new(parent: Option<JointNode<T>>) -> Self {
+    pub fn new(parent: Option<Node<T>>) -> Self {
         Self { parent }
     }
 }
@@ -39,16 +39,16 @@ impl<T> Iterator for Ancestors<T>
 where
     T: Real,
 {
-    type Item = JointNode<T>;
+    type Item = Node<T>;
 
-    fn next(&mut self) -> Option<JointNode<T>> {
+    fn next(&mut self) -> Option<Node<T>> {
         if self.parent.is_none() {
             return None;
         }
         let next = self.parent.clone().unwrap();
         self.parent = match *next.parent() {
             None => None,
-            Some(ref parent) => Some(JointNode::from_rc(
+            Some(ref parent) => Some(Node::from_rc(
                 parent.upgrade().expect("failed to get parent"),
             )),
         };
@@ -62,14 +62,14 @@ pub struct Descendants<T>
 where
     T: Real,
 {
-    stack: Vec<JointNode<T>>,
+    stack: Vec<Node<T>>,
 }
 
 impl<T> Descendants<T>
 where
     T: Real,
 {
-    pub fn new(stack: Vec<JointNode<T>>) -> Self {
+    pub fn new(stack: Vec<Node<T>>) -> Self {
         Self { stack }
     }
 }
@@ -78,7 +78,7 @@ impl<T> Iterator for Descendants<T>
 where
     T: Real,
 {
-    type Item = JointNode<T>;
+    type Item = Node<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let node = match self.stack.pop() {

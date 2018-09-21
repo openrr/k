@@ -23,7 +23,7 @@ use std::path::Path;
 
 use chain::*;
 use joint::*;
-use joint_node::*;
+use node::*;
 use link::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
@@ -256,10 +256,10 @@ where
         let mut ref_nodes = Vec::new();
         let mut child_link_name_to_node = HashMap::new();
         let mut joint_name_to_node = HashMap::new();
-        let mut parent_link_name_to_node = HashMap::<&String, Vec<JointNode<T>>>::new();
+        let mut parent_link_name_to_node = HashMap::<&String, Vec<Node<T>>>::new();
         let root_node = JointBuilder::<T>::new().name(ROOT_JOINT_NAME).into_node();
         for j in &robot.joints {
-            let node = JointNode::<T>::new(j.into());
+            let node = Node::<T>::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
             if parent_link_name_to_node.get(&j.parent.link).is_some() {
                 parent_link_name_to_node
@@ -299,13 +299,13 @@ where
             }
         }
         // set root as parent of root joint nodes
-        let root_joint_nodes = ref_nodes
+        let root_nodes = ref_nodes
             .iter()
             .filter_map(|ref_node| match *ref_node.parent() {
                 None => Some(ref_node),
                 Some(_) => None,
             });
-        for rjn in root_joint_nodes {
+        for rjn in root_nodes {
             info!("set parent = {}, child = {}", root_node, rjn);
             rjn.set_parent(&root_node);
         }

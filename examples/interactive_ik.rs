@@ -28,56 +28,56 @@ use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
-fn create_joint_with_link_array() -> k::JointNode<f32> {
-    let fixed: k::JointNode<f32> = JointBuilder::new()
+fn create_joint_with_link_array() -> k::Node<f32> {
+    let fixed: k::Node<f32> = JointBuilder::new()
         .name("fixed")
         .joint_type(JointType::Fixed)
         .translation(Translation3::new(0.0, 0.0, 0.6))
         .finalize()
         .into();
-    let l0: k::JointNode<f32> = JointBuilder::new()
+    let l0: k::Node<f32> = JointBuilder::new()
         .name("shoulder_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
         }).translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l1: k::JointNode<f32> = JointBuilder::new()
+    let l1: k::Node<f32> = JointBuilder::new()
         .name("shoulder_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),
         }).translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l2: k::JointNode<f32> = JointBuilder::new()
+    let l2: k::Node<f32> = JointBuilder::new()
         .name("shoulder_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
         }).translation(Translation3::new(0.0, 0.0, -0.30))
         .finalize()
         .into();
-    let l3: k::JointNode<f32> = JointBuilder::new()
+    let l3: k::Node<f32> = JointBuilder::new()
         .name("elbow_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
         }).translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l4: k::JointNode<f32> = JointBuilder::new()
+    let l4: k::Node<f32> = JointBuilder::new()
         .name("wrist_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
         }).translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l5: k::JointNode<f32> = JointBuilder::new()
+    let l5: k::Node<f32> = JointBuilder::new()
         .name("wrist_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
         }).translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l6: k::JointNode<f32> = JointBuilder::new()
+    let l6: k::Node<f32> = JointBuilder::new()
         .name("wrist_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),

@@ -33,10 +33,10 @@ where
     T: Real,
 {
     pub parent: Option<WeakNode<T>>,
-    pub children: Vec<JointNode<T>>,
+    pub children: Vec<Node<T>>,
     pub joint: Joint<T>,
     pub mimic_parent: Option<WeakNode<T>>,
-    pub mimic_children: Vec<JointNode<T>>,
+    pub mimic_children: Vec<Node<T>>,
     pub mimic: Option<Mimic<T>>,
     pub child_link: Option<Link<T>>,
 }
@@ -45,18 +45,18 @@ where
 ///
 /// It contains joint, joint (transform), and parent/children.
 #[derive(Debug)]
-pub struct JointNode<T: Real>(Rc<RefCell<NodeImpl<T>>>);
+pub struct Node<T: Real>(Rc<RefCell<NodeImpl<T>>>);
 
-impl<T> JointNode<T>
+impl<T> Node<T>
 where
     T: Real,
 {
     pub(crate) fn from_rc(rc: Rc<RefCell<NodeImpl<T>>>) -> Self {
-        JointNode(rc)
+        Node(rc)
     }
 
     pub fn new(joint: Joint<T>) -> Self {
-        JointNode::<T>(Rc::new(RefCell::new(NodeImpl {
+        Node::<T>(Rc::new(RefCell::new(NodeImpl {
             parent: None,
             children: Vec::new(),
             joint,
@@ -97,7 +97,7 @@ where
     }
 
     /// Set parent and child relations at same time
-    pub fn set_parent(&self, parent: &JointNode<T>) {
+    pub fn set_parent(&self, parent: &Node<T>) {
         self.0.borrow_mut().parent = Some(Rc::downgrade(&parent.0));
         parent.0.borrow_mut().children.push(self.clone());
     }
@@ -258,7 +258,7 @@ where
         self.0.borrow().joint.world_transform()
     }
 
-    pub fn set_mimic_parent(&self, parent: &JointNode<T>, mimic: Mimic<T>) {
+    pub fn set_mimic_parent(&self, parent: &Node<T>, mimic: Mimic<T>) {
         self.0.borrow_mut().mimic_parent = Some(Rc::downgrade(&parent.0));
         parent.0.borrow_mut().mimic_children.push(self.clone());
         self.0.borrow_mut().mimic = Some(mimic);
@@ -275,25 +275,25 @@ where
     }
 }
 
-impl<T> ::std::clone::Clone for JointNode<T>
+impl<T> ::std::clone::Clone for Node<T>
 where
     T: Real,
 {
     fn clone(&self) -> Self {
-        JointNode::<T>(self.0.clone())
+        Node::<T>(self.0.clone())
     }
 }
 
-impl<T> PartialEq for JointNode<T>
+impl<T> PartialEq for Node<T>
 where
     T: Real,
 {
-    fn eq(&self, other: &JointNode<T>) -> bool {
+    fn eq(&self, other: &Node<T>) -> bool {
         &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
     }
 }
 
-impl<T: Real> Display for JointNode<T> {
+impl<T: Real> Display for Node<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let inner = self.0.borrow();
         inner.joint.fmt(f)?;
@@ -305,7 +305,7 @@ impl<T: Real> Display for JointNode<T> {
     }
 }
 
-impl<T> From<Joint<T>> for JointNode<T>
+impl<T> From<Joint<T>> for Node<T>
 where
     T: Real,
 {
@@ -337,7 +337,7 @@ macro_rules! def_ref_guard {
 
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
 def_ref_guard!(ChildLinkRefGuard, Option<Link<T>>, child_link);
-def_ref_guard!(ChildrenRefGuard, Vec<JointNode<T>>, children);
+def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
 def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
 
 /// Build a `Link<T>`
@@ -419,8 +419,8 @@ where
         joint.limits = self.limits;
         joint
     }
-    /// Create `JointNode` instead of `Joint` as output
-    pub fn into_node(self) -> JointNode<T> {
+    /// Create `Node` instead of `Joint` as output
+    pub fn into_node(self) -> Node<T> {
         self.finalize().into()
     }
 }

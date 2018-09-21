@@ -80,16 +80,44 @@ pub struct Link<T: Real> {
     pub collisions: Vec<Collision<T>>,
 }
 
-impl<T> Link<T>
-where
-    T: Real,
-{
-    pub fn new(name: &str, inertial: Inertial<T>) -> Self {
+pub struct LinkBuilder<T> where T:Real {
+    name: String,
+    inertial: Inertial<T>,
+    visuals: Vec<Visual<T>>,
+    collisions: Vec<Collision<T>>,
+}
+
+impl<T> LinkBuilder<T> where T:Real {
+    pub fn new() -> Self {
         Self {
-            name: name.to_owned(),
-            inertial,
-            visuals: Vec::new(),
-            collisions: Vec::new(),
+        name: "".to_owned(),
+        inertial: Inertial::new(T::zero()),
+        visuals: Vec::new(),
+        collisions: Vec::new(),
+        }
+    }
+    pub fn name(mut self, name: &str) -> Self {
+        self.name = name.to_owned();
+        self
+    }
+    pub fn inertial(mut self, inertial: Inertial<T>) -> Self {
+        self.inertial = inertial;
+        self
+    }
+    pub fn add_visual(mut self, visual: Visual<T>) -> Self {
+        self.visuals.push(visual);
+        self
+    }
+    pub fn add_collision(mut self, collision: Collision<T>) -> Self {
+        self.collisions.push(collision);
+        self
+    }
+    pub fn finalize(self) -> Link<T> {
+        Link {
+            name: self.name,
+            inertial: self.inertial,
+            visuals: self.visuals,
+            collisions: self.collisions,
         }
     }
 }

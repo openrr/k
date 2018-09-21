@@ -18,9 +18,9 @@ use std::fmt::{self, Display};
 use std::ops::Deref;
 
 use errors::*;
-use joint_node::*;
+use node::*;
 
-/// Kinematic Chain using `JointNode`
+/// Kinematic Chain using `Node`
 ///
 /// # Examples
 ///
@@ -82,15 +82,15 @@ use joint_node::*;
 /// ```
 #[derive(Debug)]
 pub struct Chain<T: Real> {
-    contained_joints: Vec<JointNode<T>>,
-    movable_joints: Vec<JointNode<T>>,
+    contained_joints: Vec<Node<T>>,
+    movable_joints: Vec<Node<T>>,
     dof: usize,
 }
 
 impl<T: Real> Chain<T> {
     fn fmt_with_indent_level(
         &self,
-        node: &JointNode<T>,
+        node: &Node<T>,
         level: usize,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
@@ -123,7 +123,7 @@ impl<T: Real> Chain<T> {
     /// l1.set_parent(&l0);
     /// let tree = k::Chain::<f32>::from_root(l0);
     /// ```
-    pub fn from_root(root_joint: JointNode<T>) -> Self {
+    pub fn from_root(root_joint: Node<T>) -> Self {
         let contained_joints = root_joint.iter_descendants().collect::<Vec<_>>();
         let movable_joints = contained_joints
             .iter()
@@ -148,9 +148,9 @@ impl<T: Real> Chain<T> {
     /// ```rust, should_panic
     /// use k::*;
     ///
-    /// fn create_end_and_set_parent() -> JointNode<f64> {
-    ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
-    ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
+    /// fn create_end_and_set_parent() -> Node<f64> {
+    ///   let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    ///   let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
     ///   l1
     /// }
@@ -165,15 +165,15 @@ impl<T: Real> Chain<T> {
     /// use k::*;
     ///
     /// fn create_tree_from_end() -> Chain<f64> {
-    ///   let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
-    ///   let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
+    ///   let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    ///   let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
     ///   l1.set_parent(&l0);
     ///   Chain::from_end(&l1) // ok, because root is stored in `Chain`
     /// }
     ///
     /// let tree = create_tree_from_end(); // no problem
     /// ```
-    pub fn from_end(end_joint: &JointNode<T>) -> Chain<T> {
+    pub fn from_end(end_joint: &Node<T>) -> Chain<T> {
         let mut contained_joints = end_joint.iter_ancestors().collect::<Vec<_>>();
         contained_joints.reverse();
         let movable_joints = contained_joints
@@ -196,8 +196,8 @@ impl<T: Real> Chain<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = JointNode::new(Joint::new("fixed0", JointType::Fixed));
-    /// let l1 = JointNode::new(Joint::new("fixed1", JointType::Fixed));
+    /// let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    /// let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
     /// l1.set_parent(&l0);
     /// let tree = Chain::<f64>::from_root(l0);
     /// let names = tree.iter().map(|node| node.joint().name.to_owned()).collect::<Vec<_>>();
@@ -205,12 +205,12 @@ impl<T: Real> Chain<T> {
     /// assert_eq!(names[0], "fixed0");
     /// assert_eq!(names[1], "fixed1");
     /// ```
-    pub fn iter(&self) -> impl Iterator<Item = &JointNode<T>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Node<T>> {
         self.contained_joints.iter()
     }
 
     /// Iterate for movable joints
-    pub fn iter_joints(&self) -> impl Iterator<Item = &JointNode<T>> {
+    pub fn iter_joints(&self) -> impl Iterator<Item = &Node<T>> {
         self.movable_joints.iter()
     }
 
@@ -224,7 +224,7 @@ impl<T: Real> Chain<T> {
     ///     .joint_type(JointType::Fixed)
     ///     .finalize()
     ///     .into();
-    /// let l1 : JointNode<f64> = JointBuilder::new()
+    /// let l1 : Node<f64> = JointBuilder::new()
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize()
     ///     .into();
@@ -242,10 +242,10 @@ impl<T: Real> Chain<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = JointNode::new(JointBuilder::new()
+    /// let l0 = Node::new(JointBuilder::new()
     ///     .name("fixed")
     ///     .finalize());
-    /// let l1 = JointNode::new(JointBuilder::new()
+    /// let l1 = Node::new(JointBuilder::new()
     ///     .name("pitch1")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
@@ -256,7 +256,7 @@ impl<T: Real> Chain<T> {
     /// j.set_position(0.5).unwrap();
     /// assert_eq!(j.joint().position().unwrap(), 0.5);
     /// ```
-    pub fn find(&self, joint_name: &str) -> Option<&JointNode<T>> {
+    pub fn find(&self, joint_name: &str) -> Option<&Node<T>> {
         self.iter().find(|joint| joint.joint().name == joint_name)
     }
     /// Get the positions of the joints
@@ -395,7 +395,7 @@ where
         }
         Some(Self { inner })
     }
-    /// Create SerialChain from the end `JointNode`
+    /// Create SerialChain from the end `Node`
     ///
     /// # Examples
     ///
@@ -403,7 +403,7 @@ where
     /// let node = k::JointBuilder::<f32>::new().into_node();
     /// let s_chain = k::SerialChain::from_end(&node);
     /// ```
-    pub fn from_end(end_joint: &JointNode<T>) -> SerialChain<T> {
+    pub fn from_end(end_joint: &Node<T>) -> SerialChain<T> {
         SerialChain {
             inner: Chain::from_end(end_joint),
         }
@@ -442,7 +442,7 @@ where
 #[test]
 fn it_works() {
     use super::joint::*;
-    use super::joint_node::*;
+    use super::node::*;
     use na;
 
     let joint0 = JointBuilder::new()
@@ -500,7 +500,7 @@ fn it_works() {
         .collect::<Vec<_>>();
     println!("positions = {:?}", positions);
 
-    fn get_z(joint: &JointNode<f32>) -> f32 {
+    fn get_z(joint: &Node<f32>) -> f32 {
         match joint.parent_world_transform() {
             Some(iso) => iso.translation.vector.z,
             None => 0.0f32,
@@ -537,7 +537,7 @@ fn it_works() {
 #[test]
 fn test_mimic() {
     use super::joint::*;
-    use super::joint_node::*;
+    use super::node::*;
     use na;
 
     let joint0 = JointBuilder::new()
@@ -577,7 +577,7 @@ fn test_mimic() {
 #[test]
 fn test_update_center_of_mass() {
     use super::joint::*;
-    use super::joint_node::*;
+    use super::node::*;
     use super::link::*;
     use na::*;
     let j0 = JointBuilder::new()
