@@ -144,23 +144,6 @@ impl<T: Real> Chain<T> {
     ///
     /// # Examples
     ///
-    /// Bad case
-    ///
-    /// ```rust, should_panic
-    /// use k::*;
-    ///
-    /// fn create_end_and_set_parent() -> Node<f64> {
-    ///   let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
-    ///   let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
-    ///   l1.set_parent(&l0);
-    ///   l1
-    /// }
-    ///
-    /// let end = create_end_and_set_parent();
-    /// let tree = Chain::from_end(&end); // panic here!
-    /// ```
-    ///
-    /// Good case
     ///
     /// ```
     /// use k::*;
@@ -214,12 +197,6 @@ impl<T: Real> Chain<T> {
     pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
         self.movable_joints.iter().map(|node| node.joint())
     }
-
-    /// Iterate for movable joints
-    pub fn iter_joints_mut(&self) -> impl Iterator<Item = JointRefGuardMut<T>> {
-        self.movable_joints.iter().map(|node| node.joint_mut())
-    }
-
     /// Calculate the degree of freedom
     ///
     /// # Examples
@@ -260,7 +237,7 @@ impl<T: Real> Chain<T> {
     /// let tree = Chain::from_root(l0);
     /// let j = tree.find("pitch1").unwrap();
     /// j.set_joint_position(0.5).unwrap();
-    /// assert_eq!(j.joint().position().unwrap(), 0.5);
+    /// assert_eq!(j.joint_position().unwrap(), 0.5);
     /// ```
     pub fn find(&self, joint_name: &str) -> Option<&Node<T>> {
         self.iter().find(|joint| joint.joint().name == joint_name)
@@ -287,7 +264,7 @@ impl<T: Real> Chain<T> {
                 required: self.dof,
             });
         }
-        for (mut joint, position) in self.iter_joints_mut().zip(positions_vec.iter()) {
+        for (mut joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
             joint.set_joint_position(*position)?;
         }
         Ok(())
@@ -296,7 +273,7 @@ impl<T: Real> Chain<T> {
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
-        for (mut joint, position) in self.iter_joints_mut().zip(positions_vec.iter()) {
+        for (mut joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
             joint.set_joint_position_unchecked(*position);
         }
     }
@@ -328,10 +305,8 @@ impl<T: Real> Chain<T> {
                     let velocity = match node.joint().joint_type {
                         JointType::Fixed => parent_velocity.clone(),
                         JointType::Rotational { axis } => {
-                            let parent_weak = node.parent();
-                            let parent = parent_weak.clone().unwrap().upgrade().unwrap().clone();
-                            let b = parent.borrow();
-                            let parent_vel = b.joint.offset().translation.vector.clone();
+                            let parent = node.parent().expect("parent must exist");
+                            let parent_vel = parent.joint().offset_transform().translation.vector.clone();
                             Velocity::from_parts(
                                 parent_velocity.translation + parent_velocity.rotation.cross(
                                     &(parent_transform.rotation.to_rotation_matrix() * &parent_vel),
@@ -365,15 +340,16 @@ impl<T: Real> Chain<T> {
     }
     /// ```
     /// use k::*;
-    ///
+    /// use k::link::*;
+    /// 
     /// let j0 = JointBuilder::new()
     ///     .translation(Translation3::new(0.0, 1.0, 0.0))
     ///     .into_node();
     /// let j1 = JointBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .into_node();
-    /// j0.set_child_link(Some(Link::new("l0", k::link::Inertial::new(1.0))));
-    /// j1.set_child_link(Some(Link::new("l1", k::link::Inertial::new(4.0))));
+    /// j0.set_child_link(Some(LinkBuilder::new().inertial(Inertial::new(1.0)).finalize()));
+    /// j1.set_child_link(Some(LinkBuilder::new().inertial(Inertial::new(4.0)).finalize()));
     /// j1.set_parent(&j0);
     /// let tree = Chain::from_root(j0);
     /// let com1 = tree.update_center_of_mass();
@@ -648,7 +624,7 @@ fn test_update_center_of_mass() {
     ));
     let mut i1 = Inertial::new(4.0);
     i1.origin.translation.vector.z = 1.0;
-    j1.set_child_link(Some(LinkBuilder::new().name("l1").finalize()));
+    j1.set_child_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
     j1.set_parent(&j0);
     let tree = Chain::from_root(j0);
     let com1 = tree.update_center_of_mass();

@@ -14,9 +14,9 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::rc::{Rc, Weak};
 
 use errors::*;
@@ -73,15 +73,25 @@ where
         }
     }
 
+    pub fn joint_position(&self) -> Option<T> {
+        self.0.borrow().joint.joint_position()
+    }
+    /*
+
     pub fn joint_mut(&self) -> JointRefGuardMut<T> {
         JointRefGuardMut {
             guard: self.0.borrow_mut(),
         }
     }
+*/
 
-    pub fn parent(&self) -> ParentRefGuard<T> {
-        ParentRefGuard {
-            guard: self.0.borrow(),
+    //pub fn parent(&self) -> ParentRefGuard<T> {
+    pub fn parent(&self) -> Option<Node<T>> {
+        match self.0.borrow().parent {
+            Some(ref weak) => weak
+                .upgrade()
+                .and_then(|rc| Some(Node::from_rc(rc.clone()))),
+            None => None,
         }
     }
 
@@ -138,8 +148,8 @@ where
 
     /// Set the offset transform of the joint
     #[inline]
-    pub fn set_offset(&self, trans: Isometry3<T>) {
-        self.0.borrow_mut().joint.set_offset(trans);
+    pub fn set_offset_transform(&self, trans: Isometry3<T>) {
+        self.0.borrow_mut().joint.set_offset_transform(trans);
     }
 
     /// Set the position (angle) of the joint
@@ -181,11 +191,11 @@ where
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
     /// j1.set_mimic_parent(&j0, k::joint::Mimic::new(1.5, 0.1));
-    /// assert_eq!(j0.joint().position().unwrap(), 0.0);
-    /// assert_eq!(j1.joint().position().unwrap(), 0.0);
+    /// assert_eq!(j0.joint_position().unwrap(), 0.0);
+    /// assert_eq!(j1.joint_position().unwrap(), 0.0);
     /// assert!(j0.set_joint_position(1.0).is_ok());
-    /// assert_eq!(j0.joint().position().unwrap(), 1.0);
-    /// assert_eq!(j1.joint().position().unwrap(), 1.6);
+    /// assert_eq!(j0.joint_position().unwrap(), 1.0);
+    /// assert_eq!(j1.joint_position().unwrap(), 1.6);
     /// ```
     pub fn set_joint_position(&self, position: T) -> Result<(), JointError> {
         let mut node = self.0.borrow_mut();
@@ -227,23 +237,16 @@ where
     }
 
     pub(crate) fn parent_world_transform(&self) -> Option<Isometry3<T>> {
-        match self.0.borrow().parent {
-            Some(ref parent) => {
-                let rc_parent = parent.upgrade().unwrap().clone();
-                let parent_obj = rc_parent.borrow();
-                parent_obj.joint.world_transform()
-            }
+        //match self.0.borrow().parent {
+        match self.parent() {
+            Some(ref parent) => parent.world_transform(),
             None => Some(Isometry3::identity()),
         }
     }
 
     pub(crate) fn parent_world_velocity(&self) -> Option<Velocity<T>> {
-        match self.0.borrow().parent {
-            Some(ref parent) => {
-                let rc_parent = parent.upgrade().unwrap().clone();
-                let parent_obj = rc_parent.borrow();
-                parent_obj.joint.world_velocity()
-            }
+        match self.parent() {
+            Some(ref parent) => parent.world_velocity(),
             None => Some(Velocity::zero()),
         }
     }
@@ -362,6 +365,8 @@ macro_rules! def_ref_guard {
     };
 }
 
+/*
+
 macro_rules! def_ref_guard_mut {
     ($guard_struct:ident, $target:ty, $member:ident) => {
         pub struct $guard_struct<'a, T>
@@ -391,12 +396,45 @@ macro_rules! def_ref_guard_mut {
         }
     };
 }
+*/
 
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
 def_ref_guard!(ChildLinkRefGuard, Option<Link<T>>, child_link);
 def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
-def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
-def_ref_guard_mut!(JointRefGuardMut, Joint<T>, joint);
+//def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
+
+/*
+pub struct ParentRefGuard<'a, T>
+where
+    T: Real,
+{
+    guard: Ref<'a, NodeImpl<T>>,
+    parent: Option<Node<T>>,
+}
+
+impl<'a, T>  ParentRefGuard<'a, T> where T:Real {
+    pub fn new(guard: Ref<'a, NodeImpl<T>>) -> Self {
+        let parent = guard.parent.and_then(|weak| weak.upgrade().map(|rc| Node::from_rc(rc)));
+        Self {
+            guard,
+            parent,
+        }
+    }
+}
+*/
+/*
+impl<'a, T> Deref for ParentRefGuard<'a, T>
+where
+    T: Real,
+{
+    type Target = Option<Node<T>>;
+    fn deref(&self) -> &Self::Target {
+        &self.parent
+    }
+}
+*/
+
+//def_ref_guard_mut!(JointRefGuardMut, Joint<T>, joint);
 
 /// Build a `Link<T>`
 ///
@@ -473,7 +511,7 @@ where
     /// Create `Joint` instance
     pub fn finalize(self) -> Joint<T> {
         let mut joint = Joint::new(&self.name, self.joint_type);
-        joint.set_offset(self.offset);
+        joint.set_offset_transform(self.offset);
         joint.limits = self.limits;
         joint
     }

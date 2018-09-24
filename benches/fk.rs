@@ -42,10 +42,7 @@ where
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
     let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = chain
-        .iter_joints()
-        .map(|j| j.joint().limits.clone())
-        .collect();
+    let limits = chain.iter_joints().map(|j| j.limits.clone()).collect();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
         chain.set_joint_positions(&angles).unwrap();

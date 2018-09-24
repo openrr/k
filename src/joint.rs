@@ -232,11 +232,11 @@ where
     ///
     /// // create fixed joint
     /// let fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
-    /// assert!(fixed.position().is_none());
+    /// assert!(fixed.joint_position().is_none());
     ///
     /// // create rotational joint with Y-axis
     /// let rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
-    /// assert_eq!(rot.position().unwrap(), 0.0);
+    /// assert_eq!(rot.joint_position().unwrap(), 0.0);
     /// ```
     ///
     pub fn new(name: &str, joint_type: JointType<T>) -> Joint<T> {
@@ -271,10 +271,10 @@ where
     /// // As default, it has not limit
     ///
     /// // Initial position is 0.0
-    /// assert_eq!(rot.position().unwrap(), 0.0);
+    /// assert_eq!(rot.joint_position().unwrap(), 0.0);
     /// // If it has no limits, set_joint_position always succeeds.
     /// rot.set_joint_position(0.2).unwrap();
-    /// assert_eq!(rot.position().unwrap(), 0.2);
+    /// assert_eq!(rot.joint_position().unwrap(), 0.2);
     /// ```
     ///
     pub fn set_joint_position(&mut self, position: T) -> Result<(), JointError> {
@@ -317,12 +317,12 @@ where
     }
 
     #[inline]
-    pub fn offset(&self) -> &Isometry3<T> {
+    pub fn offset_transform(&self) -> &Isometry3<T> {
         &self.offset
     }
 
     #[inline]
-    pub fn set_offset(&mut self, offset: Isometry3<T>) {
+    pub fn set_offset_transform(&mut self, offset: Isometry3<T>) {
         self.offset = offset;
         self.world_transform_cache.replace(None);
     }
@@ -358,9 +358,9 @@ where
     ///
     /// // Create linear joint with X-axis
     /// let mut lin = k::Joint::<f64>::new("l0", k::JointType::Linear { axis: na::Vector3::x_axis() });
-    /// assert_eq!(lin.transform().translation.vector.x, 0.0);
+    /// assert_eq!(lin.local_transform().translation.vector.x, 0.0);
     /// lin.set_joint_position(-1.0).unwrap();
-    /// assert_eq!(lin.transform().translation.vector.x, -1.0);
+    /// assert_eq!(lin.local_transform().translation.vector.x, -1.0);
     /// ```
     ///
     pub fn local_transform(&self) -> Isometry3<T> {

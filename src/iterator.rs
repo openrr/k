@@ -46,12 +46,7 @@ where
             return None;
         }
         let next = self.parent.clone().unwrap();
-        self.parent = match *next.parent() {
-            None => None,
-            Some(ref parent) => Some(Node::from_rc(
-                parent.upgrade().expect("failed to get parent"),
-            )),
-        };
+        self.parent = next.parent().clone();
         Some(next)
     }
 }

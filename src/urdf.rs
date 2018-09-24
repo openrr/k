@@ -301,7 +301,7 @@ where
         // set root as parent of root joint nodes
         let root_nodes = ref_nodes
             .iter()
-            .filter_map(|ref_node| match *ref_node.parent() {
+            .filter_map(|ref_node| match ref_node.parent() {
                 None => Some(ref_node),
                 Some(_) => None,
             });

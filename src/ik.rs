@@ -31,6 +31,32 @@ where
     )
 }
 
+pub fn calc_jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>
+where
+    T: Real,
+{
+    let dof = arm.dof();
+    let t_n = arm.end_transform();
+    arm.update_transforms();
+    let p_n = t_n.translation;
+    let jacobi_vec = arm
+        .iter_joints()
+        .map(|joint| {
+            let t_i = joint.world_transform().unwrap();
+            let p_i = t_i.translation;
+            let a_i = t_i.rotation * match joint.joint_type {
+                JointType::Linear { axis } => axis,
+                JointType::Rotational { axis } => axis,
+                JointType::Fixed => panic!("impossible, bug of jacobian"),
+            };
+            let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
+            [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
+        }).collect::<Vec<_>>();
+    // Pi: a_i x (p_n - Pi)
+    // wi: a_i
+    DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r])
+}
+
 /// IK solver
 pub trait InverseKinematicsSolver<T>
 where
@@ -96,24 +122,8 @@ where
         let dof = orig_positions.len();
         let t_n = arm.end_transform();
         let err = calc_pose_diff(target_pose, &t_n);
-        arm.update_transforms();
-        let p_n = t_n.translation;
-        let jacobi_vec = arm
-            .iter_joints()
-            .map(|joint| {
-                let t_i = joint.world_transform().unwrap();
-                let p_i = t_i.translation;
-                let a_i = t_i.rotation * match joint.joint_type {
-                    JointType::Linear { axis } => axis,
-                    JointType::Rotational { axis } => axis,
-                    JointType::Fixed => panic!("impossible, bug of jacobian"),
-                };
-                let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
-                [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
-            }).collect::<Vec<_>>();
-        // Pi: a_i x (p_n - Pi)
-        // wi: a_i
-        let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
+        let orig_positions = arm.joint_positions();
+        let jacobi = calc_jacobian(arm);
         let positions_vec = if dof > 6 {
             self.add_positions_with_multiplier(
                 &orig_positions,

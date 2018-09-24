@@ -145,7 +145,7 @@ fn main() {
         Translation3::new(0.0, 0.0, -0.6),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
-    arm.iter().next().unwrap().set_offset(
+    arm.iter().next().unwrap().set_offset_transform(
         base_rot * Isometry3::from_parts(
             Translation3::new(0.0, 0.0, 0.6),
             UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
