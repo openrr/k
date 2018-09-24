@@ -14,9 +14,9 @@
    limitations under the License.
  */
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
-use std::cell::{Ref, RefCell};
+use std::cell::{Ref, RefCell, RefMut};
 use std::fmt::{self, Display};
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use std::rc::{Rc, Weak};
 
 use errors::*;
@@ -70,6 +70,12 @@ where
     pub fn joint(&self) -> JointRefGuard<T> {
         JointRefGuard {
             guard: self.0.borrow(),
+        }
+    }
+
+    pub fn joint_mut(&self) -> JointRefGuardMut<T> {
+        JointRefGuardMut {
+            guard: self.0.borrow_mut(),
         }
     }
 
@@ -148,8 +154,8 @@ where
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
-    /// assert!(l0.set_position(1.0).is_ok());
-    /// assert!(l0.set_position(-1.0).is_err());
+    /// assert!(l0.set_joint_position(1.0).is_ok());
+    /// assert!(l0.set_joint_position(-1.0).is_err());
     /// ```
     ///
     /// Setting position for Fixed joint is error.
@@ -159,7 +165,7 @@ where
     /// let l0 = JointBuilder::new()
     ///     .joint_type(JointType::Fixed)
     ///     .into_node();
-    /// assert!(l0.set_position(0.0).is_err());
+    /// assert!(l0.set_joint_position(0.0).is_err());
     /// ```
     ///
     /// `k::joint::Mimic` can be used to copy other joint's position.
@@ -177,21 +183,23 @@ where
     /// j1.set_mimic_parent(&j0, k::joint::Mimic::new(1.5, 0.1));
     /// assert_eq!(j0.joint().position().unwrap(), 0.0);
     /// assert_eq!(j1.joint().position().unwrap(), 0.0);
-    /// assert!(j0.set_position(1.0).is_ok());
+    /// assert!(j0.set_joint_position(1.0).is_ok());
     /// assert_eq!(j0.joint().position().unwrap(), 1.0);
     /// assert_eq!(j1.joint().position().unwrap(), 1.6);
     /// ```
-    pub fn set_position(&self, position: T) -> Result<(), JointError> {
+    pub fn set_joint_position(&self, position: T) -> Result<(), JointError> {
         let mut node = self.0.borrow_mut();
         if node.mimic_parent.is_some() {
             return Ok(());
         }
-        node.joint.set_position(position)?;
+        node.joint.set_joint_position(position)?;
         for child in &node.mimic_children {
             let mut child_node = child.0.borrow_mut();
             let mimic = child_node.mimic.clone();
             match mimic {
-                Some(m) => child_node.joint.set_position(m.mimic_position(position))?,
+                Some(m) => child_node
+                    .joint
+                    .set_joint_position(m.mimic_position(position))?,
                 None => {
                     let from = self.joint().name.to_owned();
                     let to = child.joint().name.to_owned();
@@ -199,7 +207,7 @@ where
                         from: from.clone(),
                         to: to.clone(),
                         message: format!(
-                        "set_position for {} -> {} failed. Mimic instance not found. child = {:?}",
+                        "set_joint_position for {} -> {} failed. Mimic instance not found. child = {:?}",
                         from,
                         to,
                         child
@@ -211,8 +219,11 @@ where
         Ok(())
     }
     #[inline]
-    pub fn set_position_unchecked(&self, position: T) {
-        self.0.borrow_mut().joint.set_position_unchecked(position);
+    pub fn set_joint_position_unchecked(&self, position: T) {
+        self.0
+            .borrow_mut()
+            .joint
+            .set_joint_position_unchecked(position);
     }
 
     pub(crate) fn parent_world_transform(&self) -> Option<Isometry3<T>> {
@@ -225,6 +236,18 @@ where
             None => Some(Isometry3::identity()),
         }
     }
+
+    pub(crate) fn parent_world_velocity(&self) -> Option<Velocity<T>> {
+        match self.0.borrow().parent {
+            Some(ref parent) => {
+                let rc_parent = parent.upgrade().unwrap().clone();
+                let parent_obj = rc_parent.borrow();
+                parent_obj.joint.world_velocity()
+            }
+            None => Some(Velocity::zero()),
+        }
+    }
+
     /// Get the calculated world transform.
     /// Call `Chain::update_transforms()` before using this method.
     ///
@@ -256,6 +279,10 @@ where
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         self.0.borrow().joint.world_transform()
+    }
+    #[inline]
+    pub fn world_velocity(&self) -> Option<Velocity<T>> {
+        self.0.borrow().joint.world_velocity()
     }
 
     pub fn set_mimic_parent(&self, parent: &Node<T>, mimic: Mimic<T>) {
@@ -335,10 +362,41 @@ macro_rules! def_ref_guard {
     };
 }
 
+macro_rules! def_ref_guard_mut {
+    ($guard_struct:ident, $target:ty, $member:ident) => {
+        pub struct $guard_struct<'a, T>
+        where
+            T: Real,
+        {
+            guard: RefMut<'a, NodeImpl<T>>,
+        }
+
+        impl<'a, T> Deref for $guard_struct<'a, T>
+        where
+            T: Real,
+        {
+            type Target = $target;
+            fn deref(&self) -> &Self::Target {
+                &self.guard.$member
+            }
+        }
+
+        impl<'a, T> DerefMut for $guard_struct<'a, T>
+        where
+            T: Real,
+        {
+            fn deref_mut(&mut self) -> &mut $target {
+                &mut self.guard.$member
+            }
+        }
+    };
+}
+
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
 def_ref_guard!(ChildLinkRefGuard, Option<Link<T>>, child_link);
 def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
 def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
+def_ref_guard_mut!(JointRefGuardMut, Joint<T>, joint);
 
 /// Build a `Link<T>`
 ///

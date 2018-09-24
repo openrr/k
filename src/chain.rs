@@ -18,6 +18,7 @@ use std::fmt::{self, Display};
 use std::ops::Deref;
 
 use errors::*;
+use joint::*;
 use node::*;
 
 /// Kinematic Chain using `Node`
@@ -210,8 +211,13 @@ impl<T: Real> Chain<T> {
     }
 
     /// Iterate for movable joints
-    pub fn iter_joints(&self) -> impl Iterator<Item = &Node<T>> {
-        self.movable_joints.iter()
+    pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
+        self.movable_joints.iter().map(|node| node.joint())
+    }
+
+    /// Iterate for movable joints
+    pub fn iter_joints_mut(&self) -> impl Iterator<Item = JointRefGuardMut<T>> {
+        self.movable_joints.iter().map(|node| node.joint_mut())
     }
 
     /// Calculate the degree of freedom
@@ -253,7 +259,7 @@ impl<T: Real> Chain<T> {
     /// l1.set_parent(&l0);
     /// let tree = Chain::from_root(l0);
     /// let j = tree.find("pitch1").unwrap();
-    /// j.set_position(0.5).unwrap();
+    /// j.set_joint_position(0.5).unwrap();
     /// assert_eq!(j.joint().position().unwrap(), 0.5);
     /// ```
     pub fn find(&self, joint_name: &str) -> Option<&Node<T>> {
@@ -264,9 +270,9 @@ impl<T: Real> Chain<T> {
     /// `FixedJoint` is ignored. the length is the same with `dof()`
     pub fn joint_positions(&self) -> Vec<T> {
         self.iter_joints()
-            .map(|node| {
-                node.joint()
-                    .position()
+            .map(|joint| {
+                joint
+                    .joint_position()
                     .expect("movable joint must has position")
             }).collect()
     }
@@ -281,8 +287,8 @@ impl<T: Real> Chain<T> {
                 required: self.dof,
             });
         }
-        for (mut joint, position) in self.iter_joints().zip(positions_vec.iter()) {
-            joint.set_position(*position)?;
+        for (mut joint, position) in self.iter_joints_mut().zip(positions_vec.iter()) {
+            joint.set_joint_position(*position)?;
         }
         Ok(())
     }
@@ -290,25 +296,71 @@ impl<T: Real> Chain<T> {
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
-        for (mut joint, position) in self.iter_joints().zip(positions_vec.iter()) {
-            joint.set_position_unchecked(*position);
+        for (mut joint, position) in self.iter_joints_mut().zip(positions_vec.iter()) {
+            joint.set_joint_position_unchecked(*position);
         }
     }
 
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
-            .map(|node| {
-                let trans = match node.world_transform() {
-                    None => {
-                        let parent_transform =
-                            node.parent_world_transform().expect("cache must exist");
-                        let trans = parent_transform * node.joint().transform();
-                        node.joint().set_world_transform(trans);
-                        trans
-                    }
-                    Some(trans) => trans,
-                };
-                trans
+            .map(|node| match node.world_transform() {
+                None => {
+                    let parent_transform = node.parent_world_transform().expect("cache must exist");
+                    let trans = parent_transform * node.joint().local_transform();
+                    node.joint().set_world_transform(trans);
+                    trans
+                }
+                Some(trans) => trans,
+            }).collect()
+    }
+
+    pub fn update_velocities(&self) -> Vec<Velocity<T>> {
+        self.update_transforms();
+        self.iter()
+            .map(|node| match node.world_velocity() {
+                None => {
+                    let parent_transform = node
+                        .parent_world_transform()
+                        .expect("transform cache must exist");
+                    let parent_velocity = node
+                        .parent_world_velocity()
+                        .expect("velocity cache must exist");
+                    let velocity = match node.joint().joint_type {
+                        JointType::Fixed => parent_velocity.clone(),
+                        JointType::Rotational { axis } => {
+                            let parent_weak = node.parent();
+                            let parent = parent_weak.clone().unwrap().upgrade().unwrap().clone();
+                            let b = parent.borrow();
+                            let parent_vel = b.joint.offset().translation.vector.clone();
+                            Velocity::from_parts(
+                                parent_velocity.translation + parent_velocity.rotation.cross(
+                                    &(parent_transform.rotation.to_rotation_matrix() * &parent_vel),
+                                ),
+                                parent_velocity.rotation
+                                    + node
+                                        .world_transform()
+                                        .expect("cache must exist")
+                                        .rotation
+                                        .to_rotation_matrix()
+                                        * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
+                            )
+                        }
+                        JointType::Linear { axis } => Velocity::from_parts(
+                            parent_velocity.translation
+                                + node
+                                    .world_transform()
+                                    .expect("cache must exist")
+                                    .rotation
+                                    .to_rotation_matrix()
+                                    * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
+                            // TODO: Is this true??
+                            parent_velocity.rotation.clone(),
+                        ),
+                    };
+                    node.joint().set_world_velocity(velocity.clone());
+                    velocity
+                }
+                Some(vel) => vel,
             }).collect()
     }
     /// ```
@@ -331,9 +383,9 @@ impl<T: Real> Chain<T> {
         let mut com = Vector3::zeros();
 
         self.update_transforms();
-        self.iter().for_each(|joint| {
-            if let Some(trans) = joint.joint().world_transform() {
-                if let Some(ref link) = *joint.child_link() {
+        self.iter().for_each(|node| {
+            if let Some(trans) = node.joint().world_transform() {
+                if let Some(ref link) = *node.child_link() {
                     let inertia_trans = trans * link.inertial.origin.translation;
                     com += inertia_trans.translation.vector * link.inertial.mass;
                     total_mass += link.inertial.mass;
@@ -415,7 +467,7 @@ where
     /// Calculate transform of the end joint
     pub fn end_transform(&self) -> Isometry3<T> {
         self.iter().fold(Isometry3::identity(), |trans, joint| {
-            trans * joint.joint().transform()
+            trans * joint.joint().local_transform()
         })
     }
 }
@@ -496,7 +548,7 @@ fn it_works() {
     println!("names = {:?}", names);
     let positions = joint0
         .iter_descendants()
-        .map(|joint| joint.joint().position())
+        .map(|node| node.joint().joint_position())
         .collect::<Vec<_>>();
     println!("positions = {:?}", positions);
 
@@ -515,11 +567,11 @@ fn it_works() {
 
     let _ = joint0
         .iter_ancestors()
-        .map(|joint| joint.set_position(-0.5))
+        .map(|joint| joint.set_joint_position(-0.5))
         .collect::<Vec<_>>();
     let positions = joint0
         .iter_descendants()
-        .map(|joint| joint.joint().position())
+        .map(|node| node.joint().joint_position())
         .collect::<Vec<_>>();
     println!("positions = {:?}", positions);
 
@@ -577,8 +629,8 @@ fn test_mimic() {
 #[test]
 fn test_update_center_of_mass() {
     use super::joint::*;
-    use super::node::*;
     use super::link::*;
+    use super::node::*;
     use na::*;
     let j0 = JointBuilder::new()
         .translation(Translation3::new(0.0, 1.0, 0.0))
@@ -588,17 +640,22 @@ fn test_update_center_of_mass() {
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
         }).into_node();
-    j0.set_child_link(Some(Link::new("l0", Inertial::new(1.0))));
+    j0.set_child_link(Some(
+        LinkBuilder::new()
+            .name("l0")
+            .inertial(Inertial::new(1.0))
+            .finalize(),
+    ));
     let mut i1 = Inertial::new(4.0);
     i1.origin.translation.vector.z = 1.0;
-    j1.set_child_link(Some(Link::new("l1", i1)));
+    j1.set_child_link(Some(LinkBuilder::new().name("l1").finalize()));
     j1.set_parent(&j0);
     let tree = Chain::from_root(j0);
     let com1 = tree.update_center_of_mass();
     assert_eq!(com1.x, 0.0);
     assert_eq!(com1.y, 1.0);
     assert_eq!(com1.z, 1.6);
-    j1.set_position(0.5).unwrap();
+    j1.set_joint_position(0.5).unwrap();
     let com2 = tree.update_center_of_mass();
     assert!((com2.x - 0.383540).abs() < 0.0001);
     assert_eq!(com2.y, 1.0);

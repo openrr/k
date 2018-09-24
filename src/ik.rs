@@ -100,10 +100,10 @@ where
         let p_n = t_n.translation;
         let jacobi_vec = arm
             .iter_joints()
-            .map(|node| {
-                let t_i = node.world_transform().unwrap();
+            .map(|joint| {
+                let t_i = joint.world_transform().unwrap();
                 let p_i = t_i.translation;
-                let a_i = t_i.rotation * match node.joint().joint_type {
+                let a_i = t_i.rotation * match joint.joint_type {
                     JointType::Linear { axis } => axis,
                     JointType::Rotational { axis } => axis,
                     JointType::Fixed => panic!("impossible, bug of jacobian"),

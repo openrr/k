@@ -35,8 +35,8 @@ mod errors;
 mod ik;
 pub mod iterator;
 pub mod joint;
-pub mod node;
 pub mod link;
+pub mod node;
 pub mod prelude;
 pub mod urdf;
 
@@ -44,8 +44,8 @@ pub use self::chain::*;
 pub use self::errors::*;
 pub use self::ik::*;
 pub use self::joint::{Joint, JointType};
-pub use self::node::{JointBuilder, Node};
 pub use self::link::Link;
+pub use self::node::{JointBuilder, Node};
 
 // re-export
 pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};

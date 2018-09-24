@@ -19,6 +19,33 @@ use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
 use std::cell::RefCell;
 use std::fmt::{self, Display};
 
+#[derive(Clone, Debug, Copy)]
+pub struct Velocity<T: Real> {
+    pub translation: Vector3<T>,
+    pub rotation: Vector3<T>,
+}
+
+impl<T> Velocity<T>
+where
+    T: Real,
+{
+    pub fn new() -> Self {
+        Self::zero()
+    }
+    pub fn from_parts(translation: Vector3<T>, rotation: Vector3<T>) -> Self {
+        Self {
+            translation,
+            rotation,
+        }
+    }
+    pub fn zero() -> Self {
+        Self {
+            translation: Vector3::zeros(),
+            rotation: Vector3::zeros(),
+        }
+    }
+}
+
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
 pub enum JointType<T: Real> {
@@ -187,6 +214,8 @@ pub struct Joint<T: Real> {
     offset: Isometry3<T>,
     /// cache of world transform
     world_transform_cache: RefCell<Option<Isometry3<T>>>,
+    /// cache of world velocity
+    world_velocity_cache: RefCell<Option<Velocity<T>>>,
 }
 
 impl<T> Joint<T>
@@ -219,6 +248,7 @@ where
             limits: None,
             offset: Isometry3::identity(),
             world_transform_cache: RefCell::new(None),
+            world_velocity_cache: RefCell::new(None),
         }
     }
     /// Set the position of the joint
@@ -234,7 +264,7 @@ where
     /// // Create fixed joint
     /// let mut fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
     /// // Set position to fixed joint always fails
-    /// assert!(fixed.set_position(1.0).is_err());
+    /// assert!(fixed.set_joint_position(1.0).is_err());
     ///
     /// // Create rotational joint with Y-axis
     /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
@@ -242,12 +272,12 @@ where
     ///
     /// // Initial position is 0.0
     /// assert_eq!(rot.position().unwrap(), 0.0);
-    /// // If it has no limits, set_position always succeeds.
-    /// rot.set_position(0.2).unwrap();
+    /// // If it has no limits, set_joint_position always succeeds.
+    /// rot.set_joint_position(0.2).unwrap();
     /// assert_eq!(rot.position().unwrap(), 0.2);
     /// ```
     ///
-    pub fn set_position(&mut self, position: T) -> Result<(), JointError> {
+    pub fn set_joint_position(&mut self, position: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimitError {
                 joint_name: self.name.to_string(),
@@ -268,14 +298,18 @@ where
         self.position = position;
         // TODO: have to reset descendent `world_transform_cache`
         self.world_transform_cache.replace(None);
+        self.world_velocity_cache.replace(None);
         Ok(())
     }
-    pub fn set_position_unchecked(&mut self, position: T) {
+    pub fn set_joint_position_unchecked(&mut self, position: T) {
         self.position = position;
+        // TODO: have to reset descendent `world_transform_cache`
+        self.world_transform_cache.replace(None);
+        self.world_velocity_cache.replace(None);
     }
     /// Returns the position (angle)
     #[inline]
-    pub fn position(&self) -> Option<T> {
+    pub fn joint_position(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
             _ => Some(self.position),
@@ -293,7 +327,7 @@ where
         self.world_transform_cache.replace(None);
     }
 
-    pub fn set_velocity(&mut self, velocity: T) -> Result<(), JointError> {
+    pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), JointError> {
         if let JointType::Fixed = self.joint_type {
             return Err(JointError::OutOfLimitError {
                 joint_name: self.name.to_string(),
@@ -301,12 +335,13 @@ where
             });
         }
         self.velocity = velocity;
+        self.world_velocity_cache.replace(None);
         Ok(())
     }
 
     /// Returns the velocity
     #[inline]
-    pub fn velocity(&self) -> Option<T> {
+    pub fn joint_velocity(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
             _ => Some(self.velocity),
@@ -324,11 +359,11 @@ where
     /// // Create linear joint with X-axis
     /// let mut lin = k::Joint::<f64>::new("l0", k::JointType::Linear { axis: na::Vector3::x_axis() });
     /// assert_eq!(lin.transform().translation.vector.x, 0.0);
-    /// lin.set_position(-1.0).unwrap();
+    /// lin.set_joint_position(-1.0).unwrap();
     /// assert_eq!(lin.transform().translation.vector.x, -1.0);
     /// ```
     ///
-    pub fn transform(&self) -> Isometry3<T> {
+    pub fn local_transform(&self) -> Isometry3<T> {
         let joint_transform = match self.joint_type {
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => Isometry3::from_parts(
@@ -342,9 +377,15 @@ where
         };
         self.offset * joint_transform
     }
+
     #[inline]
     pub(crate) fn set_world_transform(&self, world_transform: Isometry3<T>) {
         self.world_transform_cache.replace(Some(world_transform));
+    }
+
+    #[inline]
+    pub(crate) fn set_world_velocity(&self, world_velocity: Velocity<T>) {
+        self.world_velocity_cache.replace(Some(world_velocity));
     }
     /// Get the result of forward kinematics
     ///
@@ -352,6 +393,11 @@ where
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
         *self.world_transform_cache.borrow()
+    }
+
+    #[inline]
+    pub fn world_velocity(&self) -> Option<Velocity<T>> {
+        *self.world_velocity_cache.borrow()
     }
 
     #[inline]

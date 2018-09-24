@@ -20,7 +20,7 @@ mod tests {
 
         let names = tree
             .iter_joints()
-            .map(|j| j.joint().name.clone())
+            .map(|j| j.name.clone())
             .collect::<Vec<_>>();
         assert!(names.len() == 12);
         println!("{}", names[0]);

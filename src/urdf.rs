@@ -23,8 +23,8 @@ use std::path::Path;
 
 use chain::*;
 use joint::*;
-use node::*;
 use link::*;
+use node::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
 

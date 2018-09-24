@@ -14,8 +14,8 @@
    limitations under the License.
  */
 //! Iterators to iterate descendants and ancestors
-use node::*;
 use na::Real;
+use node::*;
 
 #[derive(Debug)]
 /// Iterator for parents
