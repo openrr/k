@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{Isometry3, Real, Vector3};
+use na::{Isometry3, Real};
 use std::fmt::{self, Display};
 use std::ops::Deref;
 
@@ -197,6 +197,11 @@ impl<T: Real> Chain<T> {
     pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
         self.movable_joints.iter().map(|node| node.joint())
     }
+
+    /// Iterate for movable joints
+    pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
+        self.movable_joints.iter().map(|node| node.link())
+    }
     /// Calculate the degree of freedom
     ///
     /// # Examples
@@ -306,7 +311,8 @@ impl<T: Real> Chain<T> {
                         JointType::Fixed => parent_velocity.clone(),
                         JointType::Rotational { axis } => {
                             let parent = node.parent().expect("parent must exist");
-                            let parent_vel = parent.joint().offset_transform().translation.vector.clone();
+                            let parent_vel =
+                                parent.joint().offset_transform().translation.vector.clone();
                             Velocity::from_parts(
                                 parent_velocity.translation + parent_velocity.rotation.cross(
                                     &(parent_transform.rotation.to_rotation_matrix() * &parent_vel),
@@ -337,38 +343,6 @@ impl<T: Real> Chain<T> {
                 }
                 Some(vel) => vel,
             }).collect()
-    }
-    /// ```
-    /// use k::*;
-    /// use k::link::*;
-    /// 
-    /// let j0 = JointBuilder::new()
-    ///     .translation(Translation3::new(0.0, 1.0, 0.0))
-    ///     .into_node();
-    /// let j1 = JointBuilder::new()
-    ///     .translation(Translation3::new(0.0, 0.0, 1.0))
-    ///     .into_node();
-    /// j0.set_child_link(Some(LinkBuilder::new().inertial(Inertial::new(1.0)).finalize()));
-    /// j1.set_child_link(Some(LinkBuilder::new().inertial(Inertial::new(4.0)).finalize()));
-    /// j1.set_parent(&j0);
-    /// let tree = Chain::from_root(j0);
-    /// let com1 = tree.update_center_of_mass();
-    /// ```
-    pub fn update_center_of_mass(&self) -> Vector3<T> {
-        let mut total_mass = T::zero();
-        let mut com = Vector3::zeros();
-
-        self.update_transforms();
-        self.iter().for_each(|node| {
-            if let Some(trans) = node.joint().world_transform() {
-                if let Some(ref link) = *node.child_link() {
-                    let inertia_trans = trans * link.inertial.origin.translation;
-                    com += inertia_trans.translation.vector * link.inertial.mass;
-                    total_mass += link.inertial.mass;
-                }
-            }
-        });
-        com / total_mass
     }
 }
 
@@ -600,40 +574,4 @@ fn test_mimic() {
     assert_eq!(positions[0], 0.1);
     assert_eq!(positions[1], 0.2);
     assert_eq!(positions[2], 0.9);
-}
-
-#[test]
-fn test_update_center_of_mass() {
-    use super::joint::*;
-    use super::link::*;
-    use super::node::*;
-    use na::*;
-    let j0 = JointBuilder::new()
-        .translation(Translation3::new(0.0, 1.0, 0.0))
-        .into_node();
-    let j1 = JointBuilder::new()
-        .translation(Translation3::new(0.0, 0.0, 1.0))
-        .joint_type(JointType::Rotational {
-            axis: Vector3::y_axis(),
-        }).into_node();
-    j0.set_child_link(Some(
-        LinkBuilder::new()
-            .name("l0")
-            .inertial(Inertial::new(1.0))
-            .finalize(),
-    ));
-    let mut i1 = Inertial::new(4.0);
-    i1.origin.translation.vector.z = 1.0;
-    j1.set_child_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
-    j1.set_parent(&j0);
-    let tree = Chain::from_root(j0);
-    let com1 = tree.update_center_of_mass();
-    assert_eq!(com1.x, 0.0);
-    assert_eq!(com1.y, 1.0);
-    assert_eq!(com1.z, 1.6);
-    j1.set_joint_position(0.5).unwrap();
-    let com2 = tree.update_center_of_mass();
-    assert!((com2.x - 0.383540).abs() < 0.0001);
-    assert_eq!(com2.y, 1.0);
-    assert!((com2.z - 1.502066).abs() < 0.0001);
 }

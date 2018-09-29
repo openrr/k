@@ -13,11 +13,11 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{self, DMatrix, Isometry3, Real, Vector3, Vector6};
+use na::{self, Isometry3, Real,Vector3, Vector6};
 
 use chain::*;
 use errors::*;
-use joint::*;
+use funcs::*;
 
 /// From 'Humanoid Robot (Kajita)' P.64
 fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
@@ -29,32 +29,6 @@ where
     Vector6::new(
         p_diff[0], p_diff[1], p_diff[2], w_diff[0], w_diff[1], w_diff[2],
     )
-}
-
-pub fn calc_jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>
-where
-    T: Real,
-{
-    let dof = arm.dof();
-    let t_n = arm.end_transform();
-    arm.update_transforms();
-    let p_n = t_n.translation;
-    let jacobi_vec = arm
-        .iter_joints()
-        .map(|joint| {
-            let t_i = joint.world_transform().unwrap();
-            let p_i = t_i.translation;
-            let a_i = t_i.rotation * match joint.joint_type {
-                JointType::Linear { axis } => axis,
-                JointType::Rotational { axis } => axis,
-                JointType::Fixed => panic!("impossible, bug of jacobian"),
-            };
-            let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
-            [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
-        }).collect::<Vec<_>>();
-    // Pi: a_i x (p_n - Pi)
-    // wi: a_i
-    DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r])
 }
 
 /// IK solver
@@ -123,7 +97,7 @@ where
         let t_n = arm.end_transform();
         let err = calc_pose_diff(target_pose, &t_n);
         let orig_positions = arm.joint_positions();
-        let jacobi = calc_jacobian(arm);
+        let jacobi = jacobian(arm);
         let positions_vec = if dof > 6 {
             self.add_positions_with_multiplier(
                 &orig_positions,

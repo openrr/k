@@ -281,10 +281,10 @@ where
                         child_node.set_parent(parent_node);
                     }
                 }
-                parent_node.set_child_link(Some(l.clone().into()));
+                parent_node.set_link(Some(l.clone().into()));
             } else {
                 info!("root={}", l.name);
-                root_node.set_child_link(Some(l.clone().into()));
+                root_node.set_link(Some(l.clone().into()));
             }
         }
         // add mimics

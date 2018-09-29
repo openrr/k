@@ -38,7 +38,7 @@ where
     pub mimic_parent: Option<WeakNode<T>>,
     pub mimic_children: Vec<Node<T>>,
     pub mimic: Option<Mimic<T>>,
-    pub child_link: Option<Link<T>>,
+    pub link: Option<Link<T>>,
 }
 
 /// Parts of `Chain`
@@ -63,7 +63,7 @@ where
             mimic_parent: None,
             mimic_children: Vec::new(),
             mimic: None,
-            child_link: None,
+            link: None,
         })))
     }
 
@@ -294,12 +294,12 @@ where
         self.0.borrow_mut().mimic = Some(mimic);
     }
 
-    pub fn set_child_link(&self, link: Option<Link<T>>) {
-        self.0.borrow_mut().child_link = link;
+    pub fn set_link(&self, link: Option<Link<T>>) {
+        self.0.borrow_mut().link = link;
     }
 
-    pub fn child_link(&self) -> ChildLinkRefGuard<T> {
-        ChildLinkRefGuard {
+    pub fn link(&self) -> LinkRefGuard<T> {
+        LinkRefGuard {
             guard: self.0.borrow(),
         }
     }
@@ -328,7 +328,7 @@ impl<T: Real> Display for Node<T> {
         let inner = self.0.borrow();
         inner.joint.fmt(f)?;
 
-        if let Some(l) = &inner.child_link {
+        if let Some(l) = &inner.link {
             write!(f, " => /{}/", l.name)?;
         }
         Ok(())
@@ -399,7 +399,7 @@ macro_rules! def_ref_guard_mut {
 */
 
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
-def_ref_guard!(ChildLinkRefGuard, Option<Link<T>>, child_link);
+def_ref_guard!(LinkRefGuard, Option<Link<T>>, link);
 def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
 //def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
 
