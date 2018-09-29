@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use na::{self, Isometry3, Real,Vector3, Vector6};
+use na::{self, Isometry3, Real, Vector3, Vector6};
 
 use chain::*;
 use errors::*;

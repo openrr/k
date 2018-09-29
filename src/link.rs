@@ -52,7 +52,7 @@ where
         Self {
             origin: Isometry3::identity(),
             mass,
-            inertia: Matrix3::identity(),
+            inertia: Matrix3::identity(), // TODO
         }
     }
 }
@@ -78,6 +78,20 @@ pub struct Link<T: Real> {
     pub inertial: Inertial<T>,
     pub visuals: Vec<Visual<T>>,
     pub collisions: Vec<Collision<T>>,
+}
+
+impl<T> Default for Link<T>
+where
+    T: Real,
+{
+    fn default() -> Self {
+        Self {
+            name: "".to_owned(),
+            inertial: Inertial::new(T::zero()),
+            visuals: Vec::new(),
+            collisions: Vec::new(),
+        }
+    }
 }
 
 pub struct LinkBuilder<T>

@@ -64,8 +64,6 @@ where
     com / total_mass
 }
 
-
-
 #[test]
 fn test_update_center_of_mass() {
     use super::joint::*;

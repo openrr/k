@@ -45,7 +45,7 @@ where
 ///
 /// It contains joint, joint (transform), and parent/children.
 #[derive(Debug)]
-pub struct Node<T: Real>(Rc<RefCell<NodeImpl<T>>>);
+pub struct Node<T: Real>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
 
 impl<T> Node<T>
 where
@@ -298,8 +298,8 @@ where
         self.0.borrow_mut().link = link;
     }
 
-    pub fn link(&self) -> LinkRefGuard<T> {
-        LinkRefGuard {
+    pub fn link(&self) -> OptionLinkRefGuard<T> {
+        OptionLinkRefGuard {
             guard: self.0.borrow(),
         }
     }
@@ -399,8 +399,28 @@ macro_rules! def_ref_guard_mut {
 */
 
 def_ref_guard!(JointRefGuard, Joint<T>, joint);
-def_ref_guard!(LinkRefGuard, Option<Link<T>>, link);
+def_ref_guard!(OptionLinkRefGuard, Option<Link<T>>, link);
+//def_ref_guard!(LinkRefGuard, Link<T>, link);
 def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
+
+pub struct LinkRefGuard<'a, T>
+where
+    T: Real,
+{
+    pub(crate) guard: Ref<'a, NodeImpl<T>>,
+}
+
+impl<'a, T> Deref for LinkRefGuard<'a, T>
+where
+    T: Real,
+{
+    type Target = Link<T>;
+    fn deref(&self) -> &Self::Target {
+        // danger
+        &self.guard.link.as_ref().unwrap()
+    }
+}
+
 //def_ref_guard!(ParentRefGuard, Option<WeakNode<T>>, parent);
 
 /*

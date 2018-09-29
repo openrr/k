@@ -194,13 +194,24 @@ impl<T: Real> Chain<T> {
     }
 
     /// Iterate for movable joints
+    ///
+    /// Fixed joints are ignored. If you want to manipulate on Fixed,
+    /// use `iter()` instead of `iter_joints()`
     pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
         self.movable_joints.iter().map(|node| node.joint())
     }
 
-    /// Iterate for movable joints
+    /// Iterate for links
     pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
-        self.movable_joints.iter().map(|node| node.link())
+        self.movable_joints.iter().filter_map(|node| {
+            if node.0.borrow().link.is_some() {
+                Some(LinkRefGuard {
+                    guard: node.0.borrow(),
+                })
+            } else {
+                None
+            }
+        })
     }
     /// Calculate the degree of freedom
     ///
@@ -315,7 +326,7 @@ impl<T: Real> Chain<T> {
                                 parent.joint().offset_transform().translation.vector.clone();
                             Velocity::from_parts(
                                 parent_velocity.translation + parent_velocity.rotation.cross(
-                                    &(parent_transform.rotation.to_rotation_matrix() * &parent_vel),
+                                    &(parent_transform.rotation.to_rotation_matrix() * parent_vel),
                                 ),
                                 parent_velocity.rotation
                                     + node
