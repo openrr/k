@@ -38,8 +38,8 @@ where
 /// let j1 = JointBuilder::new()
 ///     .translation(Translation3::new(0.0, 0.0, 1.0))
 ///     .into_node();
-/// j0.set_link(Some(LinkBuilder::new().inertial(Inertial::new(1.0)).finalize()));
-/// j1.set_link(Some(LinkBuilder::new().inertial(Inertial::new(4.0)).finalize()));
+/// j0.set_link(Some(LinkBuilder::new().inertial(Inertial::from_mass(1.0)).finalize()));
+/// j1.set_link(Some(LinkBuilder::new().inertial(Inertial::from_mass(4.0)).finalize()));
 /// j1.set_parent(&j0);
 /// let tree = Chain::from_root(j0);
 /// let com1 = center_of_mass(&tree);
@@ -81,11 +81,12 @@ fn test_update_center_of_mass() {
     j0.set_link(Some(
         LinkBuilder::new()
             .name("l0")
-            .inertial(Inertial::new(1.0))
+            .inertial(Inertial::new(Isometry3::identity(), 1.0, Matrix3::zeros()))
             .finalize(),
     ));
-    let mut i1 = Inertial::new(4.0);
-    i1.origin.translation.vector.z = 1.0;
+    let mut i1 = Inertial::new(Isometry3::identity(), 4.0, Matrix3::zeros());
+    i1.set_origin(Isometry3::from_parts(Translation3::new(0.0, 0.0, 1.0),
+    UnitQuaternion::identity()));
     j1.set_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
     j1.set_parent(&j0);
     let tree = Chain::from_root(j0);

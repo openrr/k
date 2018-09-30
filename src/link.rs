@@ -49,6 +49,14 @@ impl<T> Inertial<T>
 where
     T: Real,
 {
+    pub fn from_mass(mass:T) -> Self {
+        Self {
+            origin: Isometry3::identity(),
+            mass,
+            inertia: Matrix3::identity(),
+            world_transform_cache: None,
+        }
+    }
     pub fn new(origin: Isometry3<T>, mass: T, inertia: Matrix3<T>) -> Self {
         Self {
             origin,
