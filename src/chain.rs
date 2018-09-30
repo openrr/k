@@ -322,8 +322,7 @@ impl<T: Real> Chain<T> {
                         JointType::Fixed => parent_velocity.clone(),
                         JointType::Rotational { axis } => {
                             let parent = node.parent().expect("parent must exist");
-                            let parent_vel =
-                                parent.joint().offset_transform().translation.vector.clone();
+                            let parent_vel = parent.joint().origin().translation.vector.clone();
                             Velocity::from_parts(
                                 parent_velocity.translation + parent_velocity.rotation.cross(
                                     &(parent_transform.rotation.to_rotation_matrix() * parent_vel),
@@ -354,6 +353,26 @@ impl<T: Real> Chain<T> {
                 }
                 Some(vel) => vel,
             }).collect()
+    }
+
+    pub fn update_link_transforms(&self) {
+        self.update_transforms();
+        self.iter().for_each(|node| {
+            let parent_transform = node.parent_world_transform().expect("cache must exist");
+            let mut node_mut = node.0.borrow_mut();
+            if let Some(ref mut link) = node_mut.link {
+                let inertial_trans = parent_transform * link.inertial.origin();
+                link.inertial.set_world_transform(inertial_trans);
+                for mut c in &mut link.collisions {
+                    let c_trans = parent_transform * c.origin();
+                    c.set_world_transform(c_trans);
+                }
+                for mut v in &mut link.visuals {
+                    let v_trans = parent_transform * v.origin();
+                    v.set_world_transform(v_trans);
+                }
+            }
+        });
     }
 }
 

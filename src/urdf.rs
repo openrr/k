@@ -85,10 +85,10 @@ where
 {
     fn from(urdf_inertial: urdf_rs::Inertial) -> Self {
         let i = urdf_inertial.inertia;
-        Inertial {
-            mass: na::convert(urdf_inertial.mass.value),
-            origin: isometry_from(&urdf_inertial.origin),
-            inertia: Matrix3::new(
+        Inertial::new(
+            isometry_from(&urdf_inertial.origin),
+            na::convert(urdf_inertial.mass.value),
+            Matrix3::new(
                 na::convert(i.ixx),
                 na::convert(i.ixy),
                 na::convert(i.ixz),
@@ -99,7 +99,7 @@ where
                 na::convert(i.iyz),
                 na::convert(i.izz),
             ),
-        }
+        )
     }
 }
 
@@ -108,12 +108,12 @@ where
     T: Real,
 {
     fn from(urdf_visual: urdf_rs::Visual) -> Self {
-        Visual {
-            name: urdf_visual.name,
-            origin: isometry_from(&urdf_visual.origin),
-            geometry: urdf_visual.geometry.into(),
-            material: urdf_visual.material.into(),
-        }
+        Visual::new(
+            urdf_visual.name,
+            isometry_from(&urdf_visual.origin),
+            urdf_visual.geometry.into(),
+            urdf_visual.material.into(),
+        )
     }
 }
 
@@ -122,11 +122,11 @@ where
     T: Real,
 {
     fn from(urdf_collision: urdf_rs::Collision) -> Self {
-        Collision {
-            name: urdf_collision.name,
-            origin: isometry_from(&urdf_collision.origin),
-            geometry: urdf_collision.geometry.into(),
-        }
+        Collision::new(
+            urdf_collision.name,
+            isometry_from(&urdf_collision.origin),
+            urdf_collision.geometry.into(),
+        )
     }
 }
 

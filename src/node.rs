@@ -146,10 +146,10 @@ where
         self.0.borrow().children.is_empty()
     }
 
-    /// Set the offset transform of the joint
+    /// Set the origin transform of the joint
     #[inline]
-    pub fn set_offset_transform(&self, trans: Isometry3<T>) {
-        self.0.borrow_mut().joint.set_offset_transform(trans);
+    pub fn set_origin(&self, trans: Isometry3<T>) {
+        self.0.borrow_mut().joint.set_origin(trans);
     }
 
     /// Set the position (angle) of the joint
@@ -474,7 +474,7 @@ pub struct JointBuilder<T: Real> {
     name: String,
     joint_type: JointType<T>,
     limits: Option<Range<T>>,
-    offset: Isometry3<T>,
+    origin: Isometry3<T>,
 }
 
 impl<T> Default for JointBuilder<T>
@@ -495,7 +495,7 @@ where
             name: "".to_string(),
             joint_type: JointType::Fixed,
             limits: None,
-            offset: Isometry3::identity(),
+            origin: Isometry3::identity(),
         }
     }
     /// Set the name of the `Link`
@@ -513,25 +513,25 @@ where
         self.limits = limits;
         self
     }
-    /// Set the offset transform of this joint
-    pub fn offset(mut self, offset: Isometry3<T>) -> JointBuilder<T> {
-        self.offset = offset;
+    /// Set the origin transform of this joint
+    pub fn origin(mut self, origin: Isometry3<T>) -> JointBuilder<T> {
+        self.origin = origin;
         self
     }
-    /// Set the translation of the offset transform of this joint
+    /// Set the translation of the origin transform of this joint
     pub fn translation(mut self, translation: Translation3<T>) -> JointBuilder<T> {
-        self.offset.translation = translation;
+        self.origin.translation = translation;
         self
     }
-    /// Set the rotation of the offset transform of this joint
+    /// Set the rotation of the origin transform of this joint
     pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> JointBuilder<T> {
-        self.offset.rotation = rotation;
+        self.origin.rotation = rotation;
         self
     }
     /// Create `Joint` instance
     pub fn finalize(self) -> Joint<T> {
         let mut joint = Joint::new(&self.name, self.joint_type);
-        joint.set_offset_transform(self.offset);
+        joint.set_origin(self.origin);
         joint.limits = self.limits;
         joint
     }

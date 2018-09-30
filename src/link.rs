@@ -38,9 +38,10 @@ pub struct Material<T: Real> {
 
 #[derive(Debug, Clone)]
 pub struct Inertial<T: Real> {
-    pub origin: Isometry3<T>,
+    origin: Isometry3<T>,
     pub mass: T,
     pub inertia: Matrix3<T>,
+    world_transform_cache: Option<Isometry3<T>>,
 }
 
 // TODO
@@ -48,28 +49,113 @@ impl<T> Inertial<T>
 where
     T: Real,
 {
-    pub fn new(mass: T) -> Self {
+    pub fn new(origin: Isometry3<T>, mass: T, inertia: Matrix3<T>) -> Self {
         Self {
-            origin: Isometry3::identity(),
+            origin,
             mass,
-            inertia: Matrix3::identity(), // TODO
+            inertia,
+            world_transform_cache: None,
         }
+    }
+    pub fn set_origin(&mut self, origin: Isometry3<T>) {
+        self.origin = origin;
+        self.world_transform_cache = None;
+    }
+    pub fn origin(&self) -> &Isometry3<T> {
+        &self.origin
+    }
+    pub fn clear_world_transform(&mut self) {
+        self.world_transform_cache = None
+    }
+    pub fn set_world_transform(&mut self, trans: Isometry3<T>) {
+        self.world_transform_cache = Some(trans);
+    }
+    pub fn world_transform(&self) -> &Option<Isometry3<T>> {
+        &self.world_transform_cache
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Visual<T: Real> {
     pub name: String,
-    pub origin: Isometry3<T>,
+    origin: Isometry3<T>,
     pub geometry: Geometry<T>,
     pub material: Material<T>,
+    world_transform_cache: Option<Isometry3<T>>,
+}
+
+impl<T> Visual<T>
+where
+    T: Real,
+{
+    pub fn new(
+        name: String,
+        origin: Isometry3<T>,
+        geometry: Geometry<T>,
+        material: Material<T>,
+    ) -> Self {
+        Self {
+            name,
+            origin,
+            geometry,
+            material,
+            world_transform_cache: None,
+        }
+    }
+    pub fn set_origin(&mut self, origin: Isometry3<T>) {
+        self.origin = origin;
+        self.world_transform_cache = None;
+    }
+    pub fn origin(&self) -> &Isometry3<T> {
+        &self.origin
+    }
+    pub fn clear_world_transform(&mut self) {
+        self.world_transform_cache = None
+    }
+    pub fn set_world_transform(&mut self, trans: Isometry3<T>) {
+        self.world_transform_cache = Some(trans);
+    }
+    pub fn world_transform(&self) -> &Option<Isometry3<T>> {
+        &self.world_transform_cache
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Collision<T: Real> {
     pub name: String,
-    pub origin: Isometry3<T>,
+    origin: Isometry3<T>,
     pub geometry: Geometry<T>,
+    world_transform_cache: Option<Isometry3<T>>,
+}
+
+impl<T> Collision<T>
+where
+    T: Real,
+{
+    pub fn new(name: String, origin: Isometry3<T>, geometry: Geometry<T>) -> Self {
+        Self {
+            name,
+            origin,
+            geometry,
+            world_transform_cache: None,
+        }
+    }
+    pub fn set_origin(&mut self, origin: Isometry3<T>) {
+        self.origin = origin;
+        self.world_transform_cache = None;
+    }
+    pub fn origin(&self) -> &Isometry3<T> {
+        &self.origin
+    }
+    pub fn clear_world_transform(&mut self) {
+        self.world_transform_cache = None
+    }
+    pub fn set_world_transform(&mut self, trans: Isometry3<T>) {
+        self.world_transform_cache = Some(trans);
+    }
+    pub fn world_transform(&self) -> &Option<Isometry3<T>> {
+        &self.world_transform_cache
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -87,7 +173,7 @@ where
     fn default() -> Self {
         Self {
             name: "".to_owned(),
-            inertial: Inertial::new(T::zero()),
+            inertial: Inertial::new(Isometry3::identity(), T::zero(), Matrix3::identity()),
             visuals: Vec::new(),
             collisions: Vec::new(),
         }
@@ -111,7 +197,7 @@ where
     pub fn new() -> Self {
         Self {
             name: "".to_owned(),
-            inertial: Inertial::new(T::zero()),
+            inertial: Inertial::new(Isometry3::identity(), T::zero(), Matrix3::identity()),
             visuals: Vec::new(),
             collisions: Vec::new(),
         }

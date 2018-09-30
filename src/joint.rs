@@ -157,12 +157,12 @@ where
 /// let mimic_for_gripper_r = k::joint::Mimic::new(-1.0, 0.0);
 /// ```
 ///
-/// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + offset`
+/// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + origin`
 ///
 #[derive(Debug, Clone)]
 pub struct Mimic<T: Real> {
     pub multiplier: T,
-    pub offset: T,
+    pub origin: T,
 }
 
 impl<T> Mimic<T>
@@ -176,8 +176,8 @@ where
     /// ```
     /// let m = k::joint::Mimic::<f64>::new(1.0, 0.5);
     /// ```
-    pub fn new(multiplier: T, offset: T) -> Self {
-        Mimic { multiplier, offset }
+    pub fn new(multiplier: T, origin: T) -> Self {
+        Mimic { multiplier, origin }
     }
     /// Calculate the mimic joint position
     ///
@@ -193,7 +193,7 @@ where
     /// assert_eq!(m.mimic_position(0.2), -0.8); // 0.2 * -2.0 - 0.4
     /// ```
     pub fn mimic_position(&self, from_position: T) -> T {
-        from_position * self.multiplier + self.offset
+        from_position * self.multiplier + self.origin
     }
 }
 
@@ -210,8 +210,8 @@ pub struct Joint<T: Real> {
     velocity: T,
     /// Limits of this joint
     pub limits: Option<Range<T>>,
-    /// local offset transform of joint
-    offset: Isometry3<T>,
+    /// local origin transform of joint
+    origin: Isometry3<T>,
     /// cache of world transform
     world_transform_cache: RefCell<Option<Isometry3<T>>>,
     /// cache of world velocity
@@ -246,7 +246,7 @@ where
             position: T::zero(),
             velocity: T::zero(),
             limits: None,
-            offset: Isometry3::identity(),
+            origin: Isometry3::identity(),
             world_transform_cache: RefCell::new(None),
             world_velocity_cache: RefCell::new(None),
         }
@@ -317,13 +317,13 @@ where
     }
 
     #[inline]
-    pub fn offset_transform(&self) -> &Isometry3<T> {
-        &self.offset
+    pub fn origin(&self) -> &Isometry3<T> {
+        &self.origin
     }
 
     #[inline]
-    pub fn set_offset_transform(&mut self, offset: Isometry3<T>) {
-        self.offset = offset;
+    pub fn set_origin(&mut self, origin: Isometry3<T>) {
+        self.origin = origin;
         self.world_transform_cache.replace(None);
     }
 
@@ -375,7 +375,7 @@ where
                 UnitQuaternion::identity(),
             ),
         };
-        self.offset * joint_transform
+        self.origin * joint_transform
     }
 
     #[inline]

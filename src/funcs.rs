@@ -55,7 +55,7 @@ where
     chain.iter().for_each(|node| {
         if let Some(trans) = node.joint().world_transform() {
             if let Some(ref link) = *node.link() {
-                let inertia_trans = trans * link.inertial.origin.translation;
+                let inertia_trans = trans * link.inertial.origin().translation;
                 com += inertia_trans.translation.vector * link.inertial.mass;
                 total_mass += link.inertial.mass;
             }
