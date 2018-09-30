@@ -13,20 +13,21 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  */
-use errors::*;
-use math::*;
-use na::{self, DMatrix, Isometry3, Real, Vector6};
-use traits::*;
+use na::{self, Isometry3, Real, Vector3, Vector6};
 
-fn calc_vector6_pose<T: Real>(pose: &Isometry3<T>) -> Vector6<T> {
-    let rpy = to_euler_angles(&pose.rotation);
+use chain::*;
+use errors::*;
+use funcs::*;
+
+/// From 'Humanoid Robot (Kajita)' P.64
+fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
+where
+    T: Real,
+{
+    let p_diff = a.translation.vector - b.translation.vector;
+    let w_diff = b.rotation.rotation_to(&a.rotation).scaled_axis();
     Vector6::new(
-        pose.translation.vector[0],
-        pose.translation.vector[1],
-        pose.translation.vector[2],
-        rpy[0],
-        rpy[1],
-        rpy[2],
+        p_diff[0], p_diff[1], p_diff[2], w_diff[0], w_diff[1], w_diff[2],
     )
 }
 
@@ -36,20 +37,18 @@ where
     T: Real,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: HasJoints<T> + EndTransform<T>;
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
 #[derive(Debug, Clone)]
 pub struct JacobianIKSolver<T: Real> {
-    /// Calculate jacobian matrix with this length in each joint
-    pub jacobian_move_epsilon: T,
-    /// Move by this length in one loop
-    pub move_epsilon: T,
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
+    /// Weight for rotation
+    pub allowable_target_angle: T,
+    /// multiplier for jacobian
+    pub jacobian_multiplier: T,
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
 }
@@ -65,56 +64,60 @@ where
     /// # Examples
     ///
     /// ```
-    /// let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.01, 1000);
+    /// let solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
     /// ```
     pub fn new(
-        jacobian_move_epsilon: T,
-        move_epsilon: T,
         allowable_target_distance: T,
+        allowable_target_angle: T,
+        jacobian_multiplier: T,
         num_max_try: usize,
     ) -> JacobianIKSolver<T> {
         JacobianIKSolver {
-            jacobian_move_epsilon: jacobian_move_epsilon,
-            move_epsilon: move_epsilon,
-            allowable_target_distance: allowable_target_distance,
-            num_max_try: num_max_try,
+            allowable_target_distance,
+            allowable_target_angle,
+            jacobian_multiplier,
+            num_max_try,
         }
     }
-    fn solve_one_loop<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: HasJoints<T> + EndTransform<T>,
-    {
-        let orig_angles = arm.joint_angles();
-        let dof = orig_angles.len();
-        let orig_pose6 = calc_vector6_pose(&arm.end_transform());
-        let target_pose6 = calc_vector6_pose(target_pose);
-        let mut jacobi_vec = Vec::new();
-        for i in 0..dof {
-            let mut small_diff_angles_i = orig_angles.clone();
-            small_diff_angles_i[i] += self.jacobian_move_epsilon;
-            arm.set_joint_angles(&small_diff_angles_i)?;
-            let small_diff_pose6 = calc_vector6_pose(&arm.end_transform());
-            jacobi_vec.push(small_diff_pose6 - orig_pose6);
-        }
-        let jacobi = DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r]);
-        let j_inv = if dof > 6 {
-            let jacobi_ref = &jacobi;
-            // use pseudo inverse
-            match (jacobi_ref * jacobi_ref.transpose()).try_inverse() {
-                Some(mat) => jacobi_ref.transpose() * mat,
-                None => return Err(IKError::InverseMatrixError),
-            }
+    fn add_positions_with_multiplier(&self, input: &[T], add_values: &[T]) -> Vec<T> {
+        input
+            .iter()
+            .zip(add_values.iter())
+            .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
+            .collect()
+    }
+
+    fn solve_one_loop(
+        &self,
+        arm: &SerialChain<T>,
+        target_pose: &Isometry3<T>,
+    ) -> Result<Vector6<T>, IKError> {
+        let orig_positions = arm.joint_positions();
+        let dof = orig_positions.len();
+        let t_n = arm.end_transform();
+        let err = calc_pose_diff(target_pose, &t_n);
+        let orig_positions = arm.joint_positions();
+        let jacobi = jacobian(arm);
+        let positions_vec = if dof > 6 {
+            self.add_positions_with_multiplier(
+                &orig_positions,
+                jacobi
+                    .svd(true, true)
+                    .solve(&err, na::convert(0.0001))
+                    .as_slice(),
+            )
         } else {
-            jacobi.try_inverse().ok_or(IKError::InverseMatrixError)?
+            self.add_positions_with_multiplier(
+                &orig_positions,
+                &jacobi
+                    .lu()
+                    .solve(&err)
+                    .ok_or(IKError::InverseMatrixError)?
+                    .as_slice(),
+            )
         };
-        let new_angles_diff = j_inv * (target_pose6 - orig_pose6) * self.move_epsilon;
-        let mut angles_vec = orig_angles.clone();
-        for i in 0..dof {
-            angles_vec[i] += new_angles_diff[i];
-        }
-        arm.set_joint_angles(&angles_vec)?;
-        let new_pose6 = calc_vector6_pose(&arm.end_transform());
-        Ok((target_pose6 - new_pose6).norm())
+        arm.set_joint_positions(&positions_vec)?;
+        Ok(calc_pose_diff(target_pose, &arm.end_transform()))
     }
 }
 
@@ -122,137 +125,84 @@ impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
 {
-    /// Set joint angles of `arm` to reach the `target_pose`
+    /// Set joint positions of `arm` to reach the `target_pose`
     ///
     /// # Examples
     ///
     /// ```
     /// use k::prelude::*;
     ///
-    /// let robot = k::LinkTree::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-    /// let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
-    /// // set joint angles
-    /// let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
-    /// arm.set_joint_angles(&angles).unwrap();
-    /// println!("initial angles={:?}", arm.joint_angles());
-    /// // get the transform of the end of the manipulator (forward kinematics)
-    /// let mut target = arm.end_transform();
+    /// let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    /// // Create sub-`Chain` to make it easy to use inverse kinematics
+    /// let target_joint_name = "r_wrist_pitch";
+    /// let r_wrist = chain.find(target_joint_name).unwrap();
+    /// let mut arm = k::SerialChain::from_end(r_wrist);
+    /// println!("arm: {}", arm);
+    ///
+    /// // Set joint positions of `arm`
+    /// let positions = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
+    /// arm.set_joint_positions(&positions).unwrap();
+    /// println!("initial positions={:?}", arm.joint_positions());
+    ///
+    /// // Get the transform of the end of the manipulator (forward kinematics)
+    /// let mut target = arm.update_transforms().last().unwrap().clone();
+    ///
     /// println!("initial target pos = {}", target.translation);
-    /// println!("move z: -0.1");
-    /// target.translation.vector[2] -= 0.1;
-    /// let solver = k::JacobianIKSolverBuilder::new().finalize();
-    /// // solve and move the manipulator angles
-    /// solver.solve(&mut arm, &target).unwrap_or_else(|err| {
-    ///     println!("Err: {}", err);
-    ///     0.0f32
-    /// });
-    /// println!("solved angles={:?}", arm.joint_angles());
-    /// println!("solved target pos = {}", arm.end_transform().translation);
+    /// println!("move x: -0.1");
+    /// target.translation.vector.x -= 0.1;
+    ///
+    /// // Create IK solver with default settings
+    /// let solver = k::JacobianIKSolver::default();
+    ///
+    /// // solve and move the manipulator positions
+    /// solver.solve(&arm, &target).unwrap();
+    /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
-    fn solve<K>(&self, arm: &mut K, target_pose: &Isometry3<T>) -> Result<T, IKError>
-    where
-        K: EndTransform<T> + HasJoints<T>,
-    {
-        let orig_angles = arm.joint_angles();
-        if orig_angles.len() < 6 {
-            println!("support only 6 or more DoF now");
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
+        let orig_positions = arm.joint_positions();
+        if orig_positions.len() < 6 {
             return Err(IKError::PreconditionError {
                 error: format!(
                     "support only 6 or more DoF now, input Dof={}",
-                    orig_angles.len()
+                    orig_positions.len()
                 ),
             });
         }
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_distance = self.solve_one_loop(arm, target_pose)?;
-            if target_distance < self.allowable_target_distance {
-                return Ok(target_distance);
+            let target_diff = self.solve_one_loop(&arm, target_pose)?;
+            let len_diff = Vector3::new(target_diff[0], target_diff[1], target_diff[2]).norm();
+            let rot_diff = Vector3::new(target_diff[3], target_diff[4], target_diff[5]).norm();
+            if len_diff < self.allowable_target_distance && rot_diff < self.allowable_target_angle {
+                return Ok(());
             }
-            if let Some(last) = last_target_distance {
-                if last < target_distance {
-                    arm.set_joint_angles(&orig_angles)?;
-                    return Err(IKError::NotConverged {
-                        error: format!("jacobian did not work"),
+            if let Some((last_len, last_rot)) = last_target_distance {
+                if last_len < len_diff && last_rot < rot_diff {
+                    arm.set_joint_positions(&orig_positions)?;
+                    return Err(IKError::NotConvergedError {
+                        error: "jacobian did not work".to_owned(),
                     });
                 }
             }
-            last_target_distance = Some(target_distance);
+            last_target_distance = Some((len_diff, rot_diff));
         }
-        arm.set_joint_angles(&orig_angles)?;
-        Err(IKError::NotConverged {
+        arm.set_joint_positions(&orig_positions)?;
+        Err(IKError::NotConvergedError {
             error: format!(
-                "iteration has not converged: tried {} timed",
-                self.num_max_try
+                "iteration has not converged: tried {} timed, diff = {}, {}",
+                self.num_max_try,
+                last_target_distance.unwrap().0,
+                last_target_distance.unwrap().1,
             ),
         })
     }
 }
 
-/// Build `jacobianIKSolverBuilder`
-///
-/// This builder allow initialation of `JacobianIKSolver`
-/// without any parameters.
-///
-#[derive(Debug, Clone)]
-pub struct JacobianIKSolverBuilder<T>
-where
-    T: Real,
-{
-    pub jacobian_move_epsilon: T,
-    pub move_epsilon: T,
-    pub allowable_target_distance: T,
-    pub num_max_try: usize,
-}
-
-impl<T> JacobianIKSolverBuilder<T>
-where
-    T: Real,
-{
-    const DEFAULT_JACOBIAN_MOVE_EPSILON: f64 = 0.0001;
-    const DEFAULT_MOVE_EPSILON: f64 = 0.0001;
-    const DEFAULT_ALLOWABLE_TARGET_DISTANCE: f64 = 0.001;
-    const DEAULT_NUM_MAX_TRY: usize = 1000;
-
-    pub fn new() -> Self {
-        JacobianIKSolverBuilder {
-            jacobian_move_epsilon: na::convert(Self::DEFAULT_JACOBIAN_MOVE_EPSILON),
-            move_epsilon: na::convert(Self::DEFAULT_MOVE_EPSILON),
-            allowable_target_distance: na::convert(Self::DEFAULT_ALLOWABLE_TARGET_DISTANCE),
-            num_max_try: Self::DEAULT_NUM_MAX_TRY,
-        }
-    }
-    pub fn jacobian_move_epsilon(&mut self, jacobian_epsilon: T) -> &mut Self {
-        self.jacobian_move_epsilon = jacobian_epsilon;
-        self
-    }
-    pub fn move_epsilon(&mut self, epsilon: T) -> &mut Self {
-        self.move_epsilon = epsilon;
-        self
-    }
-    pub fn allowable_target_distance(&mut self, allowable_diff: T) -> &mut Self {
-        self.allowable_target_distance = allowable_diff;
-        self
-    }
-    pub fn num_max_try(&mut self, max_try: usize) -> &mut Self {
-        self.num_max_try = max_try;
-        self
-    }
-    pub fn finalize(&self) -> JacobianIKSolver<T> {
-        JacobianIKSolver {
-            jacobian_move_epsilon: self.jacobian_move_epsilon,
-            move_epsilon: self.move_epsilon,
-            allowable_target_distance: self.allowable_target_distance,
-            num_max_try: self.num_max_try,
-        }
-    }
-}
-
-impl<T> Default for JacobianIKSolverBuilder<T>
+impl<T> Default for JacobianIKSolver<T>
 where
     T: Real,
 {
     fn default() -> Self {
-        Self::new()
+        Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)
     }
 }

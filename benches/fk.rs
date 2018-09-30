@@ -6,7 +6,6 @@ extern crate nalgebra as na;
 extern crate rand;
 extern crate test;
 
-use k::prelude::*;
 use na::Real;
 use std::f64::consts::PI;
 
@@ -28,7 +27,7 @@ test bench_rctree_ik ... bench:      20,425 ns/iter (+/- 139)
 ```
 */
 
-fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::Range<T>>>) -> Vec<T>
+fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
 where
     T: Real,
 {
@@ -37,28 +36,30 @@ where
         .map(|range| match *range {
             Some(ref range) => (range.max - range.min) * na::convert(rand::random()) + range.min,
             None => na::convert::<f64, T>(rand::random::<f64>() - 0.5) * na::convert(2.0 * PI),
-        })
-        .collect()
+        }).collect()
 }
 
 #[bench]
 fn bench_rctree(b: &mut test::Bencher) {
-    let mut robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = robot.joint_limits();
+    let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let limits = chain.iter_joints().map(|j| j.limits.clone()).collect();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
-        robot.set_joint_angles(&angles).unwrap();
-        let _trans = robot.link_transforms();
+        chain.set_joint_positions(&angles).unwrap();
+        let _trans = chain.update_transforms();
         assert_eq!(_trans.len(), 13);
     });
 }
 
 #[bench]
 fn bench_rctree_set_joints(b: &mut test::Bencher) {
-    let mut robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let limits = robot.joint_limits();
+    let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    let limits = chain
+        .iter_joints()
+        .map(|j| j.joint().limits.clone())
+        .collect();
     let angles = generate_random_joint_angles_from_limits(&limits);
     b.iter(|| {
-        robot.set_joint_angles(&angles).unwrap();
+        chain.set_joint_positions(&angles).unwrap();
     });
 }

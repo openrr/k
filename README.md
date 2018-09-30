@@ -10,6 +10,8 @@
 
 See [Document](http://docs.rs/k) and examples/ for more details.
 
+API is unstable. 
+
 ## Requirements to build examples
 
 ```bash
@@ -40,30 +42,39 @@ Push below keys to move the end of the manipulator.
 extern crate k;
 
 use k::prelude::*;
-use k::urdf::FromUrdf;
 
 fn main() {
-    let robot = k::LinkTree::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    let mut arm = k::Manipulator::from_link_tree("l_wrist2", &robot).unwrap();
-    // set joint angles
-    let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3];
-    arm.set_joint_angles(&angles).unwrap();
-    println!("initial angles={:?}", arm.joint_angles());
-    // get the transform of the end of the manipulator (forward kinematics)
-    let mut target = arm.end_transform();
+    // Load urdf file
+    let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    println!("chain: {}", chain);
+
+    // Set initial joint angles
+    let angles = vec![0.2, 0.2, 0.0, -1.0, 0.0, 0.0, 0.2, 0.2, 0.0, -1.0, 0.0, 0.0];
+
+    chain.set_joint_positions(&angles).unwrap();
+    println!("initial angles={:?}", chain.joint_positions());
+
+    let target_link = chain.find("l_wrist_pitch").unwrap();
+
+    // Get the transform of the end of the manipulator (forward kinematics)
+    chain.update_transforms();
+    let mut target = target_link.world_transform().unwrap();
+
     println!("initial target pos = {}", target.translation);
-    println!("move z: +0.2");
-    target.translation.vector[2] += 0.2;
-    let solver = k::JacobianIKSolverBuilder::new().finalize();
+    println!("move z: +0.1");
+    target.translation.vector.z += 0.1;
+
+    // Create IK solver with default settings
+    let solver = k::JacobianIKSolver::default();
+
+    // Create a set of joints from end joint
+    let arm = k::SerialChain::from_end(target_link);
     // solve and move the manipulator angles
-    solver.solve(&mut arm, &target).unwrap_or_else(|err| {
-        println!("Err: {}", err);
-        0.0f32
-    });
-    println!("solved angles={:?}", arm.joint_angles());
-    println!(
-        "solved target pos = {}",
-        arm.end_transform().translation
-    );
+    solver.solve(&arm, &target).unwrap();
+    println!("solved angles={:?}", chain.joint_positions());
+
+    // chain.update_transforms();
+    let solved_pose = target_link.world_transform().unwrap();
+    println!("solved target pos = {}", solved_pose.translation);
 }
 ```
