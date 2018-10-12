@@ -73,7 +73,7 @@ fn main() {
     solver.solve(&arm, &target).unwrap();
     println!("solved angles={:?}", chain.joint_positions());
 
-    // chain.update_transforms();
+    chain.update_transforms();
     let solved_pose = target_link.world_transform().unwrap();
     println!("solved target pos = {}", solved_pose.translation);
 }

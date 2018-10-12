@@ -20,6 +20,7 @@ failure = "0.1"
 kiss3d = "0.15.0"
 glfw = { version = "0.19.0", default-features = false }
 rand = "0.3.18"
+docmatic = "0.1"
 
 #[profile.release]
 #debug = true
