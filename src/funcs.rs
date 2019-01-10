@@ -15,14 +15,16 @@ where
         .map(|joint| {
             let t_i = joint.world_transform().unwrap();
             let p_i = t_i.translation;
-            let a_i = t_i.rotation * match joint.joint_type {
-                JointType::Linear { axis } => axis,
-                JointType::Rotational { axis } => axis,
-                JointType::Fixed => panic!("impossible, bug of jacobian"),
-            };
+            let a_i = t_i.rotation
+                * match joint.joint_type {
+                    JointType::Linear { axis } => axis,
+                    JointType::Rotational { axis } => axis,
+                    JointType::Fixed => panic!("impossible, bug of jacobian"),
+                };
             let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
             [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
-        }).collect::<Vec<_>>();
+        })
+        .collect::<Vec<_>>();
     // Pi: a_i x (p_n - Pi)
     // wi: a_i
     DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r])
@@ -77,7 +79,8 @@ fn test_update_center_of_mass() {
         .translation(Translation3::new(0.0, 0.0, 1.0))
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     j0.set_link(Some(
         LinkBuilder::new()
             .name("l0")
@@ -85,8 +88,10 @@ fn test_update_center_of_mass() {
             .finalize(),
     ));
     let mut i1 = Inertial::new(Isometry3::identity(), 4.0, Matrix3::zeros());
-    i1.set_origin(Isometry3::from_parts(Translation3::new(0.0, 0.0, 1.0),
-    UnitQuaternion::identity()));
+    i1.set_origin(Isometry3::from_parts(
+        Translation3::new(0.0, 0.0, 1.0),
+        UnitQuaternion::identity(),
+    ));
     j1.set_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
     j1.set_parent(&j0);
     let tree = Chain::from_root(j0);

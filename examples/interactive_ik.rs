@@ -1,18 +1,18 @@
 /*
-   Copyright 2017 Takashi Ogura
+  Copyright 2017 Takashi Ogura
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
- */
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 extern crate glfw;
 #[macro_use]
 extern crate k;
@@ -39,49 +39,56 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .name("shoulder_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
-        }).translation(Translation3::new(0.0, 0.1, 0.0))
+        })
+        .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
     let l1: k::Node<f32> = JointBuilder::new()
         .name("shoulder_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),
-        }).translation(Translation3::new(0.0, 0.1, 0.0))
+        })
+        .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
     let l2: k::Node<f32> = JointBuilder::new()
         .name("shoulder_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
-        }).translation(Translation3::new(0.0, 0.0, -0.30))
+        })
+        .translation(Translation3::new(0.0, 0.0, -0.30))
         .finalize()
         .into();
     let l3: k::Node<f32> = JointBuilder::new()
         .name("elbow_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
-        }).translation(Translation3::new(0.0, 0.0, -0.15))
+        })
+        .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
     let l4: k::Node<f32> = JointBuilder::new()
         .name("wrist_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
-        }).translation(Translation3::new(0.0, 0.0, -0.15))
+        })
+        .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
     let l5: k::Node<f32> = JointBuilder::new()
         .name("wrist_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
-        }).translation(Translation3::new(0.0, 0.0, -0.15))
+        })
+        .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
     let l6: k::Node<f32> = JointBuilder::new()
         .name("wrist_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),
-        }).translation(Translation3::new(0.0, 0.0, -0.10))
+        })
+        .translation(Translation3::new(0.0, 0.0, -0.10))
         .finalize()
         .into();
     connect![fixed => l0 => l1 => l2 => l3 => l4 => l5 => l6];
@@ -146,10 +153,11 @@ fn main() {
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
     arm.iter().next().unwrap().set_origin(
-        base_rot * Isometry3::from_parts(
-            Translation3::new(0.0, 0.0, 0.6),
-            UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
-        ),
+        base_rot
+            * Isometry3::from_parts(
+                Translation3::new(0.0, 0.0, 0.6),
+                UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
+            ),
     );
     arm.update_transforms();
     let end = arm.find("wrist_roll").unwrap();
@@ -187,9 +195,13 @@ fn main() {
                 _ => {}
             }
         }
-        solver.solve(&arm, &target).unwrap_or_else(|err| {
-            println!("Err: {}", err);
-        });
+        let mut constraints = k::Constraints::default();
+        constraints.rotation_z = true;
+        solver
+            .solve_with_constraints(&arm, &target, &constraints)
+            .unwrap_or_else(|err| {
+                println!("Err: {}", err);
+            });
         c_t.set_local_transformation(target.clone());
         for (i, trans) in arm.update_transforms().iter().enumerate() {
             cubes[i].set_local_transformation(trans.clone());

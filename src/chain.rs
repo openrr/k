@@ -1,18 +1,18 @@
 /*
-   Copyright 2017 Takashi Ogura
+  Copyright 2017 Takashi Ogura
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
- */
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 use na::{Isometry3, Real};
 use std::fmt::{self, Display};
 use std::ops::Deref;
@@ -267,7 +267,8 @@ impl<T: Real> Chain<T> {
                 joint
                     .joint_position()
                     .expect("movable joint must has position")
-            }).collect()
+            })
+            .collect()
     }
 
     /// Set the positions of the joints
@@ -304,7 +305,8 @@ impl<T: Real> Chain<T> {
                     trans
                 }
                 Some(trans) => trans,
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn update_velocities(&self) -> Vec<Velocity<T>> {
@@ -324,9 +326,11 @@ impl<T: Real> Chain<T> {
                             let parent = node.parent().expect("parent must exist");
                             let parent_vel = parent.joint().origin().translation.vector.clone();
                             Velocity::from_parts(
-                                parent_velocity.translation + parent_velocity.rotation.cross(
-                                    &(parent_transform.rotation.to_rotation_matrix() * parent_vel),
-                                ),
+                                parent_velocity.translation
+                                    + parent_velocity.rotation.cross(
+                                        &(parent_transform.rotation.to_rotation_matrix()
+                                            * parent_vel),
+                                    ),
                                 parent_velocity.rotation
                                     + node
                                         .world_transform()
@@ -352,7 +356,8 @@ impl<T: Real> Chain<T> {
                     velocity
                 }
                 Some(vel) => vel,
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn update_link_transforms(&self) {
@@ -482,37 +487,43 @@ fn it_works() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint1 = JointBuilder::new()
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .name("j1")
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint2 = JointBuilder::new()
         .name("j2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint3 = JointBuilder::new()
         .name("j3")
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint4 = JointBuilder::new()
         .name("j4")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint5 = JointBuilder::new()
         .name("j5")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     joint1.set_parent(&joint0);
     joint2.set_parent(&joint1);
     joint3.set_parent(&joint2);
@@ -577,19 +588,22 @@ fn test_mimic() {
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint1 = JointBuilder::new()
         .name("joint1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     let joint2 = JointBuilder::new()
         .name("joint2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
-        }).into_node();
+        })
+        .into_node();
     joint1.set_parent(&joint0);
     joint2.set_parent(&joint1);
     joint2.set_mimic_parent(&joint1, Mimic::new(2.0, 0.5));
