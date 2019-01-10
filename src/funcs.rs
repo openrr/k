@@ -17,14 +17,14 @@ where
             match joint.joint_type {
                 JointType::Linear { axis } => {
                     let p_i = t_i.rotation * axis;
-                    [p_i[0], p_i[1], p_i[2], na::zero(),na::zero(),na::zero()]
-                },
+                    [p_i[0], p_i[1], p_i[2], na::zero(), na::zero(), na::zero()]
+                }
                 JointType::Rotational { axis } => {
                     let p_i = t_i.translation;
                     let a_i = t_i.rotation * axis;
                     let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
                     [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
-                },
+                }
                 JointType::Fixed => panic!("impossible, bug of jacobian"),
             }
         })
