@@ -187,15 +187,12 @@ where
         let mut jacobi = jacobian(arm);
         let use_dof = constraints_array.into_iter().filter(|x| **x).count();
         let mut removed_count = 0;
-        println!("dof = {}, use_dof= {}", dof, use_dof);
-        println!("b:{}", jacobi);
         for (i, use_i) in constraints_array.iter().enumerate() {
             if !use_i {
                 jacobi = jacobi.remove_row(i - removed_count);
                 removed_count += 1;
             }
         }
-        println!("a:{}, {}", jacobi, err);
         let positions_vec = if dof > use_dof {
             self.add_positions_with_multiplier(
                 &orig_positions,
@@ -214,7 +211,6 @@ where
                     .as_slice(),
             )
         };
-        println!("pos: {:?}", positions_vec);
         arm.set_joint_positions_unchecked(&positions_vec);
         Ok(calc_pose_diff_with_constraints(
             target_pose,
@@ -354,13 +350,6 @@ where
             if constraints.rotation_z {
                 rot_diff[2] = target_diff[index];
             }
-            println!(
-                "{} < {}, {} < {}",
-                len_diff.norm(),
-                self.allowable_target_distance,
-                rot_diff.norm(),
-                self.allowable_target_angle
-            );
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle
             {
