@@ -196,7 +196,7 @@ fn main() {
             }
         }
         let mut constraints = k::Constraints::default();
-        constraints.rotation_z = true;
+        constraints.rotation_x = false;
         solver
             .solve_with_constraints(&arm, &target, &constraints)
             .unwrap_or_else(|err| {
