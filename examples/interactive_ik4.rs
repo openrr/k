@@ -138,7 +138,7 @@ fn main() {
     let at = Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
 
-    let solver = JacobianIKSolver::new(0.01, 0.01, 0.2, 100);
+    let solver = JacobianIKSolver::default();
     let _ = create_ground(&mut window);
 
     while window.render_with_camera(&mut arc_ball) {
@@ -155,27 +155,27 @@ fn main() {
                             updated = true;
                         }
                         Key::F => {
-                            target.translation.vector[2] += 0.01;
+                            target.translation.vector[2] += 0.1;
                             updated = true;
                         }
                         Key::B => {
-                            target.translation.vector[2] -= 0.01;
+                            target.translation.vector[2] -= 0.1;
                             updated = true;
                         }
                         Key::R => {
-                            target.translation.vector[0] -= 0.01;
+                            target.translation.vector[0] -= 0.1;
                             updated = true;
                         }
                         Key::L => {
-                            target.translation.vector[0] += 0.01;
+                            target.translation.vector[0] += 0.1;
                             updated = true;
                         }
                         Key::P => {
-                            target.translation.vector[1] += 0.01;
+                            target.translation.vector[1] += 0.1;
                             updated = true;
                         }
                         Key::N => {
-                            target.translation.vector[1] -= 0.01;
+                            target.translation.vector[1] -= 0.1;
                             updated = true;
                         }
                         _ => {}
@@ -188,7 +188,6 @@ fn main() {
         if updated {
             let mut constraints = k::Constraints::default();
             constraints.rotation_x = false;
-            constraints.rotation_y = false;
             constraints.rotation_z = false;
             solver
                 .solve_with_constraints(&arm, &target, &constraints)

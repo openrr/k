@@ -214,6 +214,7 @@ where
                     .as_slice(),
             )
         };
+        println!("pos: {:?}", positions_vec);
         arm.set_joint_positions_unchecked(&positions_vec);
         Ok(calc_pose_diff_with_constraints(
             target_pose,
