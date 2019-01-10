@@ -116,7 +116,7 @@ where
                     .as_slice(),
             )
         };
-        arm.set_joint_positions(&positions_vec)?;
+        arm.set_joint_positions_unchecked(&positions_vec);
         Ok(calc_pose_diff(target_pose, &arm.end_transform()))
     }
 }
@@ -174,7 +174,8 @@ where
             let len_diff = Vector3::new(target_diff[0], target_diff[1], target_diff[2]).norm();
             let rot_diff = Vector3::new(target_diff[3], target_diff[4], target_diff[5]).norm();
             if len_diff < self.allowable_target_distance && rot_diff < self.allowable_target_angle {
-                return Ok(());
+                let non_checked_positions = arm.joint_positions();
+                return Ok(arm.set_joint_positions(&non_checked_positions)?);
             }
             if let Some((last_len, last_rot)) = last_target_distance {
                 if last_len < len_diff && last_rot < rot_diff {
