@@ -36,7 +36,8 @@ where
         .map(|range| match *range {
             Some(ref range) => (range.max - range.min) * na::convert(rand::random()) + range.min,
             None => na::convert::<f64, T>(rand::random::<f64>() - 0.5) * na::convert(2.0 * PI),
-        }).collect()
+        })
+        .collect()
 }
 
 #[bench]

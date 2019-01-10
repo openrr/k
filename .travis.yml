@@ -19,7 +19,7 @@ addons:
 install:
 - rustc -Vv
 - cargo -V
-- travis_wait cargo install cargo-when
+- travis_wait cargo install cargo-when --force
 - export PATH=$HOME/.cargo/bin:$PATH
 script:
 - cargo check --verbose --all

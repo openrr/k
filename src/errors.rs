@@ -1,28 +1,24 @@
 /*
-   Copyright 2017 Takashi Ogura
+  Copyright 2017 Takashi Ogura
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
- */
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 
 /// The reason of joint error
 #[derive(Debug, Clone, Fail)]
 pub enum JointError {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
-    #[fail(
-        display = "joint: {} is out of limit: {}",
-        joint_name,
-        message
-    )]
+    #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
     OutOfLimitError {
         /// name of the joint
         joint_name: String,
@@ -30,11 +26,7 @@ pub enum JointError {
         message: String,
     },
     /// Gave invalid size of vec as input
-    #[fail(
-        display = "size mismatch input = {}, required = {}",
-        input,
-        required
-    )]
+    #[fail(display = "size mismatch input = {}, required = {}", input, required)]
     SizeMismatchError {
         /// size of input
         input: usize,

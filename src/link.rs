@@ -49,7 +49,7 @@ impl<T> Inertial<T>
 where
     T: Real,
 {
-    pub fn from_mass(mass:T) -> Self {
+    pub fn from_mass(mass: T) -> Self {
         Self {
             origin: Isometry3::identity(),
             mass,

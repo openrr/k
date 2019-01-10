@@ -32,66 +32,42 @@ fn create_joint_with_link_array() -> k::Node<f32> {
     let fixed: k::Node<f32> = JointBuilder::new()
         .name("fixed")
         .joint_type(JointType::Fixed)
-        .translation(Translation3::new(0.0, 0.0, 0.6))
+        .translation(Translation3::new(0.0, 0.0, 0.1))
         .finalize()
         .into();
     let l0: k::Node<f32> = JointBuilder::new()
-        .name("shoulder_pitch")
-        .joint_type(JointType::Rotational {
-            axis: Vector3::y_axis(),
+        .name("torso_linear")
+        .joint_type(JointType::Linear {
+            axis: Vector3::z_axis(),
         })
-        .translation(Translation3::new(0.0, 0.1, 0.0))
+        .translation(Translation3::new(0.1, 0.0, 0.1))
         .finalize()
         .into();
     let l1: k::Node<f32> = JointBuilder::new()
-        .name("shoulder_roll")
-        .joint_type(JointType::Rotational {
-            axis: Vector3::x_axis(),
-        })
-        .translation(Translation3::new(0.0, 0.1, 0.0))
-        .finalize()
-        .into();
-    let l2: k::Node<f32> = JointBuilder::new()
         .name("shoulder_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
         })
-        .translation(Translation3::new(0.0, 0.0, -0.30))
+        .translation(Translation3::new(0.3, 0.0, 0.0))
+        .finalize()
+        .into();
+    let l2: k::Node<f32> = JointBuilder::new()
+        .name("elbow_yaw")
+        .joint_type(JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
+        .translation(Translation3::new(0.3, 0.0, 0.0))
         .finalize()
         .into();
     let l3: k::Node<f32> = JointBuilder::new()
-        .name("elbow_pitch")
-        .joint_type(JointType::Rotational {
-            axis: Vector3::y_axis(),
-        })
-        .translation(Translation3::new(0.0, 0.0, -0.15))
-        .finalize()
-        .into();
-    let l4: k::Node<f32> = JointBuilder::new()
         .name("wrist_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
         })
-        .translation(Translation3::new(0.0, 0.0, -0.15))
+        .translation(Translation3::new(0.3, 0.0, 0.0))
         .finalize()
         .into();
-    let l5: k::Node<f32> = JointBuilder::new()
-        .name("wrist_pitch")
-        .joint_type(JointType::Rotational {
-            axis: Vector3::y_axis(),
-        })
-        .translation(Translation3::new(0.0, 0.0, -0.15))
-        .finalize()
-        .into();
-    let l6: k::Node<f32> = JointBuilder::new()
-        .name("wrist_roll")
-        .joint_type(JointType::Rotational {
-            axis: Vector3::x_axis(),
-        })
-        .translation(Translation3::new(0.0, 0.0, -0.10))
-        .finalize()
-        .into();
-    connect![fixed => l0 => l1 => l2 => l3 => l4 => l5 => l6];
+    connect![fixed => l0 => l1 => l2 => l3];
     fixed
 }
 
@@ -130,13 +106,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
     c2.set_color(0.0, 1.0, 0.0);
     let mut c3 = window.add_cube(0.1, 0.1, 0.1);
     c3.set_color(0.0, 0.5, 1.0);
-    let mut c4 = window.add_cube(0.1, 0.1, 0.1);
-    c4.set_color(1.0, 0.5, 1.0);
-    let mut c5 = window.add_cube(0.1, 0.1, 0.1);
-    c5.set_color(0.5, 0.0, 1.0);
-    let mut c6 = window.add_cube(0.1, 0.1, 0.1);
-    c6.set_color(0.0, 0.5, 0.2);
-    vec![c_fixed, c0, c1, c2, c3, c4, c5, c6]
+    vec![c_fixed, c0, c1, c2, c3]
 }
 
 fn main() {
@@ -146,21 +116,21 @@ fn main() {
     let mut window = Window::new("k ui");
     window.set_light(Light::StickToCamera);
     let mut cubes = create_cubes(&mut window);
-    let angles = vec![0.2, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
+    let angles = vec![0.2, 0.6, -1.2, 0.6];
     arm.set_joint_positions(&angles).unwrap();
     let base_rot = Isometry3::from_parts(
-        Translation3::new(0.0, 0.0, -0.6),
+        Translation3::new(0.0, 0.0, 0.0),
         UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
     );
     arm.iter().next().unwrap().set_origin(
         base_rot
             * Isometry3::from_parts(
-                Translation3::new(0.0, 0.0, 0.6),
+                Translation3::new(0.0, 0.0, 0.2),
                 UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0),
             ),
     );
     arm.update_transforms();
-    let end = arm.find("wrist_roll").unwrap();
+    let end = arm.find("wrist_yaw").unwrap();
     let mut target = end.world_transform().unwrap().clone();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
@@ -172,6 +142,7 @@ fn main() {
     let _ = create_ground(&mut window);
 
     while window.render_with_camera(&mut arc_ball) {
+        let mut updated = false;
         for mut event in window.events().iter() {
             match event.value {
                 WindowEvent::Key(code, _, Action::Release, _) => {
@@ -181,13 +152,32 @@ fn main() {
                             arm.set_joint_positions(&angles).unwrap();
                             arm.update_transforms();
                             target = end.world_transform().unwrap().clone();
+                            updated = true;
                         }
-                        Key::F => target.translation.vector[2] += 0.1,
-                        Key::B => target.translation.vector[2] -= 0.1,
-                        Key::R => target.translation.vector[0] -= 0.1,
-                        Key::L => target.translation.vector[0] += 0.1,
-                        Key::P => target.translation.vector[1] += 0.1,
-                        Key::N => target.translation.vector[1] -= 0.1,
+                        Key::F => {
+                            target.translation.vector[2] += 0.1;
+                            updated = true;
+                        }
+                        Key::B => {
+                            target.translation.vector[2] -= 0.1;
+                            updated = true;
+                        }
+                        Key::R => {
+                            target.translation.vector[0] -= 0.1;
+                            updated = true;
+                        }
+                        Key::L => {
+                            target.translation.vector[0] += 0.1;
+                            updated = true;
+                        }
+                        Key::P => {
+                            target.translation.vector[1] += 0.1;
+                            updated = true;
+                        }
+                        Key::N => {
+                            target.translation.vector[1] -= 0.1;
+                            updated = true;
+                        }
                         _ => {}
                     }
                     event.inhibited = true // override the default keyboard handler
@@ -195,13 +185,16 @@ fn main() {
                 _ => {}
             }
         }
-        let mut constraints = k::Constraints::default();
-        constraints.rotation_x = false;
-        solver
-            .solve_with_constraints(&arm, &target, &constraints)
-            .unwrap_or_else(|err| {
-                println!("Err: {}", err);
-            });
+        if updated {
+            let mut constraints = k::Constraints::default();
+            constraints.rotation_x = false;
+            constraints.rotation_z = false;
+            solver
+                .solve_with_constraints(&arm, &target, &constraints)
+                .unwrap_or_else(|err| {
+                    println!("Err: {}", err);
+                });
+        }
         c_t.set_local_transformation(target.clone());
         for (i, trans) in arm.update_transforms().iter().enumerate() {
             cubes[i].set_local_transformation(trans.clone());
