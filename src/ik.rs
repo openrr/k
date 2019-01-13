@@ -94,7 +94,9 @@ where
     T: Real,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError>;
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
+        self.solve_with_constraints(arm, target_pose, &Constraints::default())
+    }
     /// Move the end transform of the `arm` to `target_pose` with constraints
     fn solve_with_constraints(
         &self,
