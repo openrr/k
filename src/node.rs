@@ -13,6 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+//! graph structure for kinematic chain
 use na::{Isometry3, Real, Translation3, UnitQuaternion};
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};

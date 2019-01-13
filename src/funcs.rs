@@ -2,6 +2,7 @@ use chain::*;
 use joint::*;
 use na::{DMatrix, Real, Vector3};
 
+/// Calculate Jacobian of the serial chain (manipulator).
 pub fn jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>
 where
     T: Real,
@@ -34,6 +35,8 @@ where
     DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r])
 }
 
+/// Calculate the center of mass of the chain
+///
 /// ```
 /// use k::*;
 /// use k::link::*;
