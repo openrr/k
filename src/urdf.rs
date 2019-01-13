@@ -302,10 +302,7 @@ where
         // set root as parent of root joint nodes
         let root_nodes = ref_nodes
             .iter()
-            .filter_map(|ref_node| match ref_node.parent() {
-                None => Some(ref_node),
-                Some(_) => None,
-            });
+            .filter(|ref_node| ref_node.parent().is_none());
         for rjn in root_nodes {
             info!("set parent = {}, child = {}", root_node, rjn);
             rjn.set_parent(&root_node);
