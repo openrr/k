@@ -34,7 +34,7 @@ where
 fn calc_pose_diff_with_constraints<T>(
     a: &Isometry3<T>,
     b: &Isometry3<T>,
-    constraints_array: &[bool; 6],
+    constraints_array: [bool; 6],
 ) -> DVector<T>
 where
     T: Real,
@@ -52,6 +52,9 @@ where
     diff
 }
 
+/// true means the constraint is used.
+///  The coordinates is the world, not the end of the arm.
+#[derive(Clone, Copy, Debug)]
 pub struct Constraints {
     pub position_x: bool,
     pub position_y: bool,
@@ -99,7 +102,7 @@ where
 pub struct JacobianIKSolver<T: Real> {
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
-    /// Weight for rotation
+    /// If the angle distance is smaller than this value, it is reached.
     pub allowable_target_angle: T,
     /// multiplier for jacobian
     pub jacobian_multiplier: T,
@@ -141,43 +144,11 @@ where
             .collect()
     }
 
-    fn solve_one_loop(
-        &self,
-        arm: &SerialChain<T>,
-        target_pose: &Isometry3<T>,
-    ) -> Result<Vector6<T>, IKError> {
-        let orig_positions = arm.joint_positions();
-        let dof = orig_positions.len();
-        let t_n = arm.end_transform();
-        let err = calc_pose_diff(target_pose, &t_n);
-        let orig_positions = arm.joint_positions();
-        let jacobi = jacobian(arm);
-        let positions_vec = if dof > 6 {
-            self.add_positions_with_multiplier(
-                &orig_positions,
-                jacobi
-                    .svd(true, true)
-                    .solve(&err, na::convert(0.0001))
-                    .as_slice(),
-            )
-        } else {
-            self.add_positions_with_multiplier(
-                &orig_positions,
-                &jacobi
-                    .lu()
-                    .solve(&err)
-                    .ok_or(IKError::InverseMatrixError)?
-                    .as_slice(),
-            )
-        };
-        arm.set_joint_positions_unchecked(&positions_vec);
-        Ok(calc_pose_diff(target_pose, &arm.end_transform()))
-    }
     fn solve_one_loop_with_constraints(
         &self,
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
-        constraints_array: &[bool; 6],
+        constraints_array: [bool; 6],
     ) -> Result<DVector<T>, IKError> {
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
@@ -194,6 +165,7 @@ where
             }
         }
         let positions_vec = if dof > use_dof {
+            // redundant: pseudo inverse
             self.add_positions_with_multiplier(
                 &orig_positions,
                 jacobi
@@ -202,9 +174,10 @@ where
                     .as_slice(),
             )
         } else {
+            // normal inverse matrix
             self.add_positions_with_multiplier(
                 &orig_positions,
-                &jacobi
+                jacobi
                     .lu()
                     .solve(&err)
                     .ok_or(IKError::InverseMatrixError)?
@@ -258,44 +231,33 @@ where
     /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
     fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
-        let orig_positions = arm.joint_positions();
-        if orig_positions.len() < 6 {
-            return Err(IKError::PreconditionError {
-                error: format!(
-                    "support only 6 or more DoF now, input Dof={}",
-                    orig_positions.len()
-                ),
-            });
-        }
-        let mut last_target_distance = None;
-        for _ in 0..self.num_max_try {
-            let target_diff = self.solve_one_loop(&arm, target_pose)?;
-            let len_diff = Vector3::new(target_diff[0], target_diff[1], target_diff[2]).norm();
-            let rot_diff = Vector3::new(target_diff[3], target_diff[4], target_diff[5]).norm();
-            if len_diff < self.allowable_target_distance && rot_diff < self.allowable_target_angle {
-                let non_checked_positions = arm.joint_positions();
-                return Ok(arm.set_joint_positions(&non_checked_positions)?);
-            }
-            if let Some((last_len, last_rot)) = last_target_distance {
-                if last_len < len_diff && last_rot < rot_diff {
-                    arm.set_joint_positions(&orig_positions)?;
-                    return Err(IKError::NotConvergedError {
-                        error: "jacobian did not work".to_owned(),
-                    });
-                }
-            }
-            last_target_distance = Some((len_diff, rot_diff));
-        }
-        arm.set_joint_positions(&orig_positions)?;
-        Err(IKError::NotConvergedError {
-            error: format!(
-                "iteration has not converged: tried {} timed, diff = {}, {}",
-                self.num_max_try,
-                last_target_distance.unwrap().0,
-                last_target_distance.unwrap().1,
-            ),
-        })
+        self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
+}
+
+fn target_diff_to_len_rot_diff<T>(
+    target_diff: &DVector<T>,
+    constraints_array: [bool; 6],
+) -> (Vector3<T>, Vector3<T>)
+where
+    T: Real,
+{
+    let mut len_diff = Vector3::zeros();
+    let mut index = 0;
+    for i in 0..3 {
+        if constraints_array[i] {
+            len_diff[i] = target_diff[index];
+            index += 1;
+        }
+    }
+    let mut rot_diff = Vector3::zeros();
+    for i in 0..3 {
+        if constraints_array[i + 3] {
+            rot_diff[i] = target_diff[index];
+            index += 1;
+        }
+    }
+    (len_diff, rot_diff)
 }
 
 impl<T> ConstraintsConfigurableInverseKinematicsSolver<T> for JacobianIKSolver<T>
@@ -323,33 +285,8 @@ where
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
             let target_diff =
-                self.solve_one_loop_with_constraints(&arm, target_pose, &constraints_array)?;
-            let mut len_diff = Vector3::zeros();
-            let mut rot_diff = Vector3::zeros();
-            let mut index = 0;
-            if constraints.position_x {
-                len_diff[0] = target_diff[index];
-                index += 1;
-            }
-            if constraints.position_y {
-                len_diff[1] = target_diff[index];
-                index += 1;
-            }
-            if constraints.position_z {
-                len_diff[2] = target_diff[index];
-                index += 1;
-            }
-            if constraints.rotation_x {
-                rot_diff[0] = target_diff[index];
-                index += 1;
-            }
-            if constraints.rotation_y {
-                rot_diff[1] = target_diff[index];
-                index += 1;
-            }
-            if constraints.rotation_z {
-                rot_diff[2] = target_diff[index];
-            }
+                self.solve_one_loop_with_constraints(&arm, target_pose, constraints_array)?;
+            let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, constraints_array);
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle
             {
