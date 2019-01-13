@@ -14,5 +14,4 @@
   limitations under the License.
 */
 //! Load basic trais of `k`
-pub use ik::ConstraintsConfigurableInverseKinematicsSolver;
 pub use ik::InverseKinematicsSolver;

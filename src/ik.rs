@@ -64,6 +64,19 @@ pub struct Constraints {
     pub rotation_z: bool,
 }
 
+impl Default for Constraints {
+    fn default() -> Self {
+        Self {
+            position_x: true,
+            position_y: true,
+            position_z: true,
+            rotation_x: true,
+            rotation_y: true,
+            rotation_z: true,
+        }
+    }
+}
+
 fn constraints_to_bool_array(constraints: &Constraints) -> [bool; 6] {
     let mut arr = [true; 6];
     arr[0] = constraints.position_x;
@@ -82,13 +95,7 @@ where
 {
     /// Move the end transform of the `arm` to `target_pose`
     fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError>;
-}
-
-/// constraints configurable IK solver
-pub trait ConstraintsConfigurableInverseKinematicsSolver<T>
-where
-    T: Real,
-{
+    /// Move the end transform of the `arm` to `target_pose` with constraints
     fn solve_with_constraints(
         &self,
         arm: &SerialChain<T>,
@@ -193,6 +200,31 @@ where
     }
 }
 
+fn target_diff_to_len_rot_diff<T>(
+    target_diff: &DVector<T>,
+    constraints_array: [bool; 6],
+) -> (Vector3<T>, Vector3<T>)
+where
+    T: Real,
+{
+    let mut len_diff = Vector3::zeros();
+    let mut index = 0;
+    for i in 0..3 {
+        if constraints_array[i] {
+            len_diff[i] = target_diff[index];
+            index += 1;
+        }
+    }
+    let mut rot_diff = Vector3::zeros();
+    for i in 0..3 {
+        if constraints_array[i + 3] {
+            rot_diff[i] = target_diff[index];
+            index += 1;
+        }
+    }
+    (len_diff, rot_diff)
+}
+
 impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
     T: Real,
@@ -233,37 +265,7 @@ where
     fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
-}
 
-fn target_diff_to_len_rot_diff<T>(
-    target_diff: &DVector<T>,
-    constraints_array: [bool; 6],
-) -> (Vector3<T>, Vector3<T>)
-where
-    T: Real,
-{
-    let mut len_diff = Vector3::zeros();
-    let mut index = 0;
-    for i in 0..3 {
-        if constraints_array[i] {
-            len_diff[i] = target_diff[index];
-            index += 1;
-        }
-    }
-    let mut rot_diff = Vector3::zeros();
-    for i in 0..3 {
-        if constraints_array[i + 3] {
-            rot_diff[i] = target_diff[index];
-            index += 1;
-        }
-    }
-    (len_diff, rot_diff)
-}
-
-impl<T> ConstraintsConfigurableInverseKinematicsSolver<T> for JacobianIKSolver<T>
-where
-    T: Real,
-{
     fn solve_with_constraints(
         &self,
         arm: &SerialChain<T>,
@@ -321,18 +323,5 @@ where
 {
     fn default() -> Self {
         Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)
-    }
-}
-
-impl Default for Constraints {
-    fn default() -> Self {
-        Self {
-            position_x: true,
-            position_y: true,
-            position_z: true,
-            rotation_x: true,
-            rotation_y: true,
-            rotation_z: true,
-        }
     }
 }
