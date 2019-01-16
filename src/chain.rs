@@ -299,14 +299,11 @@ impl<T: Real> Chain<T> {
     /// Update world_transform() of the joints
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
-            .map(|node| match node.world_transform() {
-                None => {
-                    let parent_transform = node.parent_world_transform().expect("cache must exist");
-                    let trans = parent_transform * node.joint().local_transform();
-                    node.joint().set_world_transform(trans);
-                    trans
-                }
-                Some(trans) => trans,
+            .map(|node| {
+                let parent_transform = node.parent_world_transform().expect("cache must exist");
+                let trans = parent_transform * node.joint().local_transform();
+                node.joint().set_world_transform(trans);
+                trans
             })
             .collect()
     }
@@ -315,50 +312,46 @@ impl<T: Real> Chain<T> {
     pub fn update_velocities(&self) -> Vec<Velocity<T>> {
         self.update_transforms();
         self.iter()
-            .map(|node| match node.world_velocity() {
-                None => {
-                    let parent_transform = node
-                        .parent_world_transform()
-                        .expect("transform cache must exist");
-                    let parent_velocity = node
-                        .parent_world_velocity()
-                        .expect("velocity cache must exist");
-                    let velocity = match node.joint().joint_type {
-                        JointType::Fixed => parent_velocity,
-                        JointType::Rotational { axis } => {
-                            let parent = node.parent().expect("parent must exist");
-                            let parent_vel = parent.joint().origin().translation.vector;
-                            Velocity::from_parts(
-                                parent_velocity.translation
-                                    + parent_velocity.rotation.cross(
-                                        &(parent_transform.rotation.to_rotation_matrix()
-                                            * parent_vel),
-                                    ),
-                                parent_velocity.rotation
-                                    + node
-                                        .world_transform()
-                                        .expect("cache must exist")
-                                        .rotation
-                                        .to_rotation_matrix()
-                                        * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
-                            )
-                        }
-                        JointType::Linear { axis } => Velocity::from_parts(
+            .map(|node| {
+                let parent_transform = node
+                    .parent_world_transform()
+                    .expect("transform cache must exist");
+                let parent_velocity = node
+                    .parent_world_velocity()
+                    .expect("velocity cache must exist");
+                let velocity = match node.joint().joint_type {
+                    JointType::Fixed => parent_velocity,
+                    JointType::Rotational { axis } => {
+                        let parent = node.parent().expect("parent must exist");
+                        let parent_vel = parent.joint().origin().translation.vector;
+                        Velocity::from_parts(
                             parent_velocity.translation
+                                + parent_velocity.rotation.cross(
+                                    &(parent_transform.rotation.to_rotation_matrix() * parent_vel),
+                                ),
+                            parent_velocity.rotation
                                 + node
                                     .world_transform()
                                     .expect("cache must exist")
                                     .rotation
                                     .to_rotation_matrix()
                                     * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
-                            // TODO: Is this true??
-                            parent_velocity.rotation,
-                        ),
-                    };
-                    node.joint().set_world_velocity(velocity);
-                    velocity
-                }
-                Some(vel) => vel,
+                        )
+                    }
+                    JointType::Linear { axis } => Velocity::from_parts(
+                        parent_velocity.translation
+                            + node
+                                .world_transform()
+                                .expect("cache must exist")
+                                .rotation
+                                .to_rotation_matrix()
+                                * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
+                        // TODO: Is this true??
+                        parent_velocity.rotation,
+                    ),
+                };
+                node.joint().set_world_velocity(velocity);
+                velocity
             })
             .collect()
     }
