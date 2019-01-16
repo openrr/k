@@ -124,6 +124,7 @@ impl<T: Real> Chain<T> {
     /// l1.set_parent(&l0);
     /// let tree = k::Chain::<f32>::from_root(l0);
     /// ```
+    #[allow(clippy::needless_pass_by_value)]
     pub fn from_root(root_joint: Node<T>) -> Self {
         let contained_joints = root_joint.iter_descendants().collect::<Vec<_>>();
         let movable_joints = contained_joints
@@ -295,6 +296,7 @@ impl<T: Real> Chain<T> {
         }
     }
 
+    /// Update world_transform() of the joints
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
             .map(|node| match node.world_transform() {
@@ -309,6 +311,7 @@ impl<T: Real> Chain<T> {
             .collect()
     }
 
+    /// Update world_velocity() of the joints
     pub fn update_velocities(&self) -> Vec<Velocity<T>> {
         self.update_transforms();
         self.iter()
@@ -321,10 +324,10 @@ impl<T: Real> Chain<T> {
                         .parent_world_velocity()
                         .expect("velocity cache must exist");
                     let velocity = match node.joint().joint_type {
-                        JointType::Fixed => parent_velocity.clone(),
+                        JointType::Fixed => parent_velocity,
                         JointType::Rotational { axis } => {
                             let parent = node.parent().expect("parent must exist");
-                            let parent_vel = parent.joint().origin().translation.vector.clone();
+                            let parent_vel = parent.joint().origin().translation.vector;
                             Velocity::from_parts(
                                 parent_velocity.translation
                                     + parent_velocity.rotation.cross(
@@ -349,10 +352,10 @@ impl<T: Real> Chain<T> {
                                     .to_rotation_matrix()
                                     * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
                             // TODO: Is this true??
-                            parent_velocity.rotation.clone(),
+                            parent_velocity.rotation,
                         ),
                     };
-                    node.joint().set_world_velocity(velocity.clone());
+                    node.joint().set_world_velocity(velocity);
                     velocity
                 }
                 Some(vel) => vel,
@@ -360,6 +363,7 @@ impl<T: Real> Chain<T> {
             .collect()
     }
 
+    /// Update transforms of the links
     pub fn update_link_transforms(&self) {
         self.update_transforms();
         self.iter().for_each(|node| {

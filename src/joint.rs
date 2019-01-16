@@ -46,6 +46,15 @@ where
     }
 }
 
+impl<T> Default for Velocity<T>
+where
+    T: Real,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
 pub enum JointType<T: Real> {

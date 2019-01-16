@@ -40,7 +40,7 @@ where
     T: Real,
 {
     type Item = Node<T>;
-
+    #[allow(clippy::question_mark)]
     fn next(&mut self) -> Option<Node<T>> {
         if self.parent.is_none() {
             return None;

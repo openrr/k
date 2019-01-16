@@ -254,3 +254,12 @@ where
         }
     }
 }
+
+impl<T> Default for LinkBuilder<T>
+where
+    T: Real,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}

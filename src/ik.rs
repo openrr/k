@@ -77,7 +77,7 @@ impl Default for Constraints {
     }
 }
 
-fn constraints_to_bool_array(constraints: &Constraints) -> [bool; 6] {
+fn constraints_to_bool_array(constraints: Constraints) -> [bool; 6] {
     let mut arr = [true; 6];
     arr[0] = constraints.position_x;
     arr[1] = constraints.position_y;
@@ -274,7 +274,7 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<(), IKError> {
-        let constraints_array = constraints_to_bool_array(constraints);
+        let constraints_array = constraints_to_bool_array(*constraints);
         let orig_positions = arm.joint_positions();
         let use_dof = constraints_array.into_iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
@@ -295,7 +295,8 @@ where
                 && rot_diff.norm() < self.allowable_target_angle
             {
                 let non_checked_positions = arm.joint_positions();
-                return Ok(arm.set_joint_positions(&non_checked_positions)?);
+                arm.set_joint_positions(&non_checked_positions)?;
+                return Ok(());
             }
             if let Some((last_len, last_rot)) = last_target_distance {
                 if last_len < len_diff && last_rot < rot_diff {
