@@ -203,7 +203,7 @@ impl<T: Real> Chain<T> {
 
     /// Iterate for links
     pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
-        self.movable_joints.iter().filter_map(|node| {
+        self.contained_joints.iter().filter_map(|node| {
             if node.0.borrow().link.is_some() {
                 Some(LinkRefGuard {
                     guard: node.0.borrow(),
