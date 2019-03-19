@@ -180,6 +180,7 @@ where
                 jacobi
                     .svd(true, true)
                     .solve(&err, na::convert(0.0001))
+                    .unwrap() // TODO
                     .as_slice(),
             )
         } else {

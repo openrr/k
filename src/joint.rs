@@ -150,7 +150,7 @@ where
     /// assert!(range.is_valid(0.0));
     /// assert!(range.is_valid(1.0));
     /// assert!(!range.is_valid(1.5));
-    /// ```    
+    /// ```
     fn from(range: ::std::ops::RangeInclusive<T>) -> Self {
         let (min, max) = range.into_inner();
         Range { min, max }
@@ -380,7 +380,7 @@ where
                 UnitQuaternion::from_axis_angle(&axis, self.position),
             ),
             JointType::Linear { axis } => Isometry3::from_parts(
-                Translation3::from_vector(axis.unwrap() * self.position),
+                Translation3::from(axis.into_inner() * self.position),
                 UnitQuaternion::identity(),
             ),
         };
