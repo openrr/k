@@ -236,7 +236,7 @@ impl<T: Real> Chain<T> {
         self.dof
     }
     /// Find the joint by name
-    ///    
+    ///
     /// # Examples
     ///
     /// ```
@@ -335,7 +335,7 @@ impl<T: Real> Chain<T> {
                                     .expect("cache must exist")
                                     .rotation
                                     .to_rotation_matrix()
-                                    * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
+                                    * (axis.into_inner() * node.joint().joint_velocity().unwrap()),
                         )
                     }
                     JointType::Linear { axis } => Velocity::from_parts(
@@ -345,7 +345,7 @@ impl<T: Real> Chain<T> {
                                 .expect("cache must exist")
                                 .rotation
                                 .to_rotation_matrix()
-                                * (axis.unwrap() * node.joint().joint_velocity().unwrap()),
+                                * (axis.into_inner() * node.joint().joint_velocity().unwrap()),
                         // TODO: Is this true??
                         parent_velocity.rotation,
                     ),
