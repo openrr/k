@@ -13,13 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-extern crate glfw;
 #[macro_use]
 extern crate k;
 extern crate kiss3d;
 extern crate nalgebra as na;
 
-use glfw::{Action, Key, WindowEvent};
+use kiss3d::event::{Action, Key, WindowEvent};
 use k::prelude::*;
 use k::{JacobianIKSolver, JointBuilder, JointType};
 use kiss3d::camera::ArcBall;
@@ -145,7 +144,7 @@ fn main() {
         let mut updated = false;
         for mut event in window.events().iter() {
             match event.value {
-                WindowEvent::Key(code, _, Action::Release, _) => {
+                WindowEvent::Key(code, Action::Release, _) => {
                     match code {
                         Key::Z => {
                             // reset
