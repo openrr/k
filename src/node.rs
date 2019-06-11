@@ -14,7 +14,7 @@
   limitations under the License.
 */
 //! graph structure for kinematic chain
-use na::{Isometry3, Real, Translation3, UnitQuaternion};
+use na::{Isometry3, RealField, Translation3, UnitQuaternion};
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
 use std::ops::Deref;
@@ -31,7 +31,7 @@ type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 /// Node for joint tree struct
 pub struct NodeImpl<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub parent: Option<WeakNode<T>>,
     pub children: Vec<Node<T>>,
@@ -46,11 +46,11 @@ where
 ///
 /// It contains joint, joint (transform), and parent/children.
 #[derive(Debug)]
-pub struct Node<T: Real>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
+pub struct Node<T: RealField>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
 
 impl<T> Node<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub(crate) fn from_rc(rc: Rc<RefCell<NodeImpl<T>>>) -> Self {
         Node(rc)
@@ -308,7 +308,7 @@ where
 
 impl<T> ::std::clone::Clone for Node<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn clone(&self) -> Self {
         Node::<T>(self.0.clone())
@@ -317,14 +317,14 @@ where
 
 impl<T> PartialEq for Node<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn eq(&self, other: &Node<T>) -> bool {
         &*self.0 as *const RefCell<NodeImpl<T>> == &*other.0 as *const RefCell<NodeImpl<T>>
     }
 }
 
-impl<T: Real> Display for Node<T> {
+impl<T: RealField> Display for Node<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let inner = self.0.borrow();
         inner.joint.fmt(f)?;
@@ -338,7 +338,7 @@ impl<T: Real> Display for Node<T> {
 
 impl<T> From<Joint<T>> for Node<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(joint: Joint<T>) -> Self {
         Self::new(joint)
@@ -349,14 +349,14 @@ macro_rules! def_ref_guard {
     ($guard_struct:ident, $target:ty, $member:ident) => {
         pub struct $guard_struct<'a, T>
         where
-            T: Real,
+            T: RealField,
         {
             guard: Ref<'a, NodeImpl<T>>,
         }
 
         impl<'a, T> Deref for $guard_struct<'a, T>
         where
-            T: Real,
+            T: RealField,
         {
             type Target = $target;
             fn deref(&self) -> &Self::Target {
@@ -372,14 +372,14 @@ macro_rules! def_ref_guard_mut {
     ($guard_struct:ident, $target:ty, $member:ident) => {
         pub struct $guard_struct<'a, T>
         where
-            T: Real,
+            T: RealField,
         {
             guard: RefMut<'a, NodeImpl<T>>,
         }
 
         impl<'a, T> Deref for $guard_struct<'a, T>
         where
-            T: Real,
+            T: RealField,
         {
             type Target = $target;
             fn deref(&self) -> &Self::Target {
@@ -389,7 +389,7 @@ macro_rules! def_ref_guard_mut {
 
         impl<'a, T> DerefMut for $guard_struct<'a, T>
         where
-            T: Real,
+            T: RealField,
         {
             fn deref_mut(&mut self) -> &mut $target {
                 &mut self.guard.$member
@@ -406,14 +406,14 @@ def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
 
 pub struct LinkRefGuard<'a, T>
 where
-    T: Real,
+    T: RealField,
 {
     pub(crate) guard: Ref<'a, NodeImpl<T>>,
 }
 
 impl<'a, T> Deref for LinkRefGuard<'a, T>
 where
-    T: Real,
+    T: RealField,
 {
     type Target = Link<T>;
     fn deref(&self) -> &Self::Target {
@@ -427,13 +427,13 @@ where
 /*
 pub struct ParentRefGuard<'a, T>
 where
-    T: Real,
+    T: RealField,
 {
     guard: Ref<'a, NodeImpl<T>>,
     parent: Option<Node<T>>,
 }
 
-impl<'a, T>  ParentRefGuard<'a, T> where T:Real {
+impl<'a, T>  ParentRefGuard<'a, T> where T:RealField {
     pub fn new(guard: Ref<'a, NodeImpl<T>>) -> Self {
         let parent = guard.parent.and_then(|weak| weak.upgrade().map(|rc| Node::from_rc(rc)));
         Self {
@@ -446,7 +446,7 @@ impl<'a, T>  ParentRefGuard<'a, T> where T:Real {
 /*
 impl<'a, T> Deref for ParentRefGuard<'a, T>
 where
-    T: Real,
+    T: RealField,
 {
     type Target = Option<Node<T>>;
     fn deref(&self) -> &Self::Target {
@@ -471,7 +471,7 @@ where
 /// println!("{:?}", l0);
 /// ```
 #[derive(Debug, Clone)]
-pub struct JointBuilder<T: Real> {
+pub struct JointBuilder<T: RealField> {
     name: String,
     joint_type: JointType<T>,
     limits: Option<Range<T>>,
@@ -480,7 +480,7 @@ pub struct JointBuilder<T: Real> {
 
 impl<T> Default for JointBuilder<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn default() -> Self {
         Self::new()
@@ -489,7 +489,7 @@ where
 
 impl<T> JointBuilder<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new() -> JointBuilder<T> {
         JointBuilder {

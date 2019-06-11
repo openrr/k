@@ -17,10 +17,10 @@
 //!
 //! `link` module is optional for `k`.
 //!
-use na::{Isometry3, Matrix3, Real, Vector3};
+use na::{Isometry3, Matrix3, RealField, Vector3};
 
 #[derive(Debug, Clone)]
-pub enum Geometry<T: Real> {
+pub enum Geometry<T: RealField> {
     Box { depth: T, width: T, height: T },
     Cylinder { radius: T, length: T },
     Sphere { radius: T },
@@ -28,7 +28,7 @@ pub enum Geometry<T: Real> {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Color<T: Real> {
+pub struct Color<T: RealField> {
     pub r: T,
     pub g: T,
     pub b: T,
@@ -49,14 +49,14 @@ impl Default for Texture {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct Material<T: Real> {
+pub struct Material<T: RealField> {
     pub name: String,
     pub color: Color<T>,
     pub texture: Texture,
 }
 
 #[derive(Debug, Clone)]
-pub struct Inertial<T: Real> {
+pub struct Inertial<T: RealField> {
     origin: Isometry3<T>,
     pub mass: T,
     pub inertia: Matrix3<T>,
@@ -66,7 +66,7 @@ pub struct Inertial<T: Real> {
 // TODO
 impl<T> Inertial<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn from_mass(mass: T) -> Self {
         Self {
@@ -103,7 +103,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct Visual<T: Real> {
+pub struct Visual<T: RealField> {
     pub name: String,
     origin: Isometry3<T>,
     pub geometry: Geometry<T>,
@@ -113,7 +113,7 @@ pub struct Visual<T: Real> {
 
 impl<T> Visual<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new(
         name: String,
@@ -148,7 +148,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct Collision<T: Real> {
+pub struct Collision<T: RealField> {
     pub name: String,
     origin: Isometry3<T>,
     pub geometry: Geometry<T>,
@@ -157,7 +157,7 @@ pub struct Collision<T: Real> {
 
 impl<T> Collision<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new(name: String, origin: Isometry3<T>, geometry: Geometry<T>) -> Self {
         Self {
@@ -186,7 +186,7 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct Link<T: Real> {
+pub struct Link<T: RealField> {
     pub name: String,
     pub inertial: Inertial<T>,
     pub visuals: Vec<Visual<T>>,
@@ -195,7 +195,7 @@ pub struct Link<T: Real> {
 
 impl<T> Default for Link<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn default() -> Self {
         Self {
@@ -209,7 +209,7 @@ where
 
 pub struct LinkBuilder<T>
 where
-    T: Real,
+    T: RealField,
 {
     name: String,
     inertial: Inertial<T>,
@@ -219,7 +219,7 @@ where
 
 impl<T> LinkBuilder<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new() -> Self {
         Self {
@@ -257,7 +257,7 @@ where
 
 impl<T> Default for LinkBuilder<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn default() -> Self {
         Self::new()

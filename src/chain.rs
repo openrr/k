@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use na::{Isometry3, Real};
+use na::{Isometry3, RealField};
 use std::fmt::{self, Display};
 use std::ops::Deref;
 
@@ -82,13 +82,13 @@ use node::*;
 /// }
 /// ```
 #[derive(Debug)]
-pub struct Chain<T: Real> {
+pub struct Chain<T: RealField> {
     contained_joints: Vec<Node<T>>,
     movable_joints: Vec<Node<T>>,
     dof: usize,
 }
 
-impl<T: Real> Chain<T> {
+impl<T: RealField> Chain<T> {
     fn fmt_with_indent_level(
         &self,
         node: &Node<T>,
@@ -105,13 +105,13 @@ impl<T: Real> Chain<T> {
     }
 }
 
-impl<T: Real> Display for Chain<T> {
+impl<T: RealField> Display for Chain<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 
-impl<T: Real> Chain<T> {
+impl<T: RealField> Chain<T> {
     /// Create Chain from root joint
     ///
     /// # Examples
@@ -382,13 +382,13 @@ impl<T: Real> Chain<T> {
 /// Kinematic chain without any branch.
 ///
 /// All joints are connected sequentially.
-pub struct SerialChain<T: Real> {
+pub struct SerialChain<T: RealField> {
     inner: Chain<T>,
 }
 
 impl<T> SerialChain<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Convert Chain into SerialChain without any check
     ///
@@ -456,7 +456,7 @@ where
 
 impl<T> Display for SerialChain<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)
@@ -465,7 +465,7 @@ where
 
 impl<T> Deref for SerialChain<T>
 where
-    T: Real,
+    T: RealField,
 {
     type Target = Chain<T>;
     fn deref(&self) -> &Self::Target {
