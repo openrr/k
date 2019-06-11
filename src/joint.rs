@@ -15,19 +15,19 @@
 */
 //! Joint related structs
 use errors::*;
-use na::{Isometry3, Real, Translation3, Unit, UnitQuaternion, Vector3};
+use na::{Isometry3, RealField, Translation3, Unit, UnitQuaternion, Vector3};
 use std::cell::RefCell;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug, Copy)]
-pub struct Velocity<T: Real> {
+pub struct Velocity<T: RealField> {
     pub translation: Vector3<T>,
     pub rotation: Vector3<T>,
 }
 
 impl<T> Velocity<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new() -> Self {
         Self::zero()
@@ -48,7 +48,7 @@ where
 
 impl<T> Default for Velocity<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn default() -> Self {
         Self::new()
@@ -57,7 +57,7 @@ where
 
 /// Type of Joint, `Fixed`, `Rotational`, `Linear` is supported now
 #[derive(Copy, Debug, Clone)]
-pub enum JointType<T: Real> {
+pub enum JointType<T: RealField> {
     /// Fixed joint. It has no `joint_position` and axis.
     Fixed,
     /// Rotational joint around axis. It has an position [rad].
@@ -72,7 +72,7 @@ pub enum JointType<T: Real> {
     },
 }
 
-fn axis_to_string<T: Real>(axis: &Unit<Vector3<T>>) -> &str {
+fn axis_to_string<T: RealField>(axis: &Unit<Vector3<T>>) -> &str {
     if *axis == Vector3::x_axis() {
         "+X"
     } else if *axis == Vector3::y_axis() {
@@ -90,7 +90,7 @@ fn axis_to_string<T: Real>(axis: &Unit<Vector3<T>>) -> &str {
     }
 }
 
-impl<T: Real> Display for JointType<T> {
+impl<T: RealField> Display for JointType<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             JointType::Fixed => write!(f, "[⚓]"),
@@ -102,14 +102,14 @@ impl<T: Real> Display for JointType<T> {
 
 /// min/max range to check the joint position
 #[derive(Copy, Debug, Clone)]
-pub struct Range<T: Real> {
+pub struct Range<T: RealField> {
     pub min: T,
     pub max: T,
 }
 
 impl<T> Range<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Create new Range instance
     ///
@@ -141,7 +141,7 @@ where
 
 impl<T> From<::std::ops::RangeInclusive<T>> for Range<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// # Examples
     ///
@@ -169,14 +169,14 @@ where
 /// output position (mimic_position() is calculated by `joint positions = joint[name] * multiplier + origin`
 ///
 #[derive(Debug, Clone)]
-pub struct Mimic<T: Real> {
+pub struct Mimic<T: RealField> {
     pub multiplier: T,
     pub origin: T,
 }
 
 impl<T> Mimic<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Create new instance of Mimic
     ///
@@ -208,7 +208,7 @@ where
 
 /// Joint with type
 #[derive(Debug, Clone)]
-pub struct Joint<T: Real> {
+pub struct Joint<T: RealField> {
     /// Name of this joint
     pub name: String,
     /// Type of this joint
@@ -229,7 +229,7 @@ pub struct Joint<T: Real> {
 
 impl<T> Joint<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Create new Joint with name and type
     ///
@@ -418,7 +418,7 @@ where
     }
 }
 
-impl<T: Real> Display for Joint<T> {
+impl<T: RealField> Display for Joint<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {}", self.name, self.joint_type)
     }

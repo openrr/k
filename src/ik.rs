@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use na::{self, DVector, Isometry3, Real, Vector3, Vector6};
+use na::{self, DVector, Isometry3, RealField, Vector3, Vector6};
 
 use chain::*;
 use errors::*;
@@ -22,7 +22,7 @@ use funcs::*;
 /// From 'Humanoid Robot (Kajita)' P.64
 fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
 where
-    T: Real,
+    T: RealField,
 {
     let p_diff = a.translation.vector - b.translation.vector;
     let w_diff = b.rotation.rotation_to(&a.rotation).scaled_axis();
@@ -37,7 +37,7 @@ fn calc_pose_diff_with_constraints<T>(
     constraints_array: [bool; 6],
 ) -> DVector<T>
 where
-    T: Real,
+    T: RealField,
 {
     let full_diff = calc_pose_diff(a, b);
     let use_dof = constraints_array.into_iter().filter(|x| **x).count();
@@ -91,7 +91,7 @@ fn constraints_to_bool_array(constraints: Constraints) -> [bool; 6] {
 /// IK solver
 pub trait InverseKinematicsSolver<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Move the end transform of the `arm` to `target_pose`
     fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
@@ -108,7 +108,7 @@ where
 
 /// Inverse Kinematics Solver using Jacobian matrix
 #[derive(Debug, Clone)]
-pub struct JacobianIKSolver<T: Real> {
+pub struct JacobianIKSolver<T: RealField> {
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
     /// If the angle distance is smaller than this value, it is reached.
@@ -121,7 +121,7 @@ pub struct JacobianIKSolver<T: Real> {
 
 impl<T> JacobianIKSolver<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Create instance of `JacobianIKSolver`.
     ///
@@ -208,7 +208,7 @@ fn target_diff_to_len_rot_diff<T>(
     constraints_array: [bool; 6],
 ) -> (Vector3<T>, Vector3<T>)
 where
-    T: Real,
+    T: RealField,
 {
     let mut len_diff = Vector3::zeros();
     let mut index = 0;
@@ -230,7 +230,7 @@ where
 
 impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
-    T: Real,
+    T: RealField,
 {
     /// Set joint positions of `arm` to reach the `target_pose`
     ///
@@ -323,7 +323,7 @@ where
 
 impl<T> Default for JacobianIKSolver<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn default() -> Self {
         Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)

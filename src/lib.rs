@@ -50,5 +50,7 @@ pub use self::joint::{Joint, JointType};
 pub use self::link::Link;
 pub use self::node::{JointBuilder, Node};
 
-// re-export
-pub use na::{Isometry3, Real, Translation3, UnitQuaternion, Vector3};
+// re-export from nalgebra
+// include Real for backwards compatibility purposes
+// (na::Real used to be the name, so we used to re-export k::Real)
+pub use na::{Isometry3, RealField as Real, RealField, Translation3, UnitQuaternion, Vector3};

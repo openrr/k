@@ -1,11 +1,11 @@
 use chain::*;
 use joint::*;
-use na::{DMatrix, Real, Vector3};
+use na::{DMatrix, RealField, Vector3};
 
 /// Calculate Jacobian of the serial chain (manipulator).
 pub fn jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>
 where
-    T: Real,
+    T: RealField,
 {
     let dof = arm.dof();
     let t_n = arm.end_transform();
@@ -55,7 +55,7 @@ where
 /// ```
 pub fn center_of_mass<T>(chain: &Chain<T>) -> Vector3<T>
 where
-    T: Real,
+    T: RealField,
 {
     let mut total_mass = T::zero();
     let mut com = Vector3::zeros();

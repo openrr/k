@@ -17,7 +17,7 @@
 //!
 use urdf_rs;
 
-use na::{self, Isometry3, Matrix3, Real};
+use na::{self, Isometry3, Matrix3, RealField};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -30,7 +30,7 @@ pub const ROOT_JOINT_NAME: &str = "root";
 
 impl<'a, T> From<&'a urdf_rs::Color> for Color<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_color: &urdf_rs::Color) -> Self {
         Color {
@@ -44,7 +44,7 @@ where
 
 impl<T> From<urdf_rs::Color> for Color<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_color: urdf_rs::Color) -> Self {
         (&urdf_color).into()
@@ -61,7 +61,7 @@ impl From<urdf_rs::Texture> for Texture {
 
 impl<T> From<urdf_rs::Material> for Material<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_material: urdf_rs::Material) -> Self {
         Material {
@@ -72,7 +72,7 @@ where
     }
 }
 
-pub fn isometry_from<T: Real>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
+pub fn isometry_from<T: RealField>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
     Isometry3::from_parts(
         translation_from(&origin_element.xyz),
         quaternion_from(&origin_element.rpy),
@@ -81,7 +81,7 @@ pub fn isometry_from<T: Real>(origin_element: &urdf_rs::Pose) -> Isometry3<T> {
 
 impl<T> From<urdf_rs::Inertial> for Inertial<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_inertial: urdf_rs::Inertial) -> Self {
         let i = urdf_inertial.inertia;
@@ -105,7 +105,7 @@ where
 
 impl<T> From<urdf_rs::Visual> for Visual<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_visual: urdf_rs::Visual) -> Self {
         Visual::new(
@@ -119,7 +119,7 @@ where
 
 impl<T> From<urdf_rs::Collision> for Collision<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_collision: urdf_rs::Collision) -> Self {
         Collision::new(
@@ -132,7 +132,7 @@ where
 
 impl<T> From<urdf_rs::Geometry> for Geometry<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_geometry: urdf_rs::Geometry) -> Self {
         match urdf_geometry {
@@ -162,7 +162,7 @@ where
 
 impl<T> From<urdf_rs::Link> for Link<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_link: urdf_rs::Link) -> Self {
         Link {
@@ -176,7 +176,7 @@ where
 
 impl<'a, T> From<&'a urdf_rs::Mimic> for Mimic<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(urdf_mimic: &urdf_rs::Mimic) -> Self {
         Mimic::new(
@@ -189,7 +189,7 @@ where
 /// Returns nalgebra::Unit<nalgebra::Vector3> from f64 array
 fn axis_from<T>(array3: [f64; 3]) -> na::Unit<na::Vector3<T>>
 where
-    T: Real,
+    T: RealField,
 {
     na::Unit::<_>::new_normalize(na::Vector3::new(
         na::convert(array3[0]),
@@ -201,7 +201,7 @@ where
 /// Returns nalgebra::UnitQuaternion from f64 array
 pub fn quaternion_from<T>(array3: &[f64; 3]) -> na::UnitQuaternion<T>
 where
-    T: Real,
+    T: RealField,
 {
     na::convert(na::UnitQuaternion::from_euler_angles(
         array3[0], array3[1], array3[2],
@@ -211,14 +211,14 @@ where
 /// Returns nalgebra::Translation3 from f64 array
 pub fn translation_from<T>(array3: &[f64; 3]) -> na::Translation3<T>
 where
-    T: Real,
+    T: RealField,
 {
     na::convert(na::Translation3::new(array3[0], array3[1], array3[2]))
 }
 
 impl<'a, T> From<&'a urdf_rs::Joint> for Joint<T>
 where
-    T: Real,
+    T: RealField,
 {
     fn from(joint: &urdf_rs::Joint) -> Joint<T> {
         let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
@@ -251,7 +251,7 @@ where
 
 impl<'a, T> From<&'a urdf_rs::Robot> for Chain<T>
 where
-    T: na::Real,
+    T: RealField,
 {
     fn from(robot: &urdf_rs::Robot) -> Self {
         let mut ref_nodes = Vec::new();
@@ -313,7 +313,7 @@ where
 
 impl<T> From<urdf_rs::Robot> for Chain<T>
 where
-    T: na::Real,
+    T: RealField,
 {
     fn from(robot: urdf_rs::Robot) -> Self {
         Self::from(&robot)
@@ -322,7 +322,7 @@ where
 
 impl<T> Chain<T>
 where
-    T: na::Real,
+    T: RealField,
 {
     pub fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
     where

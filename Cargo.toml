@@ -1,6 +1,6 @@
 [package]
 name = "k"
-version = "0.14.0"
+version = "0.15.0"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
 description = "k is for kinematics"
 license = "Apache-2.0"
@@ -11,13 +11,13 @@ documentation = "http://docs.rs/k"
 readme = "README.md"
 
 [dependencies]
-nalgebra = "0.17.0"
+nalgebra = "0.18"
 urdf-rs = "0.4.2"
 log = "0.3"
 failure = "0.1"
 
 [dev-dependencies]
-kiss3d = "0.18.0"
+kiss3d = "0.20.0"
 rand = "0.3.0"
 docmatic = "0.1"
 

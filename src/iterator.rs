@@ -14,21 +14,21 @@
   limitations under the License.
 */
 //! Iterators to iterate descendants and ancestors
-use na::Real;
+use na::RealField;
 use node::*;
 
 #[derive(Debug)]
 /// Iterator for parents
 pub struct Ancestors<T>
 where
-    T: Real,
+    T: RealField,
 {
     parent: Option<Node<T>>,
 }
 
 impl<T> Ancestors<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new(parent: Option<Node<T>>) -> Self {
         Self { parent }
@@ -37,7 +37,7 @@ where
 
 impl<T> Iterator for Ancestors<T>
 where
-    T: Real,
+    T: RealField,
 {
     type Item = Node<T>;
     #[allow(clippy::question_mark)]
@@ -55,14 +55,14 @@ where
 /// Iterator for children
 pub struct Descendants<T>
 where
-    T: Real,
+    T: RealField,
 {
     stack: Vec<Node<T>>,
 }
 
 impl<T> Descendants<T>
 where
-    T: Real,
+    T: RealField,
 {
     pub fn new(stack: Vec<Node<T>>) -> Self {
         Self { stack }
@@ -71,7 +71,7 @@ where
 
 impl<T> Iterator for Descendants<T>
 where
-    T: Real,
+    T: RealField,
 {
     type Item = Node<T>;
 
