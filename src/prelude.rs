@@ -13,5 +13,5 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//! Load basic trais of `k`
+//! Load basic traits of `k`
 pub use ik::InverseKinematicsSolver;
