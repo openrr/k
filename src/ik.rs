@@ -52,10 +52,11 @@ where
     diff
 }
 
-/// true means the constraint is used.
-///  The coordinates is the world, not the end of the arm.
+/// A bundle of flags determining which coordinates are constrained for a target
 #[derive(Clone, Copy, Debug)]
 pub struct Constraints {
+    /// true means the constraint is used.
+    ///  The coordinates is the world, not the end of the arm.
     pub position_x: bool,
     pub position_y: bool,
     pub position_z: bool,

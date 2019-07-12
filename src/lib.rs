@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//! # Kinematics(forward/inverse) library using [nalgebra](http://nalgebra.org).
+//! # Kinematics (forward/inverse) library using [nalgebra](http://nalgebra.org).
 //!
 //! `k` has below functionalities
 //!
