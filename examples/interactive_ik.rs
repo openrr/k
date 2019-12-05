@@ -187,18 +187,14 @@ fn main() {
                         Key::L => target.translation.vector[0] += 0.1,
                         Key::P => target.translation.vector[1] += 0.1,
                         Key::N => target.translation.vector[1] -= 0.1,
-                        Key::X => solver.set_nullspace_function(Box::new(|vec: &[f32]| {
-                            vec![
-                                -0.5 * vec[0],
-                                -0.5 * vec[1],
-                                -0.5 * vec[2],
-                                -vec[3],
-                                -0.5 * vec[4],
-                                -0.5 * vec[5],
-                                -0.5 * vec[6],
-                            ]
-                        })),
+                        Key::X => solver.set_nullspace_function(Box::new(
+                            k::create_reference_positions_nullspace_function(
+                                vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                vec![0.1, 0.1, 0.1, 1.0, 0.1, 0.5, 0.0],
+                            ),
+                        )),
                         Key::C => solver.clear_nullspace_function(),
+                        Key::J => println!("joint positions: {:?}", arm.joint_positions()),
                         _ => {}
                     }
                     event.inhibited = true // override the default keyboard handler

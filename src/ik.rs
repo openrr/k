@@ -347,3 +347,58 @@ where
         Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)
     }
 }
+
+/// Calc cost value from reference positions and weight
+///
+/// H(q) = 1/2(q-q^)T W (q-q^)
+/// W is simplified into vector.
+pub fn calc_cost_by_reference_positions_with_weight<T: RealField>(
+    positions: &[T],
+    reference_positions: &[T],
+    weight_vector: &[T],
+) -> T {
+    let dof = positions.len();
+    let mut diff_vec = positions.to_vec();
+    for i in 0..dof {
+        diff_vec[i] -= reference_positions[i];
+    }
+    let mut sum: T = na::convert(0.0);
+    for i in 0..dof {
+        sum += diff_vec[i] * weight_vector[i] * diff_vec[i] * na::convert(0.5);
+    }
+    sum
+}
+
+/// Calc partial derivative of cost function
+///
+/// dH(q) / dq
+pub fn calc_partial_derivative_vec<T: RealField>(
+    positions: &[T],
+    reference_positions: &[T],
+    weight_vector: &[T],
+) -> Vec<T> {
+    let dof = positions.len();
+    let mut derivative_vec = positions.to_vec();
+    const EPS: f64 = 0.01;
+    for i in 0..dof {
+        let mut p = positions.to_vec();
+        p[i] += na::convert(EPS);
+        derivative_vec[i] =
+            -(calc_cost_by_reference_positions_with_weight(&p, reference_positions, weight_vector)
+                - calc_cost_by_reference_positions_with_weight(
+                    positions,
+                    reference_positions,
+                    weight_vector,
+                ))
+                / na::convert(EPS);
+    }
+    derivative_vec
+}
+
+/// Utility function to create nullspace function
+pub fn create_reference_positions_nullspace_function<T: RealField>(
+    reference_positions: Vec<T>,
+    weight_vector: Vec<T>,
+) -> impl Fn(&[T]) -> Vec<T> {
+    move |vec| calc_partial_derivative_vec(&vec, &reference_positions, &weight_vector)
+}
