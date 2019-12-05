@@ -282,7 +282,7 @@ impl<T: RealField> Chain<T> {
                 required: self.dof,
             });
         }
-        for (mut joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
+        for (joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
             joint.set_joint_position(*position)?;
         }
         Ok(())
@@ -291,7 +291,7 @@ impl<T: RealField> Chain<T> {
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
-        for (mut joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
+        for (joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
             joint.set_joint_position_unchecked(*position);
         }
     }
@@ -365,11 +365,11 @@ impl<T: RealField> Chain<T> {
             if let Some(ref mut link) = node_mut.link {
                 let inertial_trans = parent_transform * link.inertial.origin();
                 link.inertial.set_world_transform(inertial_trans);
-                for mut c in &mut link.collisions {
+                for c in &mut link.collisions {
                     let c_trans = parent_transform * c.origin();
                     c.set_world_transform(c_trans);
                 }
-                for mut v in &mut link.visuals {
+                for v in &mut link.visuals {
                     let v_trans = parent_transform * v.origin();
                     v.set_world_transform(v_trans);
                 }
