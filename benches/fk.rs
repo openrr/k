@@ -6,7 +6,7 @@ extern crate nalgebra as na;
 extern crate rand;
 extern crate test;
 
-use na::Real;
+use na::RealField;
 use std::f64::consts::PI;
 
 /*
@@ -37,7 +37,7 @@ test bench_rctree_ik ... bench:      10,622 ns/iter (+/- 1,203)
 
 fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
 where
-    T: Real,
+    T: RealField,
 {
     limits
         .iter()
