@@ -108,7 +108,6 @@ where
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
-#[derive(Debug, Clone)]
 pub struct JacobianIKSolver<T: RealField> {
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
@@ -118,6 +117,7 @@ pub struct JacobianIKSolver<T: RealField> {
     pub jacobian_multiplier: T,
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
+    nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T>>>,
 }
 
 impl<T> JacobianIKSolver<T>
@@ -144,7 +144,15 @@ where
             allowable_target_angle,
             jacobian_multiplier,
             num_max_try,
+            nullspace_function: None,
         }
+    }
+
+    pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T>>) {
+        self.nullspace_function = Some(func);
+    }
+    pub fn clear_nullspace_function(&mut self) {
+        self.nullspace_function = None;
     }
     fn add_positions_with_multiplier(&self, input: &[T], add_values: &[T]) -> Vec<T> {
         input
@@ -153,7 +161,6 @@ where
             .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
             .collect()
     }
-
     fn solve_one_loop_with_constraints(
         &self,
         arm: &SerialChain<T>,
@@ -175,15 +182,25 @@ where
             }
         }
         let positions_vec = if dof > use_dof {
+            const EPS: f64 = 0.0001;
             // redundant: pseudo inverse
-            self.add_positions_with_multiplier(
-                &orig_positions,
-                jacobi
-                    .svd(true, true)
-                    .solve(&err, na::convert(0.0001))
-                    .unwrap() // TODO
-                    .as_slice(),
-            )
+            match self.nullspace_function {
+                Some(ref f) => {
+                    let jacobi_inv = jacobi.clone().pseudo_inverse(na::convert(EPS)).unwrap();
+                    let d_q = jacobi_inv.clone() * err
+                        + (na::DMatrix::identity(dof, dof) - jacobi_inv * jacobi)
+                            * na::DVector::from_vec(f(&orig_positions));
+                    self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
+                }
+                None => self.add_positions_with_multiplier(
+                    &orig_positions,
+                    jacobi
+                        .svd(true, true)
+                        .solve(&err, na::convert(EPS))
+                        .unwrap() // TODO
+                        .as_slice(),
+                ),
+            }
         } else {
             // normal inverse matrix
             self.add_positions_with_multiplier(
