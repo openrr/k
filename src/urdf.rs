@@ -275,7 +275,7 @@ where
         }
         for l in &robot.links {
             info!("link={}", l.name);
-            if let Some(mut parent_node) = child_link_name_to_node.get_mut(&l.name) {
+            if let Some(parent_node) = child_link_name_to_node.get_mut(&l.name) {
                 if let Some(child_nodes) = parent_link_name_to_node.get(&l.name) {
                     for child_node in child_nodes.iter() {
                         info!("set parent = {}, child = {}", parent_node, child_node);
@@ -292,7 +292,7 @@ where
         for j in &robot.joints {
             if j.mimic.joint != "" {
                 debug!("mimic found for {}", j.mimic.joint);
-                let mut child = joint_name_to_node[&j.name].clone();
+                let child = joint_name_to_node[&j.name].clone();
                 let parent = joint_name_to_node
                     .get(&j.mimic.joint)
                     .unwrap_or_else(|| panic!("{} not found, mimic not found", &j.mimic.joint));

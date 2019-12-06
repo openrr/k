@@ -18,10 +18,10 @@ extern crate k;
 extern crate kiss3d;
 extern crate nalgebra as na;
 
-use kiss3d::event::{Action, Key, WindowEvent};
 use k::prelude::*;
 use k::{JacobianIKSolver, JointBuilder, JointType};
 use kiss3d::camera::ArcBall;
+use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
@@ -166,8 +166,8 @@ fn main() {
     let eye = Point3::new(0.5f32, 1.0, 2.0);
     let at = Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
-
-    let solver = JacobianIKSolver::default();
+    let mut solver = JacobianIKSolver::default();
+    //solver.set_nullspace_function(Box::new(|vec| vec.iter().map(|x| -x).collect()));
     let _ = create_ground(&mut window);
 
     while window.render_with_camera(&mut arc_ball) {
@@ -187,6 +187,14 @@ fn main() {
                         Key::L => target.translation.vector[0] += 0.1,
                         Key::P => target.translation.vector[1] += 0.1,
                         Key::N => target.translation.vector[1] -= 0.1,
+                        Key::X => solver.set_nullspace_function(Box::new(
+                            k::create_reference_positions_nullspace_function(
+                                vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                vec![0.1, 0.1, 0.1, 1.0, 0.1, 0.5, 0.0],
+                            ),
+                        )),
+                        Key::C => solver.clear_nullspace_function(),
+                        Key::J => println!("joint positions: {:?}", arm.joint_positions()),
                         _ => {}
                     }
                     event.inhibited = true // override the default keyboard handler

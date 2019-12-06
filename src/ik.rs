@@ -108,7 +108,6 @@ where
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
-#[derive(Debug, Clone)]
 pub struct JacobianIKSolver<T: RealField> {
     /// If the distance is smaller than this value, it is reached.
     pub allowable_target_distance: T,
@@ -118,6 +117,7 @@ pub struct JacobianIKSolver<T: RealField> {
     pub jacobian_multiplier: T,
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
+    nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T>>>,
 }
 
 impl<T> JacobianIKSolver<T>
@@ -144,7 +144,15 @@ where
             allowable_target_angle,
             jacobian_multiplier,
             num_max_try,
+            nullspace_function: None,
         }
+    }
+
+    pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T>>) {
+        self.nullspace_function = Some(func);
+    }
+    pub fn clear_nullspace_function(&mut self) {
+        self.nullspace_function = None;
     }
     fn add_positions_with_multiplier(&self, input: &[T], add_values: &[T]) -> Vec<T> {
         input
@@ -153,7 +161,6 @@ where
             .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
             .collect()
     }
-
     fn solve_one_loop_with_constraints(
         &self,
         arm: &SerialChain<T>,
@@ -175,15 +182,25 @@ where
             }
         }
         let positions_vec = if dof > use_dof {
+            const EPS: f64 = 0.0001;
             // redundant: pseudo inverse
-            self.add_positions_with_multiplier(
-                &orig_positions,
-                jacobi
-                    .svd(true, true)
-                    .solve(&err, na::convert(0.0001))
-                    .unwrap() // TODO
-                    .as_slice(),
-            )
+            match self.nullspace_function {
+                Some(ref f) => {
+                    let jacobi_inv = jacobi.clone().pseudo_inverse(na::convert(EPS)).unwrap();
+                    let d_q = jacobi_inv.clone() * err
+                        + (na::DMatrix::identity(dof, dof) - jacobi_inv * jacobi)
+                            * na::DVector::from_vec(f(&orig_positions));
+                    self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
+                }
+                None => self.add_positions_with_multiplier(
+                    &orig_positions,
+                    jacobi
+                        .svd(true, true)
+                        .solve(&err, na::convert(EPS))
+                        .unwrap() // TODO
+                        .as_slice(),
+                ),
+            }
         } else {
             // normal inverse matrix
             self.add_positions_with_multiplier(
@@ -329,4 +346,37 @@ where
     fn default() -> Self {
         Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)
     }
+}
+
+/// Utility function to create nullspace function using reference joint positions.
+/// This is just an example to use nullspace.
+///
+/// H(q) = 1/2(q-q^)T W (q-q^)
+/// dH(q) / dq = W (q-q^)
+///
+/// https://minus9d.hatenablog.com/entry/20120912/1347460308
+pub fn create_reference_positions_nullspace_function<T: RealField>(
+    reference_positions: Vec<T>,
+    weight_vector: Vec<T>,
+) -> impl Fn(&[T]) -> Vec<T> {
+    let dof = reference_positions.len();
+    assert_eq!(dof, weight_vector.len());
+
+    move |positions| {
+        let mut derivative_vec = vec![na::convert(0.0); dof];
+        for i in 0..dof {
+            derivative_vec[i] = weight_vector[i] * (positions[i] - reference_positions[i]);
+        }
+        derivative_vec
+    }
+}
+
+#[test]
+fn test_nullspace_func() {
+    let f = create_reference_positions_nullspace_function(vec![0.0, 1.0], vec![0.5, 0.1]);
+    let pos1 = vec![0.5, 0.5];
+    let values = f(&pos1);
+    assert_eq!(values.len(), 2);
+    assert_eq!(values[0], 0.25);
+    assert_eq!(values[1], -0.05);
 }
