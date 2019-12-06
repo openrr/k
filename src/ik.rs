@@ -348,7 +348,8 @@ where
     }
 }
 
-/// Utility function to create nullspace function using reference joint positions
+/// Utility function to create nullspace function using reference joint positions.
+/// This is just an example to use nullspace.
 ///
 /// H(q) = 1/2(q-q^)T W (q-q^)
 /// dH(q) / dq = W (q-q^)
