@@ -317,14 +317,6 @@ where
                 arm.set_joint_positions(&non_checked_positions)?;
                 return Ok(());
             }
-            if let Some((last_len, last_rot)) = last_target_distance {
-                if last_len < len_diff && last_rot < rot_diff {
-                    arm.set_joint_positions(&orig_positions)?;
-                    return Err(IKError::NotConvergedError {
-                        error: "jacobian did not work".to_owned(),
-                    });
-                }
-            }
             last_target_distance = Some((len_diff, rot_diff));
         }
         arm.set_joint_positions(&orig_positions)?;
