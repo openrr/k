@@ -66,6 +66,17 @@ pub struct Constraints {
 }
 
 impl Default for Constraints {
+    /// Initialize with all true
+    ///
+    /// ```
+    /// let c = k::Constraints::default();
+    /// assert!(c.position_x);
+    /// assert!(c.position_y);
+    /// assert!(c.position_z);
+    /// assert!(c.rotation_x);
+    /// assert!(c.rotation_y);
+    /// assert!(c.rotation_z);
+    /// ```
     fn default() -> Self {
         Self {
             position_x: true,
@@ -117,6 +128,7 @@ pub struct JacobianIKSolver<T: RealField> {
     pub jacobian_multiplier: T,
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
+    /// Nullspace function for a redundant system
     nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T>>>,
 }
 
@@ -147,13 +159,28 @@ where
             nullspace_function: None,
         }
     }
-
+    /// Set a null space function for redundant manipulator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
+    /// solver.set_nullspace_function(Box::new(
+    /// k::create_reference_positions_nullspace_function(
+    ///    vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    ///    vec![0.1, 0.1, 0.1, 1.0, 0.1, 0.5, 0.0],
+    ///    ),
+    /// ));
+    /// ```
     pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T>>) {
         self.nullspace_function = Some(func);
     }
+
+    /// Clear the null function which is set by `set_nullspace_funtion`.
     pub fn clear_nullspace_function(&mut self) {
         self.nullspace_function = None;
     }
+
     fn add_positions_with_multiplier(&self, input: &[T], add_values: &[T]) -> Vec<T> {
         input
             .iter()
@@ -161,6 +188,7 @@ where
             .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
             .collect()
     }
+
     fn solve_one_loop_with_constraints(
         &self,
         arm: &SerialChain<T>,
@@ -287,6 +315,36 @@ where
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
 
+    /// Set joint positions of `arm` to reach the `target_pose` with constraints
+    ///
+    /// If you want to loose the constraints, use this method.
+    /// For example, ignoring rotation with an axis.
+    /// It enables to use the arms which has less than six DoF.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use k::prelude::*;
+    ///
+    /// let chain = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+    /// let target_joint_name = "r_wrist_pitch";
+    /// let r_wrist = chain.find(target_joint_name).unwrap();
+    /// let mut arm = k::SerialChain::from_end(r_wrist);
+    /// let positions = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
+    /// arm.set_joint_positions(&positions).unwrap();
+    /// let mut target = arm.update_transforms().last().unwrap().clone();
+    /// target.translation.vector.x -= 0.1;
+    /// let solver = k::JacobianIKSolver::default();
+    ///
+    /// let mut constraints = k::Constraints::default();
+    /// constraints.rotation_x = false;
+    /// constraints.rotation_z = false;
+    /// solver
+    ///    .solve_with_constraints(&arm, &target, &constraints)
+    ///    .unwrap_or_else(|err| {
+    ///        println!("Err: {}", err);
+    ///    });
+    /// ```
     fn solve_with_constraints(
         &self,
         arm: &SerialChain<T>,
