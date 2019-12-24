@@ -164,7 +164,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
+    /// let mut solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
     /// solver.set_nullspace_function(Box::new(
     /// k::create_reference_positions_nullspace_function(
     ///    vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
