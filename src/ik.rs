@@ -164,7 +164,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
+    /// let mut solver = k::JacobianIKSolver::new(0.01, 0.01, 0.5, 100);
     /// solver.set_nullspace_function(Box::new(
     /// k::create_reference_positions_nullspace_function(
     ///    vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -246,6 +246,49 @@ where
             &arm.end_transform(),
             constraints_array,
         ))
+    }
+
+    fn solve_with_constraints_internal(
+        &self,
+        arm: &SerialChain<T>,
+        target_pose: &Isometry3<T>,
+        constraints: &Constraints,
+    ) -> Result<(), IKError> {
+        let constraints_array = constraints_to_bool_array(*constraints);
+        let orig_positions = arm.joint_positions();
+        let use_dof = constraints_array.into_iter().filter(|x| **x).count();
+        if orig_positions.len() < use_dof {
+            return Err(IKError::PreconditionError {
+                error: format!(
+                    "Input Dof={}, must be greater than {}",
+                    orig_positions.len(),
+                    use_dof
+                ),
+            });
+        }
+        let mut last_target_distance = None;
+        for _ in 0..self.num_max_try {
+            let target_diff =
+                self.solve_one_loop_with_constraints(&arm, target_pose, constraints_array)?;
+            let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, constraints_array);
+            if len_diff.norm() < self.allowable_target_distance
+                && rot_diff.norm() < self.allowable_target_angle
+            {
+                let non_checked_positions = arm.joint_positions();
+                arm.set_joint_positions(&non_checked_positions)?;
+                return Ok(());
+            }
+            last_target_distance = Some((len_diff, rot_diff));
+        }
+        arm.set_joint_positions(&orig_positions)?;
+        Err(IKError::NotConvergedError {
+            error: format!(
+                "iteration has not converged: tried {} timed, diff = {}, {}",
+                self.num_max_try,
+                last_target_distance.unwrap().0,
+                last_target_distance.unwrap().1,
+            ),
+        })
     }
 }
 
@@ -351,41 +394,12 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<(), IKError> {
-        let constraints_array = constraints_to_bool_array(*constraints);
         let orig_positions = arm.joint_positions();
-        let use_dof = constraints_array.into_iter().filter(|x| **x).count();
-        if orig_positions.len() < use_dof {
-            return Err(IKError::PreconditionError {
-                error: format!(
-                    "Input Dof={}, must be greater than {}",
-                    orig_positions.len(),
-                    use_dof
-                ),
-            });
-        }
-        let mut last_target_distance = None;
-        for _ in 0..self.num_max_try {
-            let target_diff =
-                self.solve_one_loop_with_constraints(&arm, target_pose, constraints_array)?;
-            let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, constraints_array);
-            if len_diff.norm() < self.allowable_target_distance
-                && rot_diff.norm() < self.allowable_target_angle
-            {
-                let non_checked_positions = arm.joint_positions();
-                arm.set_joint_positions(&non_checked_positions)?;
-                return Ok(());
-            }
-            last_target_distance = Some((len_diff, rot_diff));
-        }
-        arm.set_joint_positions(&orig_positions)?;
-        Err(IKError::NotConvergedError {
-            error: format!(
-                "iteration has not converged: tried {} timed, diff = {}, {}",
-                self.num_max_try,
-                last_target_distance.unwrap().0,
-                last_target_distance.unwrap().1,
-            ),
-        })
+        let re = self.solve_with_constraints_internal(arm, target_pose, constraints);
+        if re.is_err() {
+            arm.set_joint_positions(&orig_positions)?;
+        };
+        re
     }
 }
 
