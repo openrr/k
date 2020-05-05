@@ -18,6 +18,7 @@
 //! `link` module is optional for `k`.
 //!
 use na::{Isometry3, Matrix3, RealField, Vector3};
+use nalgebra as na;
 
 #[derive(Debug, Clone)]
 pub enum Geometry<T: RealField> {

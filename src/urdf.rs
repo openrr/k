@@ -15,16 +15,16 @@
 */
 //! Load [URDF](http://wiki.ros.org/urdf) format and create `k::Chain`
 //!
-use urdf_rs;
 
-use na::{self, Isometry3, Matrix3, RealField};
+use super::chain::*;
+use super::joint::*;
+use super::link::*;
+use super::node::*;
+use log::*;
+use na::{Isometry3, Matrix3, RealField};
+use nalgebra as na;
 use std::collections::HashMap;
 use std::path::Path;
-
-use chain::*;
-use joint::*;
-use link::*;
-use node::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
 

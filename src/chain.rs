@@ -14,12 +14,13 @@
   limitations under the License.
 */
 use na::{Isometry3, RealField};
+use nalgebra as na;
 use std::fmt::{self, Display};
 use std::ops::Deref;
 
-use errors::*;
-use joint::*;
-use node::*;
+use super::errors::*;
+use super::joint::*;
+use super::node::*;
 
 /// Kinematic Chain using `Node`
 ///

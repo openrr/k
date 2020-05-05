@@ -1,12 +1,8 @@
 // rustup run nightly cargo bench
 #![feature(test)]
 
-extern crate k;
-extern crate nalgebra as na;
-extern crate rand;
-extern crate test;
-
 use na::RealField;
+use nalgebra as na;
 use std::f64::consts::PI;
 
 /*

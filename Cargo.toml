@@ -9,17 +9,22 @@ categories = ["algorithms"]
 repository = "https://github.com/OTL/k"
 documentation = "http://docs.rs/k"
 readme = "README.md"
+edition = "2018"
+build = "build.rs"
 
 [dependencies]
-nalgebra = "0.18"
-urdf-rs = "0.4.2"
-log = "0.3"
-failure = "0.1"
+nalgebra = "0.21"
+urdf-rs = "0.4"
+log = "0.4"
+thiserror = "1.0"
+
+[build-dependencies]
+skeptic = "0.13"
 
 [dev-dependencies]
-kiss3d = "0.20.0"
-rand = "0.3.0"
-docmatic = "0.1"
+skeptic = "0.13"
+kiss3d = "0.24"
+rand = "0.7"
 
 #[profile.release]
 #debug = true

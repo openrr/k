@@ -13,12 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+use thiserror::Error;
 
 /// The reason of joint error
-#[derive(Debug, Clone, Fail)]
+#[derive(Debug, Clone, Error)]
 pub enum JointError {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
-    #[fail(display = "joint: {} is out of limit: {}", joint_name, message)]
+    #[error("joint: {} is out of limit: {}", joint_name, message)]
     OutOfLimitError {
         /// name of the joint
         joint_name: String,
@@ -26,7 +27,7 @@ pub enum JointError {
         message: String,
     },
     /// Gave invalid size of vec as input
-    #[fail(display = "size mismatch input = {}, required = {}", input, required)]
+    #[error("size mismatch input = {}, required = {}", input, required)]
     SizeMismatchError {
         /// size of input
         input: usize,
@@ -34,7 +35,7 @@ pub enum JointError {
         required: usize,
     },
     /// Error about mimic
-    #[fail(display = "mimic error from {} to {}", from, to)]
+    #[error("mimic error from {} to {}", from, to)]
     MimicError {
         /// tried to copy from `from`
         from: String,
@@ -43,22 +44,22 @@ pub enum JointError {
         /// detail error message
         message: String,
     },
-    #[fail(display = "invalid arguments {:?}", error)]
+    #[error("invalid arguments {:?}", error)]
     InvalidArgumentsError { error: String },
 }
 
 /// The reason of the fail of inverse kinematics
-#[derive(Debug, Fail)]
+#[derive(Debug, Error)]
 pub enum IKError {
-    #[fail(display = "ik solve not converged {:?}", error)]
+    #[error("ik solve not converged {:?}", error)]
     NotConvergedError { error: String },
-    #[fail(display = "inverse matrix error")]
+    #[error("inverse matrix error")]
     InverseMatrixError,
-    #[fail(display = "ik precondition error {:?}", error)]
+    #[error("ik precondition error {:?}", error)]
     PreconditionError { error: String },
-    #[fail(display = "joint error: {:?}", error)]
+    #[error("joint error: {:?}", error)]
     JointOutOfLimitError { error: JointError },
-    #[fail(display = "invalid arguments {:?}", error)]
+    #[error("invalid arguments {:?}", error)]
     InvalidArgumentsError { error: String },
 }
 

@@ -1,10 +1,5 @@
-extern crate k;
-extern crate nalgebra as na;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     pub fn test_tree() {
         let tree = k::Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();

@@ -23,18 +23,11 @@
 //!
 //! See `Chain` as the top level interface.
 //!
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate log;
-extern crate nalgebra as na;
-extern crate urdf_rs;
-
 mod chain;
 mod errors;
 mod funcs;
 mod ik;
-
+use nalgebra as na;
 pub mod iterator;
 pub mod joint;
 pub mod link;

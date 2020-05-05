@@ -13,11 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use na::{self, DVector, Isometry3, RealField, Vector3, Vector6};
+use na::{DVector, Isometry3, RealField, Vector3, Vector6};
+use nalgebra as na;
 
-use chain::*;
-use errors::*;
-use funcs::*;
+use super::chain::*;
+use super::errors::*;
+use super::funcs::*;
 
 /// From 'Humanoid Robot (Kajita)' P.64
 fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
@@ -40,7 +41,7 @@ where
     T: RealField,
 {
     let full_diff = calc_pose_diff(a, b);
-    let use_dof = constraints_array.into_iter().filter(|x| **x).count();
+    let use_dof = constraints_array.iter().filter(|x| **x).count();
     let mut diff = DVector::from_element(use_dof, na::zero());
     let mut index = 0;
     for (i, use_i) in constraints_array.iter().enumerate() {
@@ -201,7 +202,7 @@ where
         let err = calc_pose_diff_with_constraints(target_pose, &t_n, constraints_array);
         let orig_positions = arm.joint_positions();
         let mut jacobi = jacobian(arm);
-        let use_dof = constraints_array.into_iter().filter(|x| **x).count();
+        let use_dof = constraints_array.iter().filter(|x| **x).count();
         let mut removed_count = 0;
         for (i, use_i) in constraints_array.iter().enumerate() {
             if !use_i {
@@ -256,7 +257,7 @@ where
     ) -> Result<(), IKError> {
         let constraints_array = constraints_to_bool_array(*constraints);
         let orig_positions = arm.joint_positions();
-        let use_dof = constraints_array.into_iter().filter(|x| **x).count();
+        let use_dof = constraints_array.iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
             return Err(IKError::PreconditionError {
                 error: format!(

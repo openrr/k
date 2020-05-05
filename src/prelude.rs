@@ -14,4 +14,4 @@
   limitations under the License.
 */
 //! Load basic traits of `k`
-pub use ik::InverseKinematicsSolver;
+pub use super::ik::InverseKinematicsSolver;

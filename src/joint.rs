@@ -14,8 +14,9 @@
   limitations under the License.
 */
 //! Joint related structs
-use errors::*;
+use super::errors::*;
 use na::{Isometry3, RealField, Translation3, Unit, UnitQuaternion, Vector3};
+use nalgebra as na;
 use std::cell::RefCell;
 use std::fmt::{self, Display};
 

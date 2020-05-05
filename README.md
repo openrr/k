@@ -39,8 +39,6 @@ Push below keys to move the end of the manipulator.
 ## Create link tree from urdf and solve IK
 
 ```rust
-extern crate k;
-
 use k::prelude::*;
 
 fn main() {

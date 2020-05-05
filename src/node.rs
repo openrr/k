@@ -15,15 +15,16 @@
 */
 //! graph structure for kinematic chain
 use na::{Isometry3, RealField, Translation3, UnitQuaternion};
+use nalgebra as na;
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
 use std::ops::Deref;
 use std::rc::{Rc, Weak};
 
-use errors::*;
-use iterator::*;
-use joint::*;
-use link::*;
+use super::errors::*;
+use super::iterator::*;
+use super::joint::*;
+use super::link::*;
 
 type WeakNode<T> = Weak<RefCell<NodeImpl<T>>>;
 

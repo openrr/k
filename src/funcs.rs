@@ -1,6 +1,7 @@
-use chain::*;
-use joint::*;
+use super::chain::*;
+use super::joint::*;
 use na::{DMatrix, RealField, Vector3};
+use nalgebra as na;
 
 /// Calculate Jacobian of the serial chain (manipulator).
 pub fn jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>

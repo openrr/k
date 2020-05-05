@@ -1,5 +1,4 @@
-extern crate k;
-extern crate nalgebra as na;
+use nalgebra as na;
 
 fn main() {
     let l0 = k::Node::new(

@@ -14,8 +14,8 @@
   limitations under the License.
 */
 //! Iterators to iterate descendants and ancestors
-use na::RealField;
-use node::*;
+use super::node::*;
+use nalgebra::RealField;
 
 #[derive(Debug)]
 /// Iterator for parents

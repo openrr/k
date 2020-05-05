@@ -13,15 +13,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#[macro_use]
-extern crate k;
-extern crate kiss3d;
-extern crate nalgebra as na;
+use nalgebra as na;
 
-use kiss3d::event::{Action, Key, WindowEvent};
 use k::prelude::*;
-use k::{JacobianIKSolver, JointBuilder, JointType};
+use k::{connect, JacobianIKSolver, JointBuilder, JointType};
 use kiss3d::camera::ArcBall;
+use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
