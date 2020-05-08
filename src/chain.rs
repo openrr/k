@@ -84,8 +84,8 @@ use super::node::*;
 /// ```
 #[derive(Debug)]
 pub struct Chain<T: RealField> {
-    contained_joints: Vec<Node<T>>,
-    movable_joints: Vec<Node<T>>,
+    nodes: Vec<Node<T>>,
+    movable_nodes: Vec<Node<T>>,
     dof: usize,
 }
 
@@ -96,7 +96,7 @@ impl<T: RealField> Chain<T> {
         level: usize,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        if self.contained_joints.iter().any(|joint| joint == node) {
+        if self.nodes.iter().any(|joint| joint == node) {
             writeln!(f, "{}{}", "    ".repeat(level), node)?;
         }
         for c in node.children().iter() {
@@ -127,16 +127,16 @@ impl<T: RealField> Chain<T> {
     /// ```
     #[allow(clippy::needless_pass_by_value)]
     pub fn from_root(root_joint: Node<T>) -> Self {
-        let contained_joints = root_joint.iter_descendants().collect::<Vec<_>>();
-        let movable_joints = contained_joints
+        let nodes = root_joint.iter_descendants().collect::<Vec<_>>();
+        let movable_nodes = nodes
             .iter()
             .filter(|joint| joint.joint().is_movable())
             .cloned()
             .collect::<Vec<_>>();
         Chain {
-            dof: movable_joints.len(),
-            contained_joints,
-            movable_joints,
+            dof: movable_nodes.len(),
+            nodes,
+            movable_nodes,
         }
     }
     /// Create `Chain` from end joint. It has any branches.
@@ -160,17 +160,17 @@ impl<T: RealField> Chain<T> {
     /// let tree = create_tree_from_end(); // no problem
     /// ```
     pub fn from_end(end_joint: &Node<T>) -> Chain<T> {
-        let mut contained_joints = end_joint.iter_ancestors().collect::<Vec<_>>();
-        contained_joints.reverse();
-        let movable_joints = contained_joints
+        let mut nodes = end_joint.iter_ancestors().collect::<Vec<_>>();
+        nodes.reverse();
+        let movable_nodes = nodes
             .iter()
             .filter(|joint| joint.joint().is_movable())
             .cloned()
             .collect::<Vec<_>>();
         Chain {
-            dof: movable_joints.len(),
-            movable_joints,
-            contained_joints,
+            dof: movable_nodes.len(),
+            movable_nodes,
+            nodes,
         }
     }
     /// Iterate for all joint nodes
@@ -192,7 +192,7 @@ impl<T: RealField> Chain<T> {
     /// assert_eq!(names[1], "fixed1");
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = &Node<T>> {
-        self.contained_joints.iter()
+        self.nodes.iter()
     }
 
     /// Iterate for movable joints
@@ -200,12 +200,12 @@ impl<T: RealField> Chain<T> {
     /// Fixed joints are ignored. If you want to manipulate on Fixed,
     /// use `iter()` instead of `iter_joints()`
     pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
-        self.movable_joints.iter().map(|node| node.joint())
+        self.movable_nodes.iter().map(|node| node.joint())
     }
 
     /// Iterate for links
     pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
-        self.contained_joints.iter().filter_map(|node| {
+        self.nodes.iter().filter_map(|node| {
             if node.0.borrow().link.is_some() {
                 Some(LinkRefGuard {
                     guard: node.0.borrow(),
@@ -283,7 +283,7 @@ impl<T: RealField> Chain<T> {
                 required: self.dof,
             });
         }
-        for (joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
+        for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
             joint.set_joint_position(*position)?;
         }
         Ok(())
@@ -292,7 +292,7 @@ impl<T: RealField> Chain<T> {
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
-        for (joint, position) in self.movable_joints.iter().zip(positions_vec.iter()) {
+        for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
             joint.set_joint_position_unchecked(*position);
         }
     }
