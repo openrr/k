@@ -16,7 +16,7 @@
 use nalgebra as na;
 
 use k::prelude::*;
-use k::{connect, JacobianIKSolver, NodeBuilder, JointType};
+use k::{connect, JacobianIKSolver, JointType, NodeBuilder};
 use kiss3d::camera::ArcBall;
 use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;

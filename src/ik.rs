@@ -107,7 +107,7 @@ where
     T: RealField,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError<T>> {
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
     /// Move the end transform of the `arm` to `target_pose` with constraints
@@ -116,7 +116,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError>;
+    ) -> Result<(), IKError<T>>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
@@ -195,7 +195,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints_array: [bool; 6],
-    ) -> Result<DVector<T>, IKError> {
+    ) -> Result<DVector<T>, IKError<T>> {
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
         let t_n = arm.end_transform();
@@ -254,17 +254,14 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError> {
+    ) -> Result<(), IKError<T>> {
         let constraints_array = constraints_to_bool_array(*constraints);
         let orig_positions = arm.joint_positions();
         let use_dof = constraints_array.iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
             return Err(IKError::PreconditionError {
-                error: format!(
-                    "Input Dof={}, must be greater than {}",
-                    orig_positions.len(),
-                    use_dof
-                ),
+                dof: orig_positions.len(),
+                necessary_dof: use_dof,
             });
         }
         let mut last_target_distance = None;
@@ -283,12 +280,9 @@ where
         }
         arm.set_joint_positions(&orig_positions)?;
         Err(IKError::NotConvergedError {
-            error: format!(
-                "iteration has not converged: tried {} timed, diff = {}, {}",
-                self.num_max_try,
-                last_target_distance.unwrap().0,
-                last_target_distance.unwrap().1,
-            ),
+            num_tried: self.num_max_try,
+            position_diff: na::convert(last_target_distance.unwrap().0),
+            rotation_diff: na::convert(last_target_distance.unwrap().1),
         })
     }
 }
@@ -355,7 +349,7 @@ where
     /// solver.solve(&arm, &target).unwrap();
     /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
-    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError> {
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError<T>> {
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
 
@@ -394,7 +388,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError> {
+    ) -> Result<(), IKError<T>> {
         let orig_positions = arm.joint_positions();
         let re = self.solve_with_constraints_internal(arm, target_pose, constraints);
         if re.is_err() {

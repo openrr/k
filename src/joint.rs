@@ -287,21 +287,18 @@ where
     /// assert_eq!(rot.joint_position().unwrap(), 0.2);
     /// ```
     ///
-    pub fn set_joint_position(&mut self, position: T) -> Result<(), JointError> {
+    pub fn set_joint_position(&mut self, position: T) -> Result<(), JointError<T>> {
         if let JointType::Fixed = self.joint_type {
-            return Err(JointError::OutOfLimitError {
+            return Err(JointError::SetToFixedJointError {
                 joint_name: self.name.to_string(),
-                message: "Joint is Fixed".to_owned(),
             });
         }
         if let Some(ref range) = self.limits {
             if !range.is_valid(position) {
                 return Err(JointError::OutOfLimitError {
                     joint_name: self.name.to_string(),
-                    message: format!(
-                        "Joint is out of range: input={}, range={:?}",
-                        position, range
-                    ),
+                    position: na::convert(position),
+                    limit: range.clone(),
                 });
             }
         }
@@ -337,11 +334,10 @@ where
         self.world_transform_cache.replace(None);
     }
 
-    pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), JointError> {
+    pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), JointError<T>> {
         if let JointType::Fixed = self.joint_type {
-            return Err(JointError::OutOfLimitError {
+            return Err(JointError::SetToFixedJointError {
                 joint_name: self.name.to_string(),
-                message: "Joint is Fixed".to_owned(),
             });
         }
         self.velocity = velocity;

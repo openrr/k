@@ -199,7 +199,7 @@ where
     /// assert_eq!(j0.joint_position().unwrap(), 1.0);
     /// assert_eq!(j1.joint_position().unwrap(), 1.6);
     /// ```
-    pub fn set_joint_position(&self, position: T) -> Result<(), JointError> {
+    pub fn set_joint_position(&self, position: T) -> Result<(), JointError<T>> {
         let mut node = self.0.borrow_mut();
         if node.mimic_parent.is_some() {
             return Ok(());
@@ -218,12 +218,6 @@ where
                     return Err(JointError::MimicError {
                         from: from.clone(),
                         to: to.clone(),
-                        message: format!(
-                        "set_joint_position for {} -> {} failed. Mimic instance not found. child = {:?}",
-                        from,
-                        to,
-                        child
-                    ),
                     });
                 }
             };

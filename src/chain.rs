@@ -276,7 +276,7 @@ impl<T: RealField> Chain<T> {
     /// Set the positions of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), JointError> {
+    pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), JointError<T>> {
         if positions_vec.len() != self.dof {
             return Err(JointError::SizeMismatchError {
                 input: positions_vec.len(),

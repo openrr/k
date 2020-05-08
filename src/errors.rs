@@ -13,18 +13,29 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+use nalgebra as na;
 use thiserror::Error;
 
 /// The reason of joint error
 #[derive(Debug, Clone, Error)]
-pub enum JointError {
+pub enum JointError<T>
+where
+    T: na::RealField,
+{
     /// Failed to set joint angle because the input is out of range or it is fixed joint
-    #[error("joint: {} is out of limit: {}", joint_name, message)]
+    #[error("joint: {} is out of limit: {}", joint_name, position)]
     OutOfLimitError {
         /// name of the joint
         joint_name: String,
-        /// detail error message
-        message: String,
+        /// target position
+        position: T,
+        /// limit
+        limit: super::joint::Range<T>,
+    },
+    #[error("joint {} is fixed joint but the position is set", joint_name)]
+    SetToFixedJointError {
+        /// name of the joint
+        joint_name: String,
     },
     /// Gave invalid size of vec as input
     #[error("size mismatch input = {}, required = {}", input, required)]
@@ -41,30 +52,43 @@ pub enum JointError {
         from: String,
         /// tried to copy to `to`
         to: String,
-        /// detail error message
-        message: String,
     },
-    #[error("invalid arguments {:?}", error)]
-    InvalidArgumentsError { error: String },
 }
 
 /// The reason of the fail of inverse kinematics
 #[derive(Debug, Error)]
-pub enum IKError {
-    #[error("ik solve not converged {:?}", error)]
-    NotConvergedError { error: String },
+pub enum IKError<T>
+where
+    T: na::RealField,
+{
+    #[error(
+        "ik solve not converged tried {} times, position diff = {}, rotation diff = {}",
+        num_tried,
+        position_diff,
+        rotation_diff
+    )]
+    NotConvergedError {
+        num_tried: usize,
+        position_diff: na::Vector3<T>,
+        rotation_diff: na::Vector3<T>,
+    },
     #[error("inverse matrix error")]
     InverseMatrixError,
-    #[error("ik precondition error {:?}", error)]
-    PreconditionError { error: String },
-    #[error("joint error: {:?}", error)]
-    JointOutOfLimitError { error: JointError },
-    #[error("invalid arguments {:?}", error)]
-    InvalidArgumentsError { error: String },
+    #[error(
+        "ik precondition error: input Dof={}, must be greater than {}",
+        dof,
+        necessary_dof
+    )]
+    PreconditionError { dof: usize, necessary_dof: usize },
+    #[error("joint error: {:?}", joint_error)]
+    JointOutOfLimitError { joint_error: JointError<T> },
 }
 
-impl From<JointError> for IKError {
-    fn from(error: JointError) -> IKError {
-        IKError::JointOutOfLimitError { error }
+impl<T> From<JointError<T>> for IKError<T>
+where
+    T: na::RealField,
+{
+    fn from(joint_error: JointError<T>) -> IKError<T> {
+        IKError::JointOutOfLimitError { joint_error }
     }
 }

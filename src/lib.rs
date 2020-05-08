@@ -41,7 +41,7 @@ pub use self::funcs::*;
 pub use self::ik::*;
 pub use self::joint::{Joint, JointType};
 pub use self::link::Link;
-pub use self::node::{NodeBuilder, Node};
+pub use self::node::{Node, NodeBuilder};
 
 // re-export from nalgebra
 // include Real for backwards compatibility purposes
