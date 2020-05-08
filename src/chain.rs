@@ -31,17 +31,17 @@ use super::node::*;
 /// use k::*;
 /// use k::prelude::*;
 ///
-/// let l0 = JointBuilder::new()
+/// let l0 = NodeBuilder::new()
 ///     .name("joint_pitch0")
 ///     .translation(Translation3::new(0.0, 0.0, 0.1))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .into_node();
-/// let l1 = JointBuilder::new()
+/// let l1 = NodeBuilder::new()
 ///     .name("joint_pitch1")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
 ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
 ///     .into_node();
-/// let l2 = JointBuilder::new()
+/// let l2 = NodeBuilder::new()
 ///     .name("hand")
 ///     .translation(Translation3::new(0.0, 0.0, 0.5))
 ///     .joint_type(JointType::Fixed)
@@ -120,8 +120,8 @@ impl<T: RealField> Chain<T> {
     /// ```
     /// use k;
     ///
-    /// let l0 = k::JointBuilder::new().into_node();
-    /// let l1 = k::JointBuilder::new().into_node();
+    /// let l0 = k::NodeBuilder::new().into_node();
+    /// let l1 = k::NodeBuilder::new().into_node();
     /// l1.set_parent(&l0);
     /// let tree = k::Chain::<f32>::from_root(l0);
     /// ```
@@ -221,11 +221,11 @@ impl<T: RealField> Chain<T> {
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointBuilder::new()
+    /// let l0 = NodeBuilder::new()
     ///     .joint_type(JointType::Fixed)
     ///     .finalize()
     ///     .into();
-    /// let l1 : Node<f64> = JointBuilder::new()
+    /// let l1 : Node<f64> = NodeBuilder::new()
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .finalize()
     ///     .into();
@@ -243,10 +243,10 @@ impl<T: RealField> Chain<T> {
     /// ```
     /// use k::*;
     ///
-    /// let l0 = Node::new(JointBuilder::new()
+    /// let l0 = Node::new(NodeBuilder::new()
     ///     .name("fixed")
     ///     .finalize());
-    /// let l1 = Node::new(JointBuilder::new()
+    /// let l1 = Node::new(NodeBuilder::new()
     ///     .name("pitch1")
     ///     .translation(Translation3::new(0.0, 0.1, 0.0))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
@@ -405,15 +405,15 @@ where
     /// # Examples
     ///
     /// ```
-    /// let node = k::JointBuilder::<f32>::new().into_node();
+    /// let node = k::NodeBuilder::<f32>::new().into_node();
     /// let chain = k::Chain::from_root(node);
     /// assert!(k::SerialChain::try_new(chain).is_some());
     /// ```
     ///
     /// ```
-    /// let node0 = k::JointBuilder::<f32>::new().into_node();
-    /// let node1 = k::JointBuilder::new().into_node();
-    /// let node2 = k::JointBuilder::new().into_node();
+    /// let node0 = k::NodeBuilder::<f32>::new().into_node();
+    /// let node1 = k::NodeBuilder::new().into_node();
+    /// let node2 = k::NodeBuilder::new().into_node();
     /// node1.set_parent(&node0);
     /// node2.set_parent(&node0);
     /// let chain = k::Chain::from_root(node0);
@@ -435,7 +435,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// let node = k::JointBuilder::<f32>::new().into_node();
+    /// let node = k::NodeBuilder::<f32>::new().into_node();
     /// let s_chain = k::SerialChain::from_end(&node);
     /// ```
     pub fn from_end(end_joint: &Node<T>) -> SerialChain<T> {
@@ -480,42 +480,42 @@ fn it_works() {
     use super::node::*;
     use na;
 
-    let joint0 = JointBuilder::new()
+    let joint0 = NodeBuilder::new()
         .name("j0")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint1 = JointBuilder::new()
+    let joint1 = NodeBuilder::new()
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .name("j1")
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint2 = JointBuilder::new()
+    let joint2 = NodeBuilder::new()
         .name("j2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint3 = JointBuilder::new()
+    let joint3 = NodeBuilder::new()
         .name("j3")
         .translation(na::Translation3::new(0.0, 0.1, 0.2))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint4 = JointBuilder::new()
+    let joint4 = NodeBuilder::new()
         .name("j4")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint5 = JointBuilder::new()
+    let joint5 = NodeBuilder::new()
         .name("j5")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
@@ -581,21 +581,21 @@ fn test_mimic() {
     use super::node::*;
     use na;
 
-    let joint0 = JointBuilder::new()
+    let joint0 = NodeBuilder::new()
         .name("j0")
         .translation(na::Translation3::new(0.0, 0.1, 0.0))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint1 = JointBuilder::new()
+    let joint1 = NodeBuilder::new()
         .name("joint1")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {
             axis: na::Vector3::y_axis(),
         })
         .into_node();
-    let joint2 = JointBuilder::new()
+    let joint2 = NodeBuilder::new()
         .name("joint2")
         .translation(na::Translation3::new(0.0, 0.1, 0.1))
         .joint_type(JointType::Rotational {

@@ -42,10 +42,10 @@ where
 /// use k::*;
 /// use k::link::*;
 ///
-/// let j0 = JointBuilder::new()
+/// let j0 = NodeBuilder::new()
 ///     .translation(Translation3::new(0.0, 1.0, 0.0))
 ///     .into_node();
-/// let j1 = JointBuilder::new()
+/// let j1 = NodeBuilder::new()
 ///     .translation(Translation3::new(0.0, 0.0, 1.0))
 ///     .into_node();
 /// j0.set_link(Some(LinkBuilder::new().inertial(Inertial::from_mass(1.0)).finalize()));
@@ -80,10 +80,10 @@ fn test_update_center_of_mass() {
     use super::link::*;
     use super::node::*;
     use na::*;
-    let j0 = JointBuilder::new()
+    let j0 = NodeBuilder::new()
         .translation(Translation3::new(0.0, 1.0, 0.0))
         .into_node();
-    let j1 = JointBuilder::new()
+    let j1 = NodeBuilder::new()
         .translation(Translation3::new(0.0, 0.0, 1.0))
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),

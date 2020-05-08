@@ -16,7 +16,7 @@
 use nalgebra as na;
 
 use k::prelude::*;
-use k::{connect, JacobianIKSolver, JointBuilder, JointType};
+use k::{connect, JacobianIKSolver, NodeBuilder, JointType};
 use kiss3d::camera::ArcBall;
 use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;
@@ -25,13 +25,13 @@ use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
 
 fn create_joint_with_link_array() -> k::Node<f32> {
-    let fixed: k::Node<f32> = JointBuilder::new()
+    let fixed: k::Node<f32> = NodeBuilder::new()
         .name("fixed")
         .joint_type(JointType::Fixed)
         .translation(Translation3::new(0.0, 0.0, 0.6))
         .finalize()
         .into();
-    let l0: k::Node<f32> = JointBuilder::new()
+    let l0: k::Node<f32> = NodeBuilder::new()
         .name("shoulder_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
@@ -39,7 +39,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l1: k::Node<f32> = JointBuilder::new()
+    let l1: k::Node<f32> = NodeBuilder::new()
         .name("shoulder_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),
@@ -47,7 +47,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.1, 0.0))
         .finalize()
         .into();
-    let l2: k::Node<f32> = JointBuilder::new()
+    let l2: k::Node<f32> = NodeBuilder::new()
         .name("shoulder_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
@@ -55,7 +55,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.30))
         .finalize()
         .into();
-    let l3: k::Node<f32> = JointBuilder::new()
+    let l3: k::Node<f32> = NodeBuilder::new()
         .name("elbow_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
@@ -63,7 +63,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l4: k::Node<f32> = JointBuilder::new()
+    let l4: k::Node<f32> = NodeBuilder::new()
         .name("wrist_yaw")
         .joint_type(JointType::Rotational {
             axis: Vector3::z_axis(),
@@ -71,7 +71,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l5: k::Node<f32> = JointBuilder::new()
+    let l5: k::Node<f32> = NodeBuilder::new()
         .name("wrist_pitch")
         .joint_type(JointType::Rotational {
             axis: Vector3::y_axis(),
@@ -79,7 +79,7 @@ fn create_joint_with_link_array() -> k::Node<f32> {
         .translation(Translation3::new(0.0, 0.0, -0.15))
         .finalize()
         .into();
-    let l6: k::Node<f32> = JointBuilder::new()
+    let l6: k::Node<f32> = NodeBuilder::new()
         .name("wrist_roll")
         .joint_type(JointType::Rotational {
             axis: Vector3::x_axis(),

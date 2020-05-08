@@ -2,7 +2,7 @@ use nalgebra as na;
 
 fn main() {
     let l0 = k::Node::new(
-        k::JointBuilder::new()
+        k::NodeBuilder::new()
             .name("link_pitch0")
             .translation(na::Translation3::new(0.0, 0.0, 0.1))
             .joint_type(k::JointType::Rotational {
@@ -11,7 +11,7 @@ fn main() {
             .finalize(),
     );
     let l1 = k::Node::new(
-        k::JointBuilder::new()
+        k::NodeBuilder::new()
             .name("link_pitch1")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))
             .joint_type(k::JointType::Rotational {
@@ -21,7 +21,7 @@ fn main() {
     );
 
     let l2 = k::Node::new(
-        k::JointBuilder::new()
+        k::NodeBuilder::new()
             .name("link_fixed")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))
             .joint_type(k::JointType::Fixed)
@@ -29,7 +29,7 @@ fn main() {
     );
 
     let l3 = k::Node::new(
-        k::JointBuilder::new()
+        k::NodeBuilder::new()
             .name("link_pitch2")
             .translation(na::Translation3::new(0.0, 0.0, 0.5))
             .joint_type(k::JointType::Rotational {

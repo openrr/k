@@ -229,7 +229,7 @@ where
                 na::convert(joint.limit.upper),
             ))
         };
-        JointBuilder::<T>::new()
+        NodeBuilder::<T>::new()
             .name(&joint.name)
             .joint_type(match joint.joint_type {
                 urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
@@ -258,7 +258,7 @@ where
         let mut child_link_name_to_node = HashMap::new();
         let mut joint_name_to_node = HashMap::new();
         let mut parent_link_name_to_node = HashMap::<&String, Vec<Node<T>>>::new();
-        let root_node = JointBuilder::<T>::new().name(ROOT_JOINT_NAME).into_node();
+        let root_node = NodeBuilder::<T>::new().name(ROOT_JOINT_NAME).into_node();
         for j in &robot.joints {
             let node = Node::<T>::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());

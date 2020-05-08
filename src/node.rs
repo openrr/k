@@ -125,8 +125,8 @@ where
     /// ```
     /// use k::*;
     ///
-    /// let l0 = k::JointBuilder::<f32>::new().into_node();
-    /// let l1 = k::JointBuilder::new().into_node();
+    /// let l0 = k::NodeBuilder::<f32>::new().into_node();
+    /// let l1 = k::NodeBuilder::new().into_node();
     /// l1.set_parent(&l0);
     /// assert!(l0.is_root());
     /// assert!(!l1.is_root());
@@ -138,8 +138,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// let l0 = k::JointBuilder::<f64>::new().into_node();
-    /// let l1 = k::JointBuilder::new().into_node();
+    /// let l0 = k::NodeBuilder::<f64>::new().into_node();
+    /// let l1 = k::NodeBuilder::new().into_node();
     /// l1.set_parent(&l0);
     /// assert!(!l0.is_end());
     /// assert!(l1.is_end());
@@ -162,7 +162,7 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointBuilder::new()
+    /// let l0 = NodeBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
@@ -174,7 +174,7 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let l0 = JointBuilder::new()
+    /// let l0 = NodeBuilder::new()
     ///     .joint_type(JointType::Fixed)
     ///     .into_node();
     /// assert!(l0.set_joint_position(0.0).is_err());
@@ -184,11 +184,11 @@ where
     ///
     /// ```
     /// use k::*;
-    /// let j0 = JointBuilder::new()
+    /// let j0 = NodeBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
-    /// let j1 = JointBuilder::new()
+    /// let j1 = NodeBuilder::new()
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .limits(Some((0.0..=2.0).into()))
     ///     .into_node();
@@ -262,11 +262,11 @@ where
     /// use k::*;
     /// use k::prelude::*;
     ///
-    /// let l0 = JointBuilder::new()
+    /// let l0 = NodeBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 0.2))
     ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
     ///     .into_node();
-    /// let l1 = JointBuilder::new()
+    /// let l1 = NodeBuilder::new()
     ///     .translation(Translation3::new(0.0, 0.0, 1.0))
     ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
     ///     .into_node();
@@ -464,7 +464,7 @@ where
 ///
 /// ```
 /// use k::*;
-/// let l0 = JointBuilder::new()
+/// let l0 = NodeBuilder::new()
 ///     .name("link_pitch")
 ///     .translation(Translation3::new(0.0, 0.1, 0.0))
 ///     .joint_type( JointType::Rotational{axis: Vector3::y_axis()})
@@ -472,14 +472,14 @@ where
 /// println!("{:?}", l0);
 /// ```
 #[derive(Debug, Clone)]
-pub struct JointBuilder<T: RealField> {
+pub struct NodeBuilder<T: RealField> {
     name: String,
     joint_type: JointType<T>,
     limits: Option<Range<T>>,
     origin: Isometry3<T>,
 }
 
-impl<T> Default for JointBuilder<T>
+impl<T> Default for NodeBuilder<T>
 where
     T: RealField,
 {
@@ -488,12 +488,12 @@ where
     }
 }
 
-impl<T> JointBuilder<T>
+impl<T> NodeBuilder<T>
 where
     T: RealField,
 {
-    pub fn new() -> JointBuilder<T> {
-        JointBuilder {
+    pub fn new() -> NodeBuilder<T> {
+        NodeBuilder {
             name: "".to_string(),
             joint_type: JointType::Fixed,
             limits: None,
@@ -501,32 +501,32 @@ where
         }
     }
     /// Set the name of the `Link`
-    pub fn name(mut self, name: &str) -> JointBuilder<T> {
+    pub fn name(mut self, name: &str) -> NodeBuilder<T> {
         self.name = name.to_string();
         self
     }
     /// Set the joint which is connected to this link
-    pub fn joint_type(mut self, joint_type: JointType<T>) -> JointBuilder<T> {
+    pub fn joint_type(mut self, joint_type: JointType<T>) -> NodeBuilder<T> {
         self.joint_type = joint_type;
         self
     }
     /// Set joint limits
-    pub fn limits(mut self, limits: Option<Range<T>>) -> JointBuilder<T> {
+    pub fn limits(mut self, limits: Option<Range<T>>) -> NodeBuilder<T> {
         self.limits = limits;
         self
     }
     /// Set the origin transform of this joint
-    pub fn origin(mut self, origin: Isometry3<T>) -> JointBuilder<T> {
+    pub fn origin(mut self, origin: Isometry3<T>) -> NodeBuilder<T> {
         self.origin = origin;
         self
     }
     /// Set the translation of the origin transform of this joint
-    pub fn translation(mut self, translation: Translation3<T>) -> JointBuilder<T> {
+    pub fn translation(mut self, translation: Translation3<T>) -> NodeBuilder<T> {
         self.origin.translation = translation;
         self
     }
     /// Set the rotation of the origin transform of this joint
-    pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> JointBuilder<T> {
+    pub fn rotation(mut self, rotation: UnitQuaternion<T>) -> NodeBuilder<T> {
         self.origin.rotation = rotation;
         self
     }
@@ -548,9 +548,9 @@ where
 /// ```
 /// #[macro_use] extern crate k;
 /// # fn main() {
-/// let l0 = k::JointBuilder::<f64>::new().into_node();
-/// let l1 = k::JointBuilder::new().into_node();
-/// let l2 = k::JointBuilder::new().into_node();
+/// let l0 = k::NodeBuilder::<f64>::new().into_node();
+/// let l1 = k::NodeBuilder::new().into_node();
+/// let l2 = k::NodeBuilder::new().into_node();
 ///
 /// // This is the same as below
 /// // l1.set_parent(&l0);
