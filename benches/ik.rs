@@ -1,6 +1,7 @@
 // rustup run nightly cargo bench
 #![feature(test)]
 
+extern crate test;
 use k::prelude::*;
 
 fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher) {

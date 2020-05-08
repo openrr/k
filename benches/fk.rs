@@ -1,6 +1,7 @@
 // rustup run nightly cargo bench
 #![feature(test)]
 
+extern crate test;
 use na::RealField;
 use nalgebra as na;
 use std::f64::consts::PI;
@@ -29,6 +30,11 @@ test bench_rctree            ... bench:       3,107 ns/iter (+/- 2,837)
 test bench_rctree_set_joints ... bench:         296 ns/iter (+/- 30)
 test bench_rctree_ik ... bench:      10,622 ns/iter (+/- 1,203)
 ```
+
+## v0.17.0 on MacBook Pro (Retina, 13-inch, Early 2015, 2.9GHz - 16GB)
+test bench_rctree            ... bench:       1,855 ns/iter (+/- 165)
+test bench_rctree_set_joints ... bench:         186 ns/iter (+/- 6)
+test bench_rctree_ik ... bench:       8,640 ns/iter (+/- 364)
 */
 
 fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
