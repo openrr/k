@@ -268,7 +268,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             .map(|joint| {
                 joint
                     .joint_position()
-                    .expect("movable joint must has position")
+                    .expect("Must be a bug: movable joint must have position")
             })
             .collect()
     }
