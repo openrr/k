@@ -17,6 +17,7 @@
 use super::errors::*;
 use na::{Isometry3, RealField, Translation3, Unit, UnitQuaternion, Vector3};
 use nalgebra as na;
+use simba::scalar::SubsetOf;
 use std::cell::RefCell;
 use std::fmt::{self, Display};
 
@@ -230,7 +231,7 @@ pub struct Joint<T: RealField> {
 
 impl<T> Joint<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     /// Create new Joint with name and type
     ///
@@ -287,18 +288,19 @@ where
     /// assert_eq!(rot.joint_position().unwrap(), 0.2);
     /// ```
     ///
-    pub fn set_joint_position(&mut self, position: T) -> Result<(), JointError<T>> {
+    pub fn set_joint_position(&mut self, position: T) -> Result<(), Error> {
         if let JointType::Fixed = self.joint_type {
-            return Err(JointError::SetToFixedJointError {
+            return Err(Error::SetToFixedError {
                 joint_name: self.name.to_string(),
             });
         }
         if let Some(ref range) = self.limits {
             if !range.is_valid(position) {
-                return Err(JointError::OutOfLimitError {
+                return Err(Error::OutOfLimitError {
                     joint_name: self.name.to_string(),
                     position: na::convert(position),
-                    limit: range.clone(),
+                    max_limit: na::convert(range.max),
+                    min_limit: na::convert(range.min),
                 });
             }
         }
@@ -334,9 +336,9 @@ where
         self.world_transform_cache.replace(None);
     }
 
-    pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), JointError<T>> {
+    pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), Error> {
         if let JointType::Fixed = self.joint_type {
-            return Err(JointError::SetToFixedJointError {
+            return Err(Error::SetToFixedError {
                 joint_name: self.name.to_string(),
             });
         }

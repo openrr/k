@@ -16,6 +16,7 @@
 //! graph structure for kinematic chain
 use na::{Isometry3, RealField, Translation3, UnitQuaternion};
 use nalgebra as na;
+use simba::scalar::SubsetOf;
 use std::cell::{Ref, RefCell};
 use std::fmt::{self, Display};
 use std::ops::Deref;
@@ -51,7 +52,7 @@ pub struct Node<T: RealField>(pub(crate) Rc<RefCell<NodeImpl<T>>>);
 
 impl<T> Node<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     pub(crate) fn from_rc(rc: Rc<RefCell<NodeImpl<T>>>) -> Self {
         Node(rc)
@@ -199,7 +200,7 @@ where
     /// assert_eq!(j0.joint_position().unwrap(), 1.0);
     /// assert_eq!(j1.joint_position().unwrap(), 1.6);
     /// ```
-    pub fn set_joint_position(&self, position: T) -> Result<(), JointError<T>> {
+    pub fn set_joint_position(&self, position: T) -> Result<(), Error> {
         let mut node = self.0.borrow_mut();
         if node.mimic_parent.is_some() {
             return Ok(());
@@ -215,7 +216,7 @@ where
                 None => {
                     let from = self.joint().name.to_owned();
                     let to = child.joint().name.to_owned();
-                    return Err(JointError::MimicError {
+                    return Err(Error::MimicError {
                         from: from.clone(),
                         to: to.clone(),
                     });
@@ -333,7 +334,7 @@ impl<T: RealField> Display for Node<T> {
 
 impl<T> From<Joint<T>> for Node<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn from(joint: Joint<T>) -> Self {
         Self::new(joint)
@@ -475,7 +476,7 @@ pub struct NodeBuilder<T: RealField> {
 
 impl<T> Default for NodeBuilder<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn default() -> Self {
         Self::new()
@@ -484,7 +485,7 @@ where
 
 impl<T> NodeBuilder<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     pub fn new() -> NodeBuilder<T> {
         NodeBuilder {

@@ -18,22 +18,27 @@ use thiserror::Error;
 
 /// The reason of joint error
 #[derive(Debug, Clone, Error)]
-pub enum JointError<T>
-where
-    T: na::RealField,
-{
+pub enum Error {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
-    #[error("joint: {} is out of limit: {}", joint_name, position)]
+    #[error(
+        "joint: {} is out of limit: {}, limit = {} <=> {}",
+        joint_name,
+        position,
+        max_limit,
+        min_limit
+    )]
     OutOfLimitError {
         /// name of the joint
         joint_name: String,
         /// target position
-        position: T,
-        /// limit
-        limit: super::joint::Range<T>,
+        position: f64,
+        /// max limit
+        max_limit: f64,
+        /// min limit
+        min_limit: f64,
     },
     #[error("joint {} is fixed joint but the position is set", joint_name)]
-    SetToFixedJointError {
+    SetToFixedError {
         /// name of the joint
         joint_name: String,
     },
@@ -53,14 +58,6 @@ where
         /// tried to copy to `to`
         to: String,
     },
-}
-
-/// The reason of the fail of inverse kinematics
-#[derive(Debug, Error)]
-pub enum IKError<T>
-where
-    T: na::RealField,
-{
     #[error(
         "ik solve not converged tried {} times, position diff = {}, rotation diff = {}",
         num_tried,
@@ -69,8 +66,8 @@ where
     )]
     NotConvergedError {
         num_tried: usize,
-        position_diff: na::Vector3<T>,
-        rotation_diff: na::Vector3<T>,
+        position_diff: na::Vector3<f64>,
+        rotation_diff: na::Vector3<f64>,
     },
     #[error("inverse matrix error")]
     InverseMatrixError,
@@ -80,15 +77,4 @@ where
         necessary_dof
     )]
     PreconditionError { dof: usize, necessary_dof: usize },
-    #[error("joint error: {:?}", joint_error)]
-    JointOutOfLimitError { joint_error: JointError<T> },
-}
-
-impl<T> From<JointError<T>> for IKError<T>
-where
-    T: na::RealField,
-{
-    fn from(joint_error: JointError<T>) -> IKError<T> {
-        IKError::JointOutOfLimitError { joint_error }
-    }
 }

@@ -2,11 +2,12 @@ use super::chain::*;
 use super::joint::*;
 use na::{DMatrix, RealField, Vector3};
 use nalgebra as na;
+use simba::scalar::SubsetOf;
 
 /// Calculate Jacobian of the serial chain (manipulator).
 pub fn jacobian<T>(arm: &SerialChain<T>) -> DMatrix<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     let dof = arm.dof();
     let t_n = arm.end_transform();
@@ -56,7 +57,7 @@ where
 /// ```
 pub fn center_of_mass<T>(chain: &Chain<T>) -> Vector3<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     let mut total_mass = T::zero();
     let mut com = Vector3::zeros();

@@ -13,14 +13,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use na::{Isometry3, RealField};
-use nalgebra as na;
-use std::fmt::{self, Display};
-use std::ops::Deref;
-
 use super::errors::*;
 use super::joint::*;
 use super::node::*;
+use na::{Isometry3, RealField};
+use nalgebra as na;
+use simba::scalar::SubsetOf;
+use std::fmt::{self, Display};
+use std::ops::Deref;
 
 /// Kinematic Chain using `Node`
 ///
@@ -89,7 +89,7 @@ pub struct Chain<T: RealField> {
     dof: usize,
 }
 
-impl<T: RealField> Chain<T> {
+impl<T: RealField + SubsetOf<f64>> Chain<T> {
     fn fmt_with_indent_level(
         &self,
         node: &Node<T>,
@@ -106,13 +106,13 @@ impl<T: RealField> Chain<T> {
     }
 }
 
-impl<T: RealField> Display for Chain<T> {
+impl<T: RealField + SubsetOf<f64>> Display for Chain<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
     }
 }
 
-impl<T: RealField> Chain<T> {
+impl<T: RealField + SubsetOf<f64>> Chain<T> {
     /// Create Chain from root joint
     ///
     /// # Examples
@@ -276,9 +276,9 @@ impl<T: RealField> Chain<T> {
     /// Set the positions of the joints
     ///
     /// `FixedJoints` are ignored. the input number must be equal with `dof()`
-    pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), JointError<T>> {
+    pub fn set_joint_positions(&self, positions_vec: &[T]) -> Result<(), Error> {
         if positions_vec.len() != self.dof {
-            return Err(JointError::SizeMismatchError {
+            return Err(Error::SizeMismatchError {
                 input: positions_vec.len(),
                 required: self.dof,
             });
@@ -389,7 +389,7 @@ pub struct SerialChain<T: RealField> {
 
 impl<T> SerialChain<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     /// Convert Chain into SerialChain without any check
     ///
@@ -457,7 +457,7 @@ where
 
 impl<T> Display for SerialChain<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.inner.fmt(f)

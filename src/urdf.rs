@@ -23,6 +23,7 @@ use super::node::*;
 use log::*;
 use na::{Isometry3, Matrix3, RealField};
 use nalgebra as na;
+use simba::scalar::SubsetOf;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -218,7 +219,7 @@ where
 
 impl<'a, T> From<&'a urdf_rs::Joint> for Joint<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn from(joint: &urdf_rs::Joint) -> Joint<T> {
         let limit = if (joint.limit.upper - joint.limit.lower) == 0.0 {
@@ -251,7 +252,7 @@ where
 
 impl<'a, T> From<&'a urdf_rs::Robot> for Chain<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn from(robot: &urdf_rs::Robot) -> Self {
         let mut ref_nodes = Vec::new();
@@ -313,7 +314,7 @@ where
 
 impl<T> From<urdf_rs::Robot> for Chain<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn from(robot: urdf_rs::Robot) -> Self {
         Self::from(&robot)
@@ -322,7 +323,7 @@ where
 
 impl<T> Chain<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     pub fn from_urdf_file<P>(path: P) -> Result<Self, urdf_rs::UrdfError>
     where

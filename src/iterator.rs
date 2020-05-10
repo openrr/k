@@ -16,6 +16,7 @@
 //! Iterators to iterate descendants and ancestors
 use super::node::*;
 use nalgebra::RealField;
+use simba::scalar::SubsetOf;
 
 #[derive(Debug)]
 /// Iterator for parents
@@ -37,7 +38,7 @@ where
 
 impl<T> Iterator for Ancestors<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     type Item = Node<T>;
     #[allow(clippy::question_mark)]
@@ -71,7 +72,7 @@ where
 
 impl<T> Iterator for Descendants<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     type Item = Node<T>;
 

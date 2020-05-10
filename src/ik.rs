@@ -15,6 +15,7 @@
 */
 use na::{DVector, Isometry3, RealField, Vector3, Vector6};
 use nalgebra as na;
+use simba::scalar::SubsetOf;
 
 use super::chain::*;
 use super::errors::*;
@@ -107,7 +108,7 @@ where
     T: RealField,
 {
     /// Move the end transform of the `arm` to `target_pose`
-    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError<T>> {
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), Error> {
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
     /// Move the end transform of the `arm` to `target_pose` with constraints
@@ -116,7 +117,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError<T>>;
+    ) -> Result<(), Error>;
 }
 
 /// Inverse Kinematics Solver using Jacobian matrix
@@ -135,7 +136,7 @@ pub struct JacobianIKSolver<T: RealField> {
 
 impl<T> JacobianIKSolver<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     /// Create instance of `JacobianIKSolver`.
     ///
@@ -195,7 +196,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints_array: [bool; 6],
-    ) -> Result<DVector<T>, IKError<T>> {
+    ) -> Result<DVector<T>, Error> {
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
         let t_n = arm.end_transform();
@@ -237,7 +238,7 @@ where
                 jacobi
                     .lu()
                     .solve(&err)
-                    .ok_or(IKError::InverseMatrixError)?
+                    .ok_or(Error::InverseMatrixError)?
                     .as_slice(),
             )
         };
@@ -254,12 +255,12 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError<T>> {
+    ) -> Result<(), Error> {
         let constraints_array = constraints_to_bool_array(*constraints);
         let orig_positions = arm.joint_positions();
         let use_dof = constraints_array.iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
-            return Err(IKError::PreconditionError {
+            return Err(Error::PreconditionError {
                 dof: orig_positions.len(),
                 necessary_dof: use_dof,
             });
@@ -279,7 +280,7 @@ where
             last_target_distance = Some((len_diff, rot_diff));
         }
         arm.set_joint_positions(&orig_positions)?;
-        Err(IKError::NotConvergedError {
+        Err(Error::NotConvergedError {
             num_tried: self.num_max_try,
             position_diff: na::convert(last_target_distance.unwrap().0),
             rotation_diff: na::convert(last_target_distance.unwrap().1),
@@ -314,7 +315,7 @@ where
 
 impl<T> InverseKinematicsSolver<T> for JacobianIKSolver<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     /// Set joint positions of `arm` to reach the `target_pose`
     ///
@@ -349,7 +350,7 @@ where
     /// solver.solve(&arm, &target).unwrap();
     /// println!("solved positions={:?}", arm.joint_positions());
     /// ```
-    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), IKError<T>> {
+    fn solve(&self, arm: &SerialChain<T>, target_pose: &Isometry3<T>) -> Result<(), Error> {
         self.solve_with_constraints(arm, target_pose, &Constraints::default())
     }
 
@@ -388,7 +389,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
-    ) -> Result<(), IKError<T>> {
+    ) -> Result<(), Error> {
         let orig_positions = arm.joint_positions();
         let re = self.solve_with_constraints_internal(arm, target_pose, constraints);
         if re.is_err() {
@@ -400,7 +401,7 @@ where
 
 impl<T> Default for JacobianIKSolver<T>
 where
-    T: RealField,
+    T: RealField + SubsetOf<f64>,
 {
     fn default() -> Self {
         Self::new(na::convert(0.001), na::convert(0.005), na::convert(0.5), 10)

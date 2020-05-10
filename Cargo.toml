@@ -16,6 +16,7 @@ build = "build.rs"
 nalgebra = "0.21"
 urdf-rs = "0.4"
 log = "0.4"
+simba = "0.1"
 thiserror = "1.0"
 
 [build-dependencies]
