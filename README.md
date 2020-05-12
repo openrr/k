@@ -76,3 +76,14 @@ fn main() {
     println!("solved target pos = {}", solved_pose.translation);
 }
 ```
+
+## Structure of API
+
+Top level interface is `Chain` struct. It contains `Node`s and they have the relations between nodes (parent/children).
+Actual data (joint angle(position), transform between nodes) is stored in `Joint` object inside nodes.
+
+![ik_sample](img/chain.png)
+
+You can get local/world transform of nodes. See below figure to understand what is the node's `local_transfrom()` and `world_transfrom()`.
+
+![ik_sample](img/transform.png)
