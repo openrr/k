@@ -501,6 +501,17 @@ where
     }
 }
 
+impl<T> Clone for SerialChain<T>
+where
+    T: RealField + SubsetOf<f64>,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
 impl<T> Display for SerialChain<T>
 where
     T: RealField + SubsetOf<f64>,
@@ -521,7 +532,7 @@ where
 }
 
 #[test]
-fn it_works() {
+fn test_chain0() {
     use super::joint::*;
     use super::node::*;
     use na;
