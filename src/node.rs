@@ -121,6 +121,12 @@ where
         parent.0.borrow_mut().children.push(self.clone());
     }
 
+    /// Remove parent and child relations at same time
+    pub fn remove_parent(&self, parent: &Node<T>) {
+        self.0.borrow_mut().parent = None;
+        parent.0.borrow_mut().children.retain(|x| *x != *self);
+    }
+
     /// # Examples
     ///
     /// ```
@@ -283,6 +289,15 @@ where
     #[inline]
     pub fn world_velocity(&self) -> Option<Velocity<T>> {
         self.0.borrow().joint.world_velocity()
+    }
+
+    pub fn mimic_parent(&self) -> Option<Node<T>> {
+        match self.0.borrow().mimic_parent {
+            Some(ref weak) => weak
+                .upgrade()
+                .and_then(|rc| Some(Node::from_rc(rc.clone()))),
+            None => None,
+        }
     }
 
     pub fn set_mimic_parent(&self, parent: &Node<T>, mimic: Mimic<T>) {

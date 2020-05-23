@@ -379,6 +379,52 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     }
 }
 
+impl<T> Clone for Chain<T>
+where
+    T: RealField + SubsetOf<f64>,
+{
+    fn clone(&self) -> Self {
+        // first node must be root
+        if self.nodes.is_empty() {
+            return Self {
+                nodes: vec![],
+                movable_nodes: vec![],
+                dof: 0,
+            };
+        }
+        assert!(self.nodes[0].is_root());
+        // Clone everything
+        let mut new_nodes = self
+            .nodes
+            .iter()
+            .map(|n| {
+                let node = Node::new(n.joint().clone());
+                node.set_link(n.link().clone());
+                node
+            })
+            .collect::<Vec<_>>();
+        // Connect to new nodes
+        for i in 0..new_nodes.len() {
+            if let Some(p) = self.nodes[i].parent() {
+                // get index of p
+                let parent_index = self.nodes.iter().position(|x| *x == p).unwrap();
+                new_nodes[i].set_parent(&new_nodes[parent_index]);
+            }
+            if let Some(m) = self.nodes[i].mimic_parent() {
+                let parent_index = self.nodes.iter().position(|x| *x == m).unwrap();
+                new_nodes[i].set_mimic_parent(
+                    &new_nodes[parent_index],
+                    self.nodes[i].0.borrow().mimic.clone().unwrap(),
+                );
+            }
+        }
+        //
+        // first node must be root
+        assert!(new_nodes[0].is_root());
+        Chain::from_root(new_nodes.remove(0))
+    }
+}
+
 #[derive(Debug)]
 /// Kinematic chain without any branch.
 ///
