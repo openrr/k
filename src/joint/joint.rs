@@ -125,6 +125,43 @@ where
         self.world_velocity_cache.replace(None);
         Ok(())
     }
+    /// Set the clamped position of the joint
+    ///
+    /// It refers to the joint limit and clamps the argument. This function does nothing if this is fixed joint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate nalgebra as na;
+    /// extern crate k;
+    ///
+    /// // Create rotational joint with Y-axis
+    /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
+    ///
+    /// let limits = k::joint::Range::new(-1.0, 1.0);
+    /// rot.limits = Some(limits);
+    ///
+    /// // Initial position is 0.0
+    /// assert_eq!(rot.joint_position().unwrap(), 0.0);
+    /// rot.set_joint_position_clamped(2.0);
+    // assert_eq!(rot.joint_position().unwrap(), 1.0);
+    /// rot.set_joint_position_clamped(-2.0);
+    /// assert_eq!(rot.joint_position().unwrap(), -1.0);
+    /// ```
+    ///
+    pub fn set_joint_position_clamped(&mut self, position: T) {
+        if let JointType::Fixed = self.joint_type {
+            return;
+        } else if let Some(ref range) = self.limits {
+            let position_clamped = range.clamp(position);
+            self.position = position_clamped;
+        } else {
+            self.position = position;
+        }
+        // TODO: have to reset descendent `world_transform_cache`
+        self.world_transform_cache.replace(None);
+        self.world_velocity_cache.replace(None);
+    }
     pub fn set_joint_position_unchecked(&mut self, position: T) {
         self.position = position;
         // TODO: have to reset descendent `world_transform_cache`
