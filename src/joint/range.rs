@@ -56,6 +56,25 @@ where
     pub fn is_valid(&self, val: T) -> bool {
         val <= self.max && val >= self.min
     }
+    /// Clamp the value with the range
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let range = k::joint::Range::new(-1.0, 1.0);
+    /// assert_eq!(range.clamp(0.5), 0.5);
+    /// assert_eq!(range.clamp(2.0), 1.0);
+    /// assert_eq!(range.clamp(-2.0), -1.0);
+    /// ```
+    pub fn clamp(&self, val: T) -> T {
+        if val < self.min {
+            self.min
+        } else if val > self.max {
+            self.max
+        } else {
+            val
+        }
+    }
 }
 
 impl<T> From<::std::ops::RangeInclusive<T>> for Range<T>
