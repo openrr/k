@@ -153,15 +153,12 @@ where
         if !self.is_movable() {
             return;
         }
-        if let Some(ref range) = self.limits {
-            let position_clamped = range.clamp(position);
-            self.position = position_clamped;
+        let position_clamped = if let Some(ref range) = self.limits {
+            range.clamp(position)
         } else {
-            self.position = position;
-        }
-        // TODO: have to reset descendent `world_transform_cache`
-        self.world_transform_cache.replace(None);
-        self.world_velocity_cache.replace(None);
+            position
+        };
+        self.set_joint_position_unchecked(position_clamped);
     }
     pub fn set_joint_position_unchecked(&mut self, position: T) {
         self.position = position;
