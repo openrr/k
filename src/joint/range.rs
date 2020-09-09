@@ -28,10 +28,13 @@ where
 {
     /// Create new Range instance
     ///
+    /// In case `min` is greater than `max`, this function panics.
+    ///
     /// # Examples
     ///
     /// ```
     /// let range = k::joint::Range::new(-1.0, 1.0);
+    /// // let range = k::joint::Range::new(1.0, -1.0);  // panic
     /// ```
     pub fn new(min: T, max: T) -> Self {
         assert!(min <= max, "min must be less than or equal to max");
