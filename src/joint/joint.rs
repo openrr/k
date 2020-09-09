@@ -104,7 +104,7 @@ where
     /// ```
     ///
     pub fn set_joint_position(&mut self, position: T) -> Result<(), Error> {
-        if let JointType::Fixed = self.joint_type {
+        if !self.is_movable() {
             return Err(Error::SetToFixedError {
                 joint_name: self.name.to_string(),
             });
@@ -150,7 +150,7 @@ where
     /// ```
     ///
     pub fn set_joint_position_clamped(&mut self, position: T) {
-        if let JointType::Fixed = self.joint_type {
+        if !self.is_movable() {
             return;
         } else if let Some(ref range) = self.limits {
             let position_clamped = range.clamp(position);
