@@ -144,7 +144,7 @@ where
     /// // Initial position is 0.0
     /// assert_eq!(rot.joint_position().unwrap(), 0.0);
     /// rot.set_joint_position_clamped(2.0);
-    // assert_eq!(rot.joint_position().unwrap(), 1.0);
+    /// assert_eq!(rot.joint_position().unwrap(), 1.0);
     /// rot.set_joint_position_clamped(-2.0);
     /// assert_eq!(rot.joint_position().unwrap(), -1.0);
     /// ```
