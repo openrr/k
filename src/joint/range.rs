@@ -34,6 +34,7 @@ where
     /// let range = k::joint::Range::new(-1.0, 1.0);
     /// ```
     pub fn new(min: T, max: T) -> Self {
+        assert!(min <= max, "min must be less than or equal to max");
         Range { min, max }
     }
     /// Check if the value is in the range
@@ -68,6 +69,6 @@ where
     /// ```
     fn from(range: ::std::ops::RangeInclusive<T>) -> Self {
         let (min, max) = range.into_inner();
-        Range { min, max }
+        Range::new(min, max)
     }
 }
