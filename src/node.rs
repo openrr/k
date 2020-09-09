@@ -231,6 +231,31 @@ where
         }
         Ok(())
     }
+
+    /// Set the clamped position (angle) of the joint
+    ///
+    /// It refers to the joint limit and clamps the argument. This function does nothing if this is fixed joint.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use k::*;
+    /// let l0 = NodeBuilder::new()
+    ///     .joint_type(JointType::Linear{axis: Vector3::z_axis()})
+    ///     .limits(Some((-1.0..=1.0).into()))
+    ///     .into_node();
+    /// l0.set_joint_position_clamped(2.0);
+    /// assert_eq!(l0.joint().joint_position(), Some(1.0));
+    /// l0.set_joint_position_clamped(-2.0);
+    /// assert_eq!(l0.joint().joint_position(), Some(-1.0));
+    /// ```
+    pub fn set_joint_position_clamped(&self, position: T) {
+        self.0
+            .borrow_mut()
+            .joint
+            .set_joint_position_clamped(position);
+    }
+
     #[inline]
     pub fn set_joint_position_unchecked(&self, position: T) {
         self.0

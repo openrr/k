@@ -289,6 +289,15 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
         Ok(())
     }
 
+    /// Set the clamped positions of the joints
+    ///
+    /// This function is safe, in contrast to `set_joint_positions_unchecked`.
+    pub fn set_joint_positions_clamped(&self, positions_vec: &[T]) {
+        for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
+            joint.set_joint_position_clamped(*position);
+        }
+    }
+
     /// Fast, but without check, dangerous `set_joint_positions`
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
