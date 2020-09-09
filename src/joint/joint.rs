@@ -152,7 +152,8 @@ where
     pub fn set_joint_position_clamped(&mut self, position: T) {
         if !self.is_movable() {
             return;
-        } else if let Some(ref range) = self.limits {
+        }
+        if let Some(ref range) = self.limits {
             let position_clamped = range.clamp(position);
             self.position = position_clamped;
         } else {
