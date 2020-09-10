@@ -242,7 +242,7 @@ where
                     .as_slice(),
             )
         };
-        arm.set_joint_positions_unchecked(&positions_vec);
+        arm.set_joint_positions_clamped(&positions_vec);
         Ok(calc_pose_diff_with_constraints(
             target_pose,
             &arm.end_transform(),
@@ -274,7 +274,7 @@ where
                 && rot_diff.norm() < self.allowable_target_angle
             {
                 let non_checked_positions = arm.joint_positions();
-                arm.set_joint_positions(&non_checked_positions)?;
+                arm.set_joint_positions_clamped(&non_checked_positions);
                 return Ok(());
             }
             last_target_distance = Some((len_diff, rot_diff));
