@@ -161,6 +161,12 @@ where
         self.0.borrow_mut().joint.set_origin(trans);
     }
 
+    /// Get the origin transform of the joint
+    #[inline]
+    pub fn origin(&self) -> Isometry3<T> {
+        self.0.borrow_mut().joint.origin().clone()
+    }
+
     /// Set the position (angle) of the joint
     ///
     /// If position is out of limit, it returns Err.

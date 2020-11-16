@@ -173,6 +173,33 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             nodes,
         }
     }
+    /// Set the `Chain`'s origin
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use k::*;
+    ///
+    /// let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    /// let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
+    /// l1.set_parent(&l0);
+    /// let c = Chain::<f32>::from_end(&l1);
+    /// let mut o = c.origin();
+    /// assert!(o.translation.vector[0].abs() < 0.000001);
+    /// o.translation.vector[0] = 1.0;
+    /// c.set_origin(o);
+    /// assert!((o.translation.vector[0] - 1.0).abs() < 0.000001);
+    /// ```
+    pub fn set_origin(&self, pose: na::Isometry3<T>) {
+        self.nodes[0].set_origin(pose)
+    }
+
+    /// Get the `Chain`'s origin
+    pub fn origin(&self) -> na::Isometry3<T> {
+        self.nodes[0].origin()
+    }
+
     /// Iterate for all joint nodes
     ///
     /// The order is from parent to children. You can assume that parent is already iterated.
