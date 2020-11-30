@@ -233,10 +233,8 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     /// Iterate for links
     pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
         self.nodes.iter().filter_map(|node| {
-            if node.0.borrow().link.is_some() {
-                Some(LinkRefGuard {
-                    guard: node.0.borrow(),
-                })
+            if node.link().is_some() {
+                Some(LinkRefGuard { guard: node.lock() })
             } else {
                 None
             }
@@ -398,7 +396,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
         self.update_transforms();
         self.iter().for_each(|node| {
             let parent_transform = node.parent_world_transform().expect("cache must exist");
-            let mut node_mut = node.0.borrow_mut();
+            let mut node_mut = node.lock();
             if let Some(ref mut link) = node_mut.link {
                 let inertial_trans = parent_transform * link.inertial.origin();
                 link.inertial.set_world_transform(inertial_trans);
@@ -450,7 +448,7 @@ where
                 let parent_index = self.nodes.iter().position(|x| *x == m).unwrap();
                 new_nodes[i].set_mimic_parent(
                     &new_nodes[parent_index],
-                    self.nodes[i].0.borrow().mimic.clone().unwrap(),
+                    self.nodes[i].lock().mimic.clone().unwrap(),
                 );
             }
         }
