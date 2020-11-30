@@ -35,6 +35,18 @@ test bench_rctree_ik ... bench:      10,622 ns/iter (+/- 1,203)
 test bench_rctree            ... bench:       1,855 ns/iter (+/- 165)
 test bench_rctree_set_joints ... bench:         186 ns/iter (+/- 6)
 test bench_rctree_ik ... bench:       8,640 ns/iter (+/- 364)
+
+## v0.19.0 on Desktop (AMD Ryzen 9 3950X 16-Core Processor, 3.5GHz - 64GB)
+
+test bench_rctree            ... bench:       1,293 ns/iter (+/- 17)
+test bench_rctree_set_joints ... bench:          98 ns/iter (+/- 2)
+test bench_rctree_ik ... bench:       4,394 ns/iter (+/- 73)
+
+## v0.20.0(Arc) on Desktop (AMD Ryzen 9 3950X 16-Core Processor, 3.5GHz - 64GB)
+
+test bench_rctree            ... bench:       1,803 ns/iter (+/- 21)
+test bench_rctree_set_joints ... bench:         204 ns/iter (+/- 17)
+test bench_rctree_ik ... bench:       5,985 ns/iter (+/- 65)
 */
 
 fn generate_random_joint_angles_from_limits<T>(limits: &Vec<Option<k::joint::Range<T>>>) -> Vec<T>
