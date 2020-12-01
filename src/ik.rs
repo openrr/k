@@ -131,7 +131,7 @@ pub struct JacobianIKSolver<T: RealField> {
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
     /// Nullspace function for a redundant system
-    nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T>>>,
+    nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T> + Send + Sync>>,
 }
 
 impl<T> JacobianIKSolver<T>
@@ -174,7 +174,7 @@ where
     ///    ),
     /// ));
     /// ```
-    pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T>>) {
+    pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T> + Send + Sync>) {
         self.nullspace_function = Some(func);
     }
 
