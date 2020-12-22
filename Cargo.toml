@@ -13,7 +13,7 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-nalgebra = "0.21"
+nalgebra = "0.23"
 urdf-rs = "0.4"
 log = "0.4"
 simba = "0.1"
@@ -24,7 +24,7 @@ skeptic = "0.13"
 
 [dev-dependencies]
 skeptic = "0.13"
-kiss3d = "0.24"
+kiss3d = "0.28"
 rand = "0.7"
 
 #[profile.release]
