@@ -282,8 +282,8 @@ where
         arm.set_joint_positions(&orig_positions)?;
         Err(Error::NotConvergedError {
             num_tried: self.num_max_try,
-            position_diff: na::convert(last_target_distance.unwrap().0),
-            rotation_diff: na::convert(last_target_distance.unwrap().1),
+            position_diff: na::try_convert(last_target_distance.unwrap().0).unwrap_or_default(),
+            rotation_diff: na::try_convert(last_target_distance.unwrap().1).unwrap_or_default(),
         })
     }
 }

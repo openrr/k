@@ -113,9 +113,9 @@ where
             if !range.is_valid(position) {
                 return Err(Error::OutOfLimitError {
                     joint_name: self.name.to_string(),
-                    position: na::convert(position),
-                    max_limit: na::convert(range.max),
-                    min_limit: na::convert(range.min),
+                    position: na::try_convert(position).unwrap_or_default(),
+                    max_limit: na::try_convert(range.max).unwrap_or_default(),
+                    min_limit: na::try_convert(range.min).unwrap_or_default(),
                 });
             }
         }
