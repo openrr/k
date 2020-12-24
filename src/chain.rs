@@ -128,17 +128,9 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     #[allow(clippy::needless_pass_by_value)]
     pub fn from_root(root_joint: Node<T>) -> Self {
         let nodes = root_joint.iter_descendants().collect::<Vec<_>>();
-        let movable_nodes = nodes
-            .iter()
-            .filter(|joint| joint.joint().is_movable())
-            .cloned()
-            .collect::<Vec<_>>();
-        Chain {
-            dof: movable_nodes.len(),
-            nodes,
-            movable_nodes,
-        }
+        Self::from_nodes(nodes)
     }
+
     /// Create `Chain` from end joint. It has any branches.
     ///
     /// Do not discard root joint before create Chain.
@@ -162,6 +154,25 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     pub fn from_end(end_joint: &Node<T>) -> Chain<T> {
         let mut nodes = end_joint.iter_ancestors().collect::<Vec<_>>();
         nodes.reverse();
+        Self::from_nodes(nodes)
+    }
+
+    /// Create `Chain` from nodes.
+    ///
+    /// This method is public, but it is for professional use.
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// use k::*;
+    ///
+    /// let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    /// let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
+    /// l1.set_parent(&l0);
+    /// let chain = Chain::<f64>::from_nodes(vec![l0, l1]);
+    /// ```
+    pub fn from_nodes(nodes: Vec<Node<T>>) -> Chain<T> {
         let movable_nodes = nodes
             .iter()
             .filter(|joint| joint.joint().is_movable())
@@ -173,6 +184,41 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             nodes,
         }
     }
+
+    /// Create `Chain` from end node and root node, without any branches.
+    /// The root node is included in the chain.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use k::*;
+    ///
+    /// let l0 = Node::new(Joint::new("fixed0", JointType::Fixed));
+    /// let l1 = Node::new(Joint::new("fixed1", JointType::Fixed));
+    /// let l2 = Node::new(Joint::new("fixed2", JointType::Fixed));
+    /// let l3 = Node::new(Joint::new("fixed3", JointType::Fixed));
+    /// l1.set_parent(&l0);
+    /// l2.set_parent(&l1);
+    /// l3.set_parent(&l2);
+    /// let chain = Chain::<f32>::from_end_to_root(&l2, &l1);
+    ///
+    /// assert!(chain.find("fixed0").is_none()); // not included
+    /// assert!(chain.find("fixed1").is_some());
+    /// assert!(chain.find("fixed2").is_some());
+    /// assert!(chain.find("fixed3").is_none()); // not included
+    /// ```
+    pub fn from_end_to_root(end_joint: &Node<T>, root_joint: &Node<T>) -> Chain<T> {
+        let mut nodes = Vec::new();
+        for n in end_joint.iter_ancestors() {
+            nodes.push(n.clone());
+            if n == *root_joint {
+                break;
+            }
+        }
+        nodes.reverse();
+        Self::from_nodes(nodes)
+    }
+
     /// Set the `Chain`'s origin
     ///
     /// # Examples
@@ -523,6 +569,26 @@ where
             inner: Chain::from_end(end_joint),
         }
     }
+
+    /// Create SerialChain from the end `Node` and root `Node`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let node0 = k::NodeBuilder::<f32>::new().into_node();
+    /// let node1 = k::NodeBuilder::<f32>::new().into_node();
+    /// let node2 = k::NodeBuilder::<f32>::new().into_node();
+    /// let node3 = k::NodeBuilder::<f32>::new().into_node();
+    /// k::connect![node0 => node1 => node2 => node3];
+    /// let s_chain = k::SerialChain::from_end_to_root(&node2, &node1);
+    /// assert_eq!(s_chain.dof(), 2);
+    /// ```
+    pub fn from_end_to_root(end_joint: &Node<T>, root_joint: &Node<T>) -> SerialChain<T> {
+        SerialChain {
+            inner: Chain::from_end_to_root(end_joint, root_joint),
+        }
+    }
+
     /// Safely unwrap and returns inner `Chain` instance
     pub fn unwrap(self) -> Chain<T> {
         self.inner
