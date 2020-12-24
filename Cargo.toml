@@ -12,6 +12,11 @@ readme = "README.md"
 edition = "2018"
 build = "build.rs"
 
+[features]
+default = []
+# only support nalgebra modules now
+serde-serialize = ["nalgebra/serde-serialize"]
+
 [dependencies]
 nalgebra = "0.23"
 urdf-rs = "0.4"
