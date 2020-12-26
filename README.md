@@ -1,6 +1,6 @@
 # `k`: Kinematics library for rust-lang
 
- ![Rust](https://github.com/openrr/k/workflows/Rust/badge.svg) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/master/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k)
+ ![Build and Test](https://github.com/openrr/k/workflows/Rust/badge.svg) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/master/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k)
 
 `k` has below functionalities.
 
