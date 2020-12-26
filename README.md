@@ -1,4 +1,6 @@
-# `k`: Kinematics library for rust-lang ![Rust](https://github.com/openrr/k/workflows/Rust/badge.svg) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k)
+# `k`: Kinematics library for rust-lang
+
+ ![Rust](https://github.com/openrr/k/workflows/Rust/badge.svg) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/master/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k)
 
 `k` has below functionalities.
 
@@ -10,7 +12,7 @@
 
 See [Document](http://docs.rs/k) and examples/ for more details.
 
-API is unstable. 
+API is unstable.
 
 ## Requirements to build examples
 
