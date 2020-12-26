@@ -579,9 +579,10 @@ where
     /// let node1 = k::NodeBuilder::<f32>::new().into_node();
     /// let node2 = k::NodeBuilder::<f32>::new().into_node();
     /// let node3 = k::NodeBuilder::<f32>::new().into_node();
-    /// k::connect![node0 => node1 => node2 => node3];
+    /// use k::connect;
+    /// connect![node0 => node1 => node2 => node3];
     /// let s_chain = k::SerialChain::from_end_to_root(&node2, &node1);
-    /// assert_eq!(s_chain.dof(), 2);
+    /// assert_eq!(s_chain.iter().count(), 2);
     /// ```
     pub fn from_end_to_root(end_joint: &Node<T>, root_joint: &Node<T>) -> SerialChain<T> {
         SerialChain {
