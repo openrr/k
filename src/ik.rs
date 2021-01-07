@@ -15,6 +15,8 @@
 */
 use na::{DVector, Isometry3, RealField, Vector3, Vector6};
 use nalgebra as na;
+#[cfg(feature = "serde-serialize")]
+use serde::{Deserialize, Serialize};
 use simba::scalar::SubsetOf;
 
 use super::chain::*;
@@ -56,6 +58,7 @@ where
 
 /// A bundle of flags determining which coordinates are constrained for a target
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
 pub struct Constraints {
     /// true means the constraint is used.
     ///  The coordinates is the world, not the end of the arm.
