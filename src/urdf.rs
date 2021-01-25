@@ -329,7 +329,7 @@ where
     where
         P: AsRef<Path>,
     {
-        Ok(urdf_rs::read_file(path)?.into())
+        Ok(urdf_rs::utils::read_urdf_or_xacro(path)?.into())
     }
 }
 
