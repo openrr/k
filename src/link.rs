@@ -24,6 +24,7 @@ use nalgebra as na;
 pub enum Geometry<T: RealField> {
     Box { depth: T, width: T, height: T },
     Cylinder { radius: T, length: T },
+    Capsule { radius: T, length: T },
     Sphere { radius: T },
     Mesh { filename: String, scale: Vector3<T> },
 }
