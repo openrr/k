@@ -146,6 +146,10 @@ where
                 radius: na::convert(radius),
                 length: na::convert(length),
             },
+            urdf_rs::Geometry::Capsule { radius, length } => Geometry::Capsule {
+                radius: na::convert(radius),
+                length: na::convert(length),
+            },
             urdf_rs::Geometry::Sphere { radius } => Geometry::Sphere {
                 radius: na::convert(radius),
             },
