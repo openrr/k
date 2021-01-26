@@ -126,7 +126,7 @@ mod tests {
         arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
-        let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.5, 100);
+        let solver = k::JacobianIkSolver::new(0.001, 0.001, 0.5, 100);
         solver.solve(&arm, &init_pose).unwrap();
         let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
@@ -141,7 +141,7 @@ mod tests {
         arm.set_joint_positions(&angles).unwrap();
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
-        let solver = k::JacobianIKSolver::new(0.001, 0.001, 0.8, 100);
+        let solver = k::JacobianIkSolver::new(0.001, 0.001, 0.8, 100);
         // set different angles
         arm.set_joint_positions(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
             .unwrap();

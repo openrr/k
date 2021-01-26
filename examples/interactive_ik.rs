@@ -16,7 +16,7 @@
 use nalgebra as na;
 
 use k::prelude::*;
-use k::{connect, JacobianIKSolver, JointType, NodeBuilder};
+use k::{connect, JacobianIkSolver, JointType, NodeBuilder};
 use kiss3d::camera::ArcBall;
 use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;
@@ -163,7 +163,7 @@ fn main() {
     let eye = Point3::new(0.5f32, 1.0, 2.0);
     let at = Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
-    let mut solver = JacobianIKSolver::default();
+    let mut solver = JacobianIkSolver::default();
     //solver.set_nullspace_function(Box::new(|vec| vec.iter().map(|x| -x).collect()));
     let _ = create_ground(&mut window);
 

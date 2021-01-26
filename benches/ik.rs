@@ -13,7 +13,7 @@ fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher
     arm.update_transforms();
     let mut target = target_node.world_transform().unwrap();
     target.translation.vector[0] += 0.02;
-    let solver = k::JacobianIKSolver::new(0.001, 0.01, 0.8, 10);
+    let solver = k::JacobianIkSolver::new(0.001, 0.01, 0.8, 10);
     b.iter(|| {
         solver.solve(&arm, &target).unwrap();
         arm.set_joint_positions(&angles).unwrap();
