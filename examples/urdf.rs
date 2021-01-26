@@ -38,7 +38,7 @@ fn main() {
     target.translation.vector.z += 0.1;
 
     // Create IK solver with default settings
-    let solver = k::JacobianIKSolver::default();
+    let solver = k::JacobianIkSolver::default();
 
     // Create a set of joints from end joint
     let arm = k::SerialChain::from_end(target_link);
