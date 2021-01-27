@@ -1,6 +1,5 @@
-#[macro_use]
-extern crate k;
-extern crate nalgebra as na;
+use k::connect;
+use nalgebra as na;
 
 #[cfg(test)]
 mod tests {

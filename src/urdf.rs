@@ -346,9 +346,6 @@ where
 /// # Examples
 ///
 /// ```
-/// extern crate urdf_rs;
-/// extern crate k;
-///
 /// let urdf_robot = urdf_rs::read_file("urdf/sample.urdf").unwrap();
 /// let map = k::urdf::link_to_joint_map(&urdf_robot);
 /// assert_eq!(map.get("root_body").unwrap(), k::urdf::ROOT_JOINT_NAME);

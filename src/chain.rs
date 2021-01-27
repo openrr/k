@@ -27,7 +27,6 @@ use std::ops::Deref;
 /// # Examples
 ///
 /// ```
-/// #[macro_use]
 /// use k::*;
 /// use k::prelude::*;
 ///
