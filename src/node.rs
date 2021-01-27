@@ -577,7 +577,7 @@ where
 /// set parents easily
 ///
 /// ```
-/// #[macro_use] extern crate k;
+/// use k::connect;
 /// # fn main() {
 /// let l0 = k::NodeBuilder::<f64>::new().into_node();
 /// let l1 = k::NodeBuilder::new().into_node();
@@ -601,6 +601,6 @@ macro_rules! connect {
     };
     ($x:expr => $y:expr => $($rest:tt)+) => {
         $y.set_parent(&$x);
-        connect!($y => $($rest)*);
+        $crate::connect!($y => $($rest)*);
     };
 }

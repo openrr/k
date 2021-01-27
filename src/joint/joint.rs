@@ -53,8 +53,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use nalgebra as na;
     ///
     /// // create fixed joint
     /// let fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
@@ -84,8 +83,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use nalgebra as na;
     ///
     /// // Create fixed joint
     /// let mut fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
@@ -132,8 +130,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use nalgebra as na;
     ///
     /// // Create rotational joint with Y-axis
     /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
@@ -211,8 +208,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// extern crate nalgebra as na;
-    /// extern crate k;
+    /// use nalgebra as na;
     ///
     /// // Create linear joint with X-axis
     /// let mut lin = k::Joint::<f64>::new("l0", k::JointType::Linear { axis: na::Vector3::x_axis() });
