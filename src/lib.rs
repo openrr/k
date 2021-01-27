@@ -23,6 +23,10 @@
 //!
 //! See `Chain` as the top level interface.
 //!
+
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
+
 mod chain;
 mod errors;
 mod funcs;
