@@ -18,6 +18,7 @@ use thiserror::Error;
 
 /// The reason of joint error
 #[derive(Debug, Clone, Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Failed to set joint angle because the input is out of range or it is fixed joint
     #[error(
