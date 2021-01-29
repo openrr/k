@@ -15,12 +15,13 @@ edition = "2018"
 default = []
 serde-serialize = ["nalgebra/serde-serialize", "serde"]
 
+# Note: nalgebra, simba, urdf-rs, and serde are public dependencies.
 [dependencies]
-nalgebra = "0.24"
-urdf-rs = "0.5"
 log = "0.4"
+nalgebra = "0.24"
 simba = "0.3"
 thiserror = "1.0"
+urdf-rs = "0.6"
 
 serde = { version = "1.0", features = ["derive"], optional = true }
 
