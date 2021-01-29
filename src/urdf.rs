@@ -67,8 +67,8 @@ where
     fn from(urdf_material: urdf_rs::Material) -> Self {
         Material {
             name: urdf_material.name,
-            color: urdf_material.color.into(),
-            texture: urdf_material.texture.into(),
+            color: urdf_material.color.unwrap_or_default().into(),
+            texture: urdf_material.texture.unwrap_or_default().into(),
         }
     }
 }
@@ -110,10 +110,10 @@ where
 {
     fn from(urdf_visual: urdf_rs::Visual) -> Self {
         Visual::new(
-            urdf_visual.name,
+            urdf_visual.name.unwrap_or_default(),
             isometry_from(&urdf_visual.origin),
             urdf_visual.geometry.into(),
-            urdf_visual.material.into(),
+            urdf_visual.material.unwrap_or_default().into(),
         )
     }
 }
@@ -124,7 +124,7 @@ where
 {
     fn from(urdf_collision: urdf_rs::Collision) -> Self {
         Collision::new(
-            urdf_collision.name,
+            urdf_collision.name.unwrap_or_default(),
             isometry_from(&urdf_collision.origin),
             urdf_collision.geometry.into(),
         )
@@ -153,14 +153,17 @@ where
             urdf_rs::Geometry::Sphere { radius } => Geometry::Sphere {
                 radius: na::convert(radius),
             },
-            urdf_rs::Geometry::Mesh { filename, scale } => Geometry::Mesh {
-                filename,
-                scale: na::Vector3::new(
-                    na::convert(scale[0]),
-                    na::convert(scale[1]),
-                    na::convert(scale[2]),
-                ),
-            },
+            urdf_rs::Geometry::Mesh { filename, scale } => {
+                let scale = scale.unwrap_or(DEFAULT_MESH_SCALE);
+                Geometry::Mesh {
+                    filename,
+                    scale: na::Vector3::new(
+                        na::convert(scale[0]),
+                        na::convert(scale[1]),
+                        na::convert(scale[2]),
+                    ),
+                }
+            }
         }
     }
 }
@@ -185,8 +188,9 @@ where
 {
     fn from(urdf_mimic: &urdf_rs::Mimic) -> Self {
         Mimic::new(
-            na::convert(urdf_mimic.multiplier),
-            na::convert(urdf_mimic.offset),
+            // https://github.com/openrr/urdf-rs/pull/3/files#diff-0fb2eeea3273a4c9b3de69ee949567f546dc8c06b1e190336870d00b54ea0979L244-L245
+            na::convert(urdf_mimic.multiplier.unwrap_or(1.0)),
+            na::convert(urdf_mimic.offset.unwrap_or_default()),
         )
     }
 }
@@ -295,13 +299,13 @@ where
         }
         // add mimics
         for j in &robot.joints {
-            if j.mimic.joint != "" {
-                debug!("mimic found for {}", j.mimic.joint);
+            if let Some(mimic) = &j.mimic {
+                debug!("mimic found for {}", mimic.joint);
                 let child = joint_name_to_node[&j.name].clone();
                 let parent = joint_name_to_node
-                    .get(&j.mimic.joint)
-                    .unwrap_or_else(|| panic!("{} not found, mimic not found", &j.mimic.joint));
-                child.set_mimic_parent(parent, (&j.mimic).into());
+                    .get(&mimic.joint)
+                    .unwrap_or_else(|| panic!("{} not found, mimic not found", &mimic.joint));
+                child.set_mimic_parent(parent, mimic.into());
             }
         }
         // set root as parent of root joint nodes
@@ -377,6 +381,9 @@ pub fn joint_to_link_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
     }
     map
 }
+
+// https://github.com/openrr/urdf-rs/pull/3/files#diff-0fb2eeea3273a4c9b3de69ee949567f546dc8c06b1e190336870d00b54ea0979L36-L38
+const DEFAULT_MESH_SCALE: [f64; 3] = [1.0f64; 3];
 
 #[test]
 fn test_tree() {
