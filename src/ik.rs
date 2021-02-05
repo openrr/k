@@ -62,12 +62,37 @@ where
 pub struct Constraints {
     /// true means the constraint is used.
     ///  The coordinates is the world, not the end of the arm.
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_x"))]
     pub position_x: bool,
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_y"))]
     pub position_y: bool,
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_z"))]
     pub position_z: bool,
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_x"))]
     pub rotation_x: bool,
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_y"))]
     pub rotation_y: bool,
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_z"))]
     pub rotation_z: bool,
+}
+
+fn default_position_x() -> bool {
+    true
+}
+fn default_position_y() -> bool {
+    true
+}
+fn default_position_z() -> bool {
+    true
+}
+fn default_rotation_x() -> bool {
+    true
+}
+fn default_rotation_y() -> bool {
+    true
+}
+fn default_rotation_z() -> bool {
+    true
 }
 
 impl Default for Constraints {
@@ -84,12 +109,12 @@ impl Default for Constraints {
     /// ```
     fn default() -> Self {
         Self {
-            position_x: true,
-            position_y: true,
-            position_z: true,
-            rotation_x: true,
-            rotation_y: true,
-            rotation_z: true,
+            position_x: default_position_x(),
+            position_y: default_position_y(),
+            position_z: default_position_z(),
+            rotation_x: default_rotation_x(),
+            rotation_y: default_rotation_y(),
+            rotation_z: default_rotation_z(),
         }
     }
 }
