@@ -62,36 +62,21 @@ where
 pub struct Constraints {
     /// true means the constraint is used.
     ///  The coordinates is the world, not the end of the arm.
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_x"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub position_x: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_y"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub position_y: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_position_z"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub position_z: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_x"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub rotation_x: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_y"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub rotation_y: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_rotation_z"))]
+    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub rotation_z: bool,
 }
 
-fn default_position_x() -> bool {
-    true
-}
-fn default_position_y() -> bool {
-    true
-}
-fn default_position_z() -> bool {
-    true
-}
-fn default_rotation_x() -> bool {
-    true
-}
-fn default_rotation_y() -> bool {
-    true
-}
-fn default_rotation_z() -> bool {
+fn default_true() -> bool {
     true
 }
 
@@ -109,12 +94,12 @@ impl Default for Constraints {
     /// ```
     fn default() -> Self {
         Self {
-            position_x: default_position_x(),
-            position_y: default_position_y(),
-            position_z: default_position_z(),
-            rotation_x: default_rotation_x(),
-            rotation_y: default_rotation_y(),
-            rotation_z: default_rotation_z(),
+            position_x: default_true(),
+            position_y: default_true(),
+            position_z: default_true(),
+            rotation_x: default_true(),
+            rotation_y: default_true(),
+            rotation_z: default_true(),
         }
     }
 }
