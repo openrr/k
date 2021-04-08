@@ -83,9 +83,7 @@ where
 
     pub fn parent(&self) -> Option<Node<T>> {
         match self.lock().parent {
-            Some(ref weak) => weak
-                .upgrade()
-                .and_then(|arc| Some(Node::from_arc(arc.clone()))),
+            Some(ref weak) => weak.upgrade().and_then(|arc| Some(Node::from_arc(arc))),
             None => None,
         }
     }
@@ -154,7 +152,7 @@ where
     /// Get the origin transform of the joint
     #[inline]
     pub fn origin(&self) -> Isometry3<T> {
-        self.joint().origin().clone()
+        *self.joint().origin()
     }
 
     /// Set the position (angle) of the joint
@@ -218,10 +216,7 @@ where
                 None => {
                     let from = self.joint().name.to_owned();
                     let to = child.joint().name.to_owned();
-                    return Err(Error::MimicError {
-                        from: from.clone(),
-                        to: to.clone(),
-                    });
+                    return Err(Error::MimicError { from, to });
                 }
             };
         }
@@ -316,9 +311,7 @@ where
 
     pub fn mimic_parent(&self) -> Option<Node<T>> {
         match self.lock().mimic_parent {
-            Some(ref weak) => weak
-                .upgrade()
-                .and_then(|arc| Some(Node::from_arc(arc.clone()))),
+            Some(ref weak) => weak.upgrade().and_then(|arc| Some(Node::from_arc(arc))),
             None => None,
         }
     }
