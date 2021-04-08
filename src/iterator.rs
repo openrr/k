@@ -47,7 +47,7 @@ where
             return None;
         }
         let next = self.parent.clone().unwrap();
-        self.parent = next.parent().clone();
+        self.parent = next.parent();
         Some(next)
     }
 }
