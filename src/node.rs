@@ -53,7 +53,7 @@ impl<T> Node<T>
 where
     T: RealField + SubsetOf<f64>,
 {
-    pub(crate) fn from_rc(arc_mutex_node: Arc<Mutex<NodeImpl<T>>>) -> Self {
+    pub(crate) fn from_arc(arc_mutex_node: Arc<Mutex<NodeImpl<T>>>) -> Self {
         Node(arc_mutex_node)
     }
 
@@ -85,7 +85,7 @@ where
         match self.lock().parent {
             Some(ref weak) => weak
                 .upgrade()
-                .and_then(|rc| Some(Node::from_rc(rc.clone()))),
+                .and_then(|arc| Some(Node::from_arc(arc.clone()))),
             None => None,
         }
     }
@@ -318,7 +318,7 @@ where
         match self.lock().mimic_parent {
             Some(ref weak) => weak
                 .upgrade()
-                .and_then(|rc| Some(Node::from_rc(rc.clone()))),
+                .and_then(|arc| Some(Node::from_arc(arc.clone()))),
             None => None,
         }
     }
@@ -467,7 +467,7 @@ where
 
 impl<'a, T>  ParentRefGuard<'a, T> where T:RealField {
     pub fn new(guard: Ref<'a, NodeImpl<T>>) -> Self {
-        let parent = guard.parent.and_then(|weak| weak.upgrade().map(|rc| Node::from_rc(rc)));
+        let parent = guard.parent.and_then(|weak| weak.upgrade().map(|arc| Node::from_arc(arc)));
         Self {
             guard,
             parent,
