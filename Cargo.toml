@@ -18,7 +18,7 @@ serde-serialize = ["nalgebra/serde-serialize", "serde"]
 # Note: nalgebra, simba, urdf-rs, and serde are public dependencies.
 [dependencies]
 log = "0.4"
-nalgebra = "0.25"
+nalgebra = "0.26"
 simba = "0.4"
 thiserror = "1.0"
 urdf-rs = "0.6"
@@ -27,7 +27,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 doc-comment = "0.3"
-kiss3d = "0.30"
+kiss3d = "0.31"
 rand = "0.8"
 
 #[profile.release]
