@@ -8,7 +8,6 @@ keywords = ["kinematics", "robotics", "ik"]
 categories = ["algorithms"]
 repository = "https://github.com/openrr/k"
 documentation = "http://docs.rs/k"
-readme = "README.md"
 edition = "2018"
 
 [features]
