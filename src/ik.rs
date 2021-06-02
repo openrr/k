@@ -74,19 +74,12 @@ pub struct Constraints {
     pub rotation_y: bool,
     #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub rotation_z: bool,
-    #[cfg_attr(
-        feature = "serde-serialize",
-        serde(default = "default_empty_string_vector")
-    )]
+    #[cfg_attr(feature = "serde-serialize", serde(default))]
     pub ignored_joint_names: Vec<String>,
 }
 
 fn default_true() -> bool {
     true
-}
-
-fn default_empty_string_vector() -> Vec<String> {
-    vec![]
 }
 
 impl Default for Constraints {
@@ -110,7 +103,7 @@ impl Default for Constraints {
             rotation_x: default_true(),
             rotation_y: default_true(),
             rotation_z: default_true(),
-            ignored_joint_names: default_empty_string_vector(),
+            ignored_joint_names: Default::default(),
         }
     }
 }
