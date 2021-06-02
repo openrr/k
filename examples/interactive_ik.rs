@@ -23,6 +23,13 @@ use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+struct Opt {
+    #[structopt(short = "i", long = "ignored-joint-names")]
+    ignored_joint_names: Vec<String>,
+}
 
 fn create_joint_with_link_array() -> k::Node<f32> {
     let fixed: k::Node<f32> = NodeBuilder::new()
@@ -136,6 +143,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 }
 
 fn main() {
+    let opt = Opt::from_args();
     let root = create_joint_with_link_array();
     let arm = k::SerialChain::new_unchecked(k::Chain::from_root(root));
 
@@ -201,6 +209,7 @@ fn main() {
         }
         let mut constraints = k::Constraints::default();
         constraints.rotation_x = false;
+        constraints.ignored_joint_names = opt.ignored_joint_names.clone();
         solver
             .solve_with_constraints(&arm, &target, &constraints)
             .unwrap_or_else(|err| {
