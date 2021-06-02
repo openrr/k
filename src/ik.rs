@@ -57,7 +57,7 @@ where
 }
 
 /// A bundle of flags determining which coordinates are constrained for a target
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
 pub struct Constraints {
     /// true means the constraint is used.
@@ -74,10 +74,19 @@ pub struct Constraints {
     pub rotation_y: bool,
     #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
     pub rotation_z: bool,
+    #[cfg_attr(
+        feature = "serde-serialize",
+        serde(default = "default_empty_string_vector")
+    )]
+    pub ignored_joint_names: Vec<String>,
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_empty_string_vector() -> Vec<String> {
+    vec![]
 }
 
 impl Default for Constraints {
@@ -91,6 +100,7 @@ impl Default for Constraints {
     /// assert!(c.rotation_x);
     /// assert!(c.rotation_y);
     /// assert!(c.rotation_z);
+    /// assert!(c.ignored_joint_names.is_empty());
     /// ```
     fn default() -> Self {
         Self {
@@ -100,6 +110,7 @@ impl Default for Constraints {
             rotation_x: default_true(),
             rotation_y: default_true(),
             rotation_z: default_true(),
+            ignored_joint_names: default_empty_string_vector(),
         }
     }
 }
@@ -208,8 +219,9 @@ where
         &self,
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
-        constraints_array: [bool; 6],
+        constraints: &Constraints,
     ) -> Result<DVector<T>, Error> {
+        let constraints_array = constraints_to_bool_array(constraints.clone());
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
         let t_n = arm.end_transform();
@@ -269,7 +281,7 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<(), Error> {
-        let constraints_array = constraints_to_bool_array(*constraints);
+        let constraints_array = constraints_to_bool_array(constraints.clone());
         let orig_positions = arm.joint_positions();
         let use_dof = constraints_array.iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
@@ -281,7 +293,7 @@ where
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
             let target_diff =
-                self.solve_one_loop_with_constraints(&arm, target_pose, constraints_array)?;
+                self.solve_one_loop_with_constraints(&arm, target_pose, constraints)?;
             let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, constraints_array);
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle
