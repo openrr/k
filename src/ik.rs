@@ -38,16 +38,16 @@ where
 fn calc_pose_diff_with_constraints<T>(
     a: &Isometry3<T>,
     b: &Isometry3<T>,
-    constraints_array: [bool; 6],
+    operational_space: [bool; 6],
 ) -> DVector<T>
 where
     T: RealField,
 {
     let full_diff = calc_pose_diff(a, b);
-    let use_dof = constraints_array.iter().filter(|x| **x).count();
+    let use_dof = operational_space.iter().filter(|x| **x).count();
     let mut diff = DVector::from_element(use_dof, na::zero());
     let mut index = 0;
-    for (i, use_i) in constraints_array.iter().enumerate() {
+    for (i, use_i) in operational_space.iter().enumerate() {
         if *use_i {
             diff[index] = full_diff[i];
             index += 1;
@@ -108,7 +108,7 @@ impl Default for Constraints {
     }
 }
 
-fn constraints_to_bool_array(constraints: Constraints) -> [bool; 6] {
+fn define_operational_space(constraints: &Constraints) -> [bool; 6] {
     let mut arr = [true; 6];
     arr[0] = constraints.position_x;
     arr[1] = constraints.position_y;
@@ -214,16 +214,16 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<DVector<T>, Error> {
-        let constraints_array = constraints_to_bool_array(constraints.clone());
+        let operational_space = define_operational_space(&constraints);
         let orig_positions = arm.joint_positions();
         let dof = orig_positions.len();
         let t_n = arm.end_transform();
-        let err = calc_pose_diff_with_constraints(target_pose, &t_n, constraints_array);
+        let err = calc_pose_diff_with_constraints(target_pose, &t_n, operational_space);
         let orig_positions = arm.joint_positions();
         let mut jacobi = jacobian(arm);
-        let use_dof = constraints_array.iter().filter(|x| **x).count();
+        let use_dof = operational_space.iter().filter(|x| **x).count();
         let mut removed_count = 0;
-        for (i, use_i) in constraints_array.iter().enumerate() {
+        for (i, use_i) in operational_space.iter().enumerate() {
             if !use_i {
                 jacobi = jacobi.remove_row(i - removed_count);
                 removed_count += 1;
@@ -264,7 +264,7 @@ where
         Ok(calc_pose_diff_with_constraints(
             target_pose,
             &arm.end_transform(),
-            constraints_array,
+            operational_space,
         ))
     }
 
@@ -274,9 +274,9 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<(), Error> {
-        let constraints_array = constraints_to_bool_array(constraints.clone());
+        let operational_space = define_operational_space(&constraints);
         let orig_positions = arm.joint_positions();
-        let use_dof = constraints_array.iter().filter(|x| **x).count();
+        let use_dof = operational_space.iter().filter(|x| **x).count();
         if orig_positions.len() < use_dof {
             return Err(Error::PreconditionError {
                 dof: orig_positions.len(),
@@ -287,7 +287,7 @@ where
         for _ in 0..self.num_max_try {
             let target_diff =
                 self.solve_one_loop_with_constraints(&arm, target_pose, constraints)?;
-            let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, constraints_array);
+            let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, operational_space);
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle
             {
@@ -308,7 +308,7 @@ where
 
 fn target_diff_to_len_rot_diff<T>(
     target_diff: &DVector<T>,
-    constraints_array: [bool; 6],
+    operational_space: [bool; 6],
 ) -> (Vector3<T>, Vector3<T>)
 where
     T: RealField,
@@ -316,14 +316,14 @@ where
     let mut len_diff = Vector3::zeros();
     let mut index = 0;
     for i in 0..3 {
-        if constraints_array[i] {
+        if operational_space[i] {
             len_diff[i] = target_diff[index];
             index += 1;
         }
     }
     let mut rot_diff = Vector3::zeros();
     for i in 0..3 {
-        if constraints_array[i + 3] {
+        if operational_space[i + 3] {
             rot_diff[i] = target_diff[index];
             index += 1;
         }
