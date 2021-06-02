@@ -31,7 +31,6 @@ mod chain;
 mod errors;
 mod funcs;
 mod ik;
-use nalgebra as na;
 pub mod iterator;
 pub mod joint;
 pub mod link;
@@ -52,6 +51,6 @@ pub use self::node::{Node, NodeBuilder};
 // (na::Real used to be the name, so we used to re-export k::Real)
 pub use na::{Isometry3, RealField as Real, RealField, Translation3, UnitQuaternion, Vector3};
 // export everything
-pub use nalgebra;
+pub extern crate nalgebra as na;
 pub use simba;
 pub use simba::scalar::{SubsetOf, SupersetOf};

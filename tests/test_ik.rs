@@ -1,5 +1,4 @@
-use k::connect;
-use nalgebra as na;
+use k::{connect, na};
 
 #[cfg(test)]
 mod tests {

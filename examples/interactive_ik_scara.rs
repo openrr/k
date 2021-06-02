@@ -13,10 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-use nalgebra as na;
 
 use k::prelude::*;
-use k::{connect, JacobianIkSolver, JointType, NodeBuilder};
+use k::{connect, na, JacobianIkSolver, JointType, NodeBuilder};
 use kiss3d::camera::ArcBall;
 use kiss3d::event::{Action, Key, WindowEvent};
 use kiss3d::light::Light;

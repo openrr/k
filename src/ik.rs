@@ -14,7 +14,6 @@
   limitations under the License.
 */
 use na::{DVector, Isometry3, RealField, Vector3, Vector6};
-use nalgebra as na;
 #[cfg(feature = "serde-serialize")]
 use serde::{Deserialize, Serialize};
 use simba::scalar::SubsetOf;

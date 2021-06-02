@@ -2,8 +2,8 @@
 #![feature(test)]
 
 extern crate test;
+use k::na;
 use na::RealField;
-use nalgebra as na;
 use std::f64::consts::PI;
 
 /*

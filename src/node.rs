@@ -15,7 +15,6 @@
 */
 //! graph structure for kinematic chain
 use na::{Isometry3, RealField, Translation3, UnitQuaternion};
-use nalgebra as na;
 use simba::scalar::SubsetOf;
 use std::fmt::{self, Display};
 use std::ops::Deref;

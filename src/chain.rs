@@ -17,7 +17,6 @@ use super::errors::*;
 use super::joint::*;
 use super::node::*;
 use na::{Isometry3, RealField};
-use nalgebra as na;
 use simba::scalar::SubsetOf;
 use std::fmt::{self, Display};
 use std::ops::Deref;

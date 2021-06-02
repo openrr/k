@@ -18,7 +18,6 @@ use super::range::*;
 use super::velocity::*;
 use crate::errors::*;
 use na::{Isometry3, RealField, Translation3, UnitQuaternion};
-use nalgebra as na;
 use simba::scalar::SubsetOf;
 use std::cell::RefCell;
 use std::fmt::{self, Display};
@@ -53,7 +52,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use nalgebra as na;
+    /// use k::na;
     ///
     /// // create fixed joint
     /// let fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
@@ -83,7 +82,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use nalgebra as na;
+    /// use k::na;
     ///
     /// // Create fixed joint
     /// let mut fixed = k::Joint::<f32>::new("f0", k::JointType::Fixed);
@@ -130,7 +129,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use nalgebra as na;
+    /// use k::na;
     ///
     /// // Create rotational joint with Y-axis
     /// let mut rot = k::Joint::<f64>::new("r0", k::JointType::Rotational { axis: na::Vector3::y_axis() });
@@ -208,7 +207,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use nalgebra as na;
+    /// use k::na;
     ///
     /// // Create linear joint with X-axis
     /// let mut lin = k::Joint::<f64>::new("l0", k::JointType::Linear { axis: na::Vector3::x_axis() });

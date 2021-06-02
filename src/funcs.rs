@@ -1,7 +1,6 @@
 use super::chain::*;
 use super::joint::*;
 use na::{DMatrix, RealField, Vector3};
-use nalgebra as na;
 use simba::scalar::SubsetOf;
 
 /// Calculate Jacobian of the serial chain (manipulator).

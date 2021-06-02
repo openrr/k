@@ -1,4 +1,4 @@
-use nalgebra as na;
+use k::na;
 
 fn main() {
     let l0 = k::Node::new(
