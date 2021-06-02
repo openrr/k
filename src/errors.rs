@@ -78,4 +78,6 @@ pub enum Error {
         necessary_dof
     )]
     PreconditionError { dof: usize, necessary_dof: usize },
+    #[error("There is no valid joint named {}", joint_name)]
+    InvalidJointNameError { joint_name: String },
 }

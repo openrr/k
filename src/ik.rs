@@ -215,39 +215,71 @@ where
         constraints: &Constraints,
     ) -> Result<DVector<T>, Error> {
         let operational_space = define_operational_space(&constraints);
+        let required_dof = operational_space.iter().filter(|x| **x).count();
         let orig_positions = arm.joint_positions();
-        let dof = orig_positions.len();
+        let available_dof = arm.dof() - constraints.ignored_joint_names.len();
+
         let t_n = arm.end_transform();
         let err = calc_pose_diff_with_constraints(target_pose, &t_n, operational_space);
-        let orig_positions = arm.joint_positions();
         let mut jacobi = jacobian(arm);
-        let use_dof = operational_space.iter().filter(|x| **x).count();
-        let mut removed_count = 0;
+        let mut num_removed_rows = 0;
         for (i, use_i) in operational_space.iter().enumerate() {
             if !use_i {
-                jacobi = jacobi.remove_row(i - removed_count);
-                removed_count += 1;
+                jacobi = jacobi.remove_row(i - num_removed_rows);
+                num_removed_rows += 1;
             }
         }
-        let positions_vec = if dof > use_dof {
+
+        let mut ignored_joint_indices = Vec::<usize>::new();
+        for joint_name in constraints.ignored_joint_names.iter() {
+            // Try to get joint index
+            match arm.iter_joints().position(|x| x.name == *joint_name) {
+                Some(index) => {
+                    ignored_joint_indices.push(index);
+                }
+                None => {
+                    return Err(Error::InvalidJointNameError {
+                        joint_name: joint_name.to_string(),
+                    });
+                }
+            }
+        }
+
+        ignored_joint_indices.sort();
+        for (i, joint_index) in ignored_joint_indices.iter().enumerate() {
+            jacobi = jacobi.remove_column(*joint_index - i);
+        }
+
+        let positions_vec = if available_dof > required_dof {
             const EPS: f64 = 0.0001;
             // redundant: pseudo inverse
             match self.nullspace_function {
                 Some(ref f) => {
                     let jacobi_inv = jacobi.clone().pseudo_inverse(na::convert(EPS)).unwrap();
-                    let d_q = jacobi_inv.clone() * err
-                        + (na::DMatrix::identity(dof, dof) - jacobi_inv * jacobi)
-                            * na::DVector::from_vec(f(&orig_positions));
+
+                    let mut subtask = na::DVector::from_vec(f(&orig_positions));
+                    for (i, joint_index) in ignored_joint_indices.iter().enumerate() {
+                        subtask = subtask.remove_row(*joint_index - i);
+                    }
+                    let mut d_q = jacobi_inv.clone() * err
+                        + (na::DMatrix::identity(available_dof, available_dof)
+                            - jacobi_inv * jacobi)
+                            * subtask;
+                    for joint_index in ignored_joint_indices.iter() {
+                        d_q = d_q.insert_row(*joint_index, T::zero());
+                    }
                     self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
                 }
-                None => self.add_positions_with_multiplier(
-                    &orig_positions,
-                    jacobi
+                None => {
+                    let mut d_q = jacobi
                         .svd(true, true)
                         .solve(&err, na::convert(EPS))
-                        .unwrap() // TODO
-                        .as_slice(),
-                ),
+                        .unwrap();
+                    for joint_index in ignored_joint_indices.iter() {
+                        d_q = d_q.insert_row(*joint_index, T::zero());
+                    }
+                    self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
+                }
             }
         } else {
             // normal inverse matrix
@@ -275,12 +307,13 @@ where
         constraints: &Constraints,
     ) -> Result<(), Error> {
         let operational_space = define_operational_space(&constraints);
+        let required_dof = operational_space.iter().filter(|x| **x).count();
         let orig_positions = arm.joint_positions();
-        let use_dof = operational_space.iter().filter(|x| **x).count();
-        if orig_positions.len() < use_dof {
+        let available_dof = arm.dof() - constraints.ignored_joint_names.len();
+        if available_dof < required_dof {
             return Err(Error::PreconditionError {
-                dof: orig_positions.len(),
-                necessary_dof: use_dof,
+                dof: available_dof,
+                necessary_dof: required_dof,
             });
         }
         let mut last_target_distance = None;
