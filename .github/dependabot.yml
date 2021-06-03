@@ -6,4 +6,9 @@ updates:
       interval: daily
     commit-message:
       prefix: ''
+    ignore:
+      # These dependencies need to be updated at the same time.
+      - dependency-name: nalgebra
+      - dependency-name: simba
+      - dependency-name: kiss3d
     labels: []
