@@ -212,15 +212,15 @@ where
         &self,
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
-        constraints: &Constraints,
+        operational_space: &[bool; 6],
+        ignored_joint_indices: &Vec<usize>,
     ) -> Result<DVector<T>, Error> {
-        let operational_space = define_operational_space(&constraints);
         let required_dof = operational_space.iter().filter(|x| **x).count();
         let orig_positions = arm.joint_positions();
-        let available_dof = arm.dof() - constraints.ignored_joint_names.len();
+        let available_dof = arm.dof() - ignored_joint_indices.len();
 
         let t_n = arm.end_transform();
-        let err = calc_pose_diff_with_constraints(target_pose, &t_n, operational_space);
+        let err = calc_pose_diff_with_constraints(target_pose, &t_n, *operational_space);
         let mut jacobi = jacobian(arm);
         let mut num_removed_rows = 0;
         for (i, use_i) in operational_space.iter().enumerate() {
@@ -230,22 +230,6 @@ where
             }
         }
 
-        let mut ignored_joint_indices = Vec::<usize>::new();
-        for joint_name in constraints.ignored_joint_names.iter() {
-            // Try to get joint index
-            match arm.iter_joints().position(|x| x.name == *joint_name) {
-                Some(index) => {
-                    ignored_joint_indices.push(index);
-                }
-                None => {
-                    return Err(Error::InvalidJointNameError {
-                        joint_name: joint_name.to_string(),
-                    });
-                }
-            }
-        }
-
-        ignored_joint_indices.sort();
         for (i, joint_index) in ignored_joint_indices.iter().enumerate() {
             jacobi = jacobi.remove_column(*joint_index - i);
         }
@@ -296,7 +280,7 @@ where
         Ok(calc_pose_diff_with_constraints(
             target_pose,
             &arm.end_transform(),
-            operational_space,
+            *operational_space,
         ))
     }
 
@@ -316,10 +300,25 @@ where
                 necessary_dof: required_dof,
             });
         }
+        let mut ignored_joint_indices = Vec::new();
+        for joint_name in constraints.ignored_joint_names.iter() {
+            // Try to get joint index
+            match arm.iter_joints().position(|x| x.name == *joint_name) {
+                Some(index) => {
+                    ignored_joint_indices.push(index);
+                }
+                None => {
+                    return Err(Error::InvalidJointNameError {
+                        joint_name: joint_name.to_string(),
+                    });
+                }
+            }
+        }
+        ignored_joint_indices.sort();
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
             let target_diff =
-                self.solve_one_loop_with_constraints(&arm, target_pose, constraints)?;
+                self.solve_one_loop_with_constraints(&arm, target_pose, &operational_space, &ignored_joint_indices)?;
             let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, operational_space);
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle
