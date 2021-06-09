@@ -213,7 +213,7 @@ where
         arm: &SerialChain<T>,
         target_pose: &Isometry3<T>,
         operational_space: &[bool; 6],
-        ignored_joint_indices: &Vec<usize>,
+        ignored_joint_indices: &[usize],
     ) -> Result<DVector<T>, Error> {
         let required_dof = operational_space.iter().filter(|x| **x).count();
         let orig_positions = arm.joint_positions();
@@ -249,7 +249,7 @@ where
                         + (na::DMatrix::identity(available_dof, available_dof)
                             - jacobi_inv * jacobi)
                             * subtask;
-                    for joint_index in ignored_joint_indices.iter() {
+                    for joint_index in ignored_joint_indices {
                         d_q = d_q.insert_row(*joint_index, T::zero());
                     }
                     self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
@@ -259,7 +259,7 @@ where
                         .svd(true, true)
                         .solve(&err, na::convert(EPS))
                         .unwrap();
-                    for joint_index in ignored_joint_indices.iter() {
+                    for joint_index in ignored_joint_indices {
                         d_q = d_q.insert_row(*joint_index, T::zero());
                     }
                     self.add_positions_with_multiplier(&orig_positions, d_q.as_slice())
@@ -301,7 +301,7 @@ where
             });
         }
         let mut ignored_joint_indices = Vec::new();
-        for joint_name in constraints.ignored_joint_names.iter() {
+        for joint_name in &constraints.ignored_joint_names {
             // Try to get joint index
             match arm.iter_joints().position(|x| x.name == *joint_name) {
                 Some(index) => {
