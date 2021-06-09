@@ -195,7 +195,7 @@ where
         self.nullspace_function = Some(func);
     }
 
-    /// Clear the null function which is set by `set_nullspace_funtion`.
+    /// Clear the null function which is set by `set_nullspace_function`.
     pub fn clear_nullspace_function(&mut self) {
         self.nullspace_function = None;
     }
