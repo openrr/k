@@ -151,4 +151,23 @@ mod tests {
             assert!((init - end).abs() < 0.002);
         }
     }
+
+    #[test]
+    pub fn ik_fk7_with_constraints() {
+        let arm = create_joint_with_link_array7();
+        let angles = vec![0.8, 0.2, 0.0, -1.5, 0.0, -0.3, 0.0];
+        arm.set_joint_positions(&angles).unwrap();
+        let poses = arm.update_transforms();
+        let init_pose = poses.last().unwrap();
+        let solver = k::JacobianIkSolver::new(0.001, 0.001, 0.5, 100);
+        let mut constraints = k::Constraints::default();
+        constraints.rotation_x = false;
+        constraints.ignored_joint_names = vec!["wrist_roll".to_string()];
+        solver.solve_with_constraints(&arm, &init_pose, &constraints).unwrap();
+        let end_angles = arm.joint_positions();
+        for (init, end) in angles.iter().zip(end_angles.iter()) {
+            assert!((init - end).abs() < 0.001);
+            assert!(angles[6] == end_angles[6]);
+        }
+    }
 }
