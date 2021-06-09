@@ -317,8 +317,12 @@ where
         ignored_joint_indices.sort();
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
-            let target_diff =
-                self.solve_one_loop_with_constraints(&arm, target_pose, &operational_space, &ignored_joint_indices)?;
+            let target_diff = self.solve_one_loop_with_constraints(
+                &arm,
+                target_pose,
+                &operational_space,
+                &ignored_joint_indices,
+            )?;
             let (len_diff, rot_diff) = target_diff_to_len_rot_diff(&target_diff, operational_space);
             if len_diff.norm() < self.allowable_target_distance
                 && rot_diff.norm() < self.allowable_target_angle

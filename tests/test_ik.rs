@@ -163,7 +163,9 @@ mod tests {
         let mut constraints = k::Constraints::default();
         constraints.rotation_x = false;
         constraints.ignored_joint_names = vec!["wrist_roll".to_string()];
-        solver.solve_with_constraints(&arm, &init_pose, &constraints).unwrap();
+        solver
+            .solve_with_constraints(&arm, &init_pose, &constraints)
+            .unwrap();
         let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
