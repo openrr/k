@@ -86,6 +86,6 @@ Actual data (joint angle(position), transform between nodes) is stored in `Joint
 
 ![ik_sample](img/chain.png)
 
-You can get local/world transform of nodes. See below figure to understand what is the node's `local_transfrom()` and `world_transfrom()`.
+You can get local/world transform of nodes. See below figure to understand what is the node's `local_transform()` and `world_transform()`.
 
 ![ik_sample](img/transform.png)
