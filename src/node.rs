@@ -83,7 +83,7 @@ where
 
     pub fn parent(&self) -> Option<Node<T>> {
         match self.lock().parent {
-            Some(ref weak) => weak.upgrade().and_then(|arc| Some(Node::from_arc(arc))),
+            Some(ref weak) => weak.upgrade().map(Node::from_arc),
             None => None,
         }
     }
@@ -311,7 +311,7 @@ where
 
     pub fn mimic_parent(&self) -> Option<Node<T>> {
         match self.lock().mimic_parent {
-            Some(ref weak) => weak.upgrade().and_then(|arc| Some(Node::from_arc(arc))),
+            Some(ref weak) => weak.upgrade().map(Node::from_arc),
             None => None,
         }
     }
@@ -345,7 +345,7 @@ where
     T: RealField,
 {
     fn eq(&self, other: &Node<T>) -> bool {
-        &*self.0 as *const Mutex<NodeImpl<T>> == &*other.0 as *const Mutex<NodeImpl<T>>
+        std::ptr::eq(&*self.0, &*other.0)
     }
 }
 
@@ -443,7 +443,7 @@ where
     type Target = Link<T>;
     fn deref(&self) -> &Self::Target {
         // danger
-        &self.guard.link.as_ref().unwrap()
+        self.guard.link.as_ref().unwrap()
     }
 }
 

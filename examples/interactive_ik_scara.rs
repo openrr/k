@@ -127,7 +127,7 @@ fn main() {
     );
     arm.update_transforms();
     let end = arm.find("wrist_yaw").unwrap();
-    let mut target = end.world_transform().unwrap().clone();
+    let mut target = end.world_transform().unwrap();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
     let eye = Point3::new(0.5f32, 1.0, 2.0);
@@ -140,60 +140,59 @@ fn main() {
     while window.render_with_camera(&mut arc_ball) {
         let mut updated = false;
         for mut event in window.events().iter() {
-            match event.value {
-                WindowEvent::Key(code, Action::Release, _) => {
-                    match code {
-                        Key::Z => {
-                            // reset
-                            arm.set_joint_positions(&angles).unwrap();
-                            arm.update_transforms();
-                            target = end.world_transform().unwrap().clone();
-                            updated = true;
-                        }
-                        Key::F => {
-                            target.translation.vector[2] += 0.1;
-                            updated = true;
-                        }
-                        Key::B => {
-                            target.translation.vector[2] -= 0.1;
-                            updated = true;
-                        }
-                        Key::R => {
-                            target.translation.vector[0] -= 0.1;
-                            updated = true;
-                        }
-                        Key::L => {
-                            target.translation.vector[0] += 0.1;
-                            updated = true;
-                        }
-                        Key::P => {
-                            target.translation.vector[1] += 0.1;
-                            updated = true;
-                        }
-                        Key::N => {
-                            target.translation.vector[1] -= 0.1;
-                            updated = true;
-                        }
-                        _ => {}
+            if let WindowEvent::Key(code, Action::Release, _) = event.value {
+                match code {
+                    Key::Z => {
+                        // reset
+                        arm.set_joint_positions(&angles).unwrap();
+                        arm.update_transforms();
+                        target = end.world_transform().unwrap();
+                        updated = true;
                     }
-                    event.inhibited = true // override the default keyboard handler
+                    Key::F => {
+                        target.translation.vector[2] += 0.1;
+                        updated = true;
+                    }
+                    Key::B => {
+                        target.translation.vector[2] -= 0.1;
+                        updated = true;
+                    }
+                    Key::R => {
+                        target.translation.vector[0] -= 0.1;
+                        updated = true;
+                    }
+                    Key::L => {
+                        target.translation.vector[0] += 0.1;
+                        updated = true;
+                    }
+                    Key::P => {
+                        target.translation.vector[1] += 0.1;
+                        updated = true;
+                    }
+                    Key::N => {
+                        target.translation.vector[1] -= 0.1;
+                        updated = true;
+                    }
+                    _ => {}
                 }
-                _ => {}
+                event.inhibited = true // override the default keyboard handler
             }
         }
         if updated {
-            let mut constraints = k::Constraints::default();
-            constraints.rotation_x = false;
-            constraints.rotation_z = false;
+            let constraints = k::Constraints {
+                rotation_x: false,
+                rotation_z: false,
+                ..Default::default()
+            };
             solver
                 .solve_with_constraints(&arm, &target, &constraints)
                 .unwrap_or_else(|err| {
                     println!("Err: {}", err);
                 });
         }
-        c_t.set_local_transformation(target.clone());
+        c_t.set_local_transformation(target);
         for (i, trans) in arm.update_transforms().iter().enumerate() {
-            cubes[i].set_local_transformation(trans.clone());
+            cubes[i].set_local_transformation(*trans);
         }
     }
 }

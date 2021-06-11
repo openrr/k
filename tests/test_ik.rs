@@ -126,7 +126,7 @@ mod tests {
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
         let solver = k::JacobianIkSolver::new(0.001, 0.001, 0.5, 100);
-        solver.solve(&arm, &init_pose).unwrap();
+        solver.solve(&arm, init_pose).unwrap();
         let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
@@ -144,7 +144,7 @@ mod tests {
         // set different angles
         arm.set_joint_positions(&[0.4, 0.1, 0.1, -1.0, 0.1, 0.1])
             .unwrap();
-        solver.solve(&arm, &init_pose).unwrap();
+        solver.solve(&arm, init_pose).unwrap();
         let end_angles = arm.joint_positions();
         println!("{:?}", end_angles);
         for (init, end) in angles.iter().zip(end_angles.iter()) {
@@ -160,16 +160,18 @@ mod tests {
         let poses = arm.update_transforms();
         let init_pose = poses.last().unwrap();
         let solver = k::JacobianIkSolver::new(0.001, 0.001, 0.5, 100);
-        let mut constraints = k::Constraints::default();
-        constraints.rotation_x = false;
-        constraints.ignored_joint_names = vec!["wrist_roll".to_string()];
+        let constraints = k::Constraints {
+            rotation_x: false,
+            ignored_joint_names: vec!["wrist_roll".to_string()],
+            ..Default::default()
+        };
         solver
-            .solve_with_constraints(&arm, &init_pose, &constraints)
+            .solve_with_constraints(&arm, init_pose, &constraints)
             .unwrap();
         let end_angles = arm.joint_positions();
         for (init, end) in angles.iter().zip(end_angles.iter()) {
             assert!((init - end).abs() < 0.001);
-            assert!(angles[6] == end_angles[6]);
+            assert!((angles[6] - end_angles[6]).abs() < f32::EPSILON);
         }
     }
 }

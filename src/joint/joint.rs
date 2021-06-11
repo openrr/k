@@ -256,10 +256,7 @@ where
 
     #[inline]
     pub fn is_movable(&self) -> bool {
-        match self.joint_type {
-            JointType::Fixed => false,
-            _ => true,
-        }
+        !matches!(self.joint_type, JointType::Fixed)
     }
 }
 

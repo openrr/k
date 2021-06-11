@@ -107,7 +107,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
 
 impl<T: RealField + SubsetOf<f64>> Display for Chain<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.fmt_with_indent_level(&self.iter().next().unwrap(), 0, f)
+        self.fmt_with_indent_level(self.iter().next().unwrap(), 0, f)
     }
 }
 
@@ -635,7 +635,6 @@ where
 fn test_chain0() {
     use super::joint::*;
     use super::node::*;
-    use na;
 
     let joint0 = NodeBuilder::new()
         .name("j0")
@@ -736,7 +735,6 @@ fn test_chain0() {
 fn test_mimic() {
     use super::joint::*;
     use super::node::*;
-    use na;
 
     let joint0 = NodeBuilder::new()
         .name("j0")
@@ -770,7 +768,7 @@ fn test_mimic() {
     let positions = vec![0.1, 0.2, 0.3];
     arm.set_joint_positions(&positions).unwrap();
     let positions = arm.joint_positions();
-    assert_eq!(positions[0], 0.1);
-    assert_eq!(positions[1], 0.2);
-    assert_eq!(positions[2], 0.9);
+    assert!((positions[0] - 0.1f64).abs() < f64::EPSILON);
+    assert!((positions[1] - 0.2f64).abs() < f64::EPSILON);
+    assert!((positions[2] - 0.9f64).abs() < f64::EPSILON);
 }

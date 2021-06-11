@@ -105,12 +105,12 @@ fn test_update_center_of_mass() {
     j1.set_parent(&j0);
     let tree = Chain::from_root(j0);
     let com1 = center_of_mass(&tree);
-    assert_eq!(com1.x, 0.0);
-    assert_eq!(com1.y, 1.0);
-    assert_eq!(com1.z, 1.6);
+    assert!((com1.x - 0.0f64).abs() < f64::EPSILON);
+    assert!((com1.y - 1.0f64).abs() < f64::EPSILON);
+    assert!((com1.z - 1.6f64).abs() < f64::EPSILON);
     j1.set_joint_position(0.5).unwrap();
     let com2 = center_of_mass(&tree);
     assert!((com2.x - 0.383540).abs() < 0.0001);
-    assert_eq!(com2.y, 1.0);
+    assert!((com2.y - 1.0f64).abs() < f64::EPSILON);
     assert!((com2.z - 1.502066).abs() < 0.0001);
 }
