@@ -148,6 +148,7 @@ pub struct JacobianIkSolver<T: RealField> {
     /// How many times the joints are tried to be moved
     pub num_max_try: usize,
     /// Nullspace function for a redundant system
+    #[allow(clippy::type_complexity)]
     nullspace_function: Option<Box<dyn Fn(&[T]) -> Vec<T> + Send + Sync>>,
 }
 
@@ -290,7 +291,7 @@ where
         target_pose: &Isometry3<T>,
         constraints: &Constraints,
     ) -> Result<(), Error> {
-        let operational_space = define_operational_space(&constraints);
+        let operational_space = define_operational_space(constraints);
         let required_dof = operational_space.iter().filter(|x| **x).count();
         let orig_positions = arm.joint_positions();
         let available_dof = arm.dof() - constraints.ignored_joint_names.len();
@@ -314,11 +315,11 @@ where
                 }
             }
         }
-        ignored_joint_indices.sort();
+        ignored_joint_indices.sort_unstable();
         let mut last_target_distance = None;
         for _ in 0..self.num_max_try {
             let target_diff = self.solve_one_loop_with_constraints(
-                &arm,
+                arm,
                 target_pose,
                 &operational_space,
                 &ignored_joint_indices,
@@ -491,6 +492,6 @@ fn test_nullspace_func() {
     let pos1 = vec![0.5, 0.5];
     let values = f(&pos1);
     assert_eq!(values.len(), 2);
-    assert_eq!(values[0], 0.25);
-    assert_eq!(values[1], -0.05);
+    assert!((values[0] - 0.25f64).abs() < f64::EPSILON);
+    assert!((values[1] - (-0.05f64)).abs() < f64::EPSILON);
 }

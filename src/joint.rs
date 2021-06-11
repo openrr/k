@@ -14,6 +14,7 @@
   limitations under the License.
 */
 //! Joint related structs
+#[allow(clippy::module_inception)]
 mod joint;
 mod joint_type;
 mod mimic;

@@ -165,7 +165,7 @@ fn main() {
     );
     arm.update_transforms();
     let end = arm.find("wrist_roll").unwrap();
-    let mut target = end.world_transform().unwrap().clone();
+    let mut target = end.world_transform().unwrap();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
     let eye = Point3::new(0.5f32, 1.0, 2.0);
@@ -177,47 +177,46 @@ fn main() {
 
     while window.render_with_camera(&mut arc_ball) {
         for mut event in window.events().iter() {
-            match event.value {
-                WindowEvent::Key(code, Action::Release, _) => {
-                    match code {
-                        Key::Z => {
-                            // reset
-                            arm.set_joint_positions(&angles).unwrap();
-                            arm.update_transforms();
-                            target = end.world_transform().unwrap().clone();
-                        }
-                        Key::F => target.translation.vector[2] += 0.1,
-                        Key::B => target.translation.vector[2] -= 0.1,
-                        Key::R => target.translation.vector[0] -= 0.1,
-                        Key::L => target.translation.vector[0] += 0.1,
-                        Key::P => target.translation.vector[1] += 0.1,
-                        Key::N => target.translation.vector[1] -= 0.1,
-                        Key::X => solver.set_nullspace_function(Box::new(
-                            k::create_reference_positions_nullspace_function(
-                                vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                                vec![0.1, 0.1, 0.1, 1.0, 0.1, 0.5, 0.0],
-                            ),
-                        )),
-                        Key::C => solver.clear_nullspace_function(),
-                        Key::J => println!("joint positions: {:?}", arm.joint_positions()),
-                        _ => {}
+            if let WindowEvent::Key(code, Action::Release, _) = event.value {
+                match code {
+                    Key::Z => {
+                        // reset
+                        arm.set_joint_positions(&angles).unwrap();
+                        arm.update_transforms();
+                        target = end.world_transform().unwrap();
                     }
-                    event.inhibited = true // override the default keyboard handler
+                    Key::F => target.translation.vector[2] += 0.1,
+                    Key::B => target.translation.vector[2] -= 0.1,
+                    Key::R => target.translation.vector[0] -= 0.1,
+                    Key::L => target.translation.vector[0] += 0.1,
+                    Key::P => target.translation.vector[1] += 0.1,
+                    Key::N => target.translation.vector[1] -= 0.1,
+                    Key::X => solver.set_nullspace_function(Box::new(
+                        k::create_reference_positions_nullspace_function(
+                            vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                            vec![0.1, 0.1, 0.1, 1.0, 0.1, 0.5, 0.0],
+                        ),
+                    )),
+                    Key::C => solver.clear_nullspace_function(),
+                    Key::J => println!("joint positions: {:?}", arm.joint_positions()),
+                    _ => {}
                 }
-                _ => {}
+                event.inhibited = true // override the default keyboard handler
             }
         }
-        let mut constraints = k::Constraints::default();
-        constraints.rotation_x = false;
-        constraints.ignored_joint_names = opt.ignored_joint_names.clone();
+        let constraints = k::Constraints {
+            rotation_x: false,
+            ignored_joint_names: opt.ignored_joint_names.clone(),
+            ..Default::default()
+        };
         solver
             .solve_with_constraints(&arm, &target, &constraints)
             .unwrap_or_else(|err| {
                 println!("Err: {}", err);
             });
-        c_t.set_local_transformation(target.clone());
+        c_t.set_local_transformation(target);
         for (i, trans) in arm.update_transforms().iter().enumerate() {
-            cubes[i].set_local_transformation(trans.clone());
+            cubes[i].set_local_transformation(*trans);
         }
     }
 }
