@@ -13,6 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
+use std::fmt;
+
 use na::{DVector, Isometry3, RealField, Vector3, Vector6};
 use nalgebra as na;
 #[cfg(feature = "serde-serialize")]
@@ -340,6 +343,18 @@ where
             position_diff: na::try_convert(last_target_distance.unwrap().0).unwrap_or_default(),
             rotation_diff: na::try_convert(last_target_distance.unwrap().1).unwrap_or_default(),
         })
+    }
+}
+
+impl<T: RealField + fmt::Debug> fmt::Debug for JacobianIkSolver<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("JacobianIkSolver")
+            .field("allowable_target_distance", &self.allowable_target_distance)
+            .field("allowable_target_angle", &self.allowable_target_angle)
+            .field("jacobian_multiplier", &self.jacobian_multiplier)
+            .field("num_max_try", &self.num_max_try)
+            .field("has_nullspace_function", &self.nullspace_function.is_some())
+            .finish()
     }
 }
 

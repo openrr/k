@@ -28,8 +28,8 @@ use super::link::*;
 
 type WeakNode<T> = Weak<Mutex<NodeImpl<T>>>;
 
-#[derive(Debug)]
 /// Node for joint tree struct
+#[derive(Debug)]
 pub struct NodeImpl<T>
 where
     T: RealField,
@@ -372,6 +372,7 @@ where
 
 macro_rules! def_ref_guard {
     ($guard_struct:ident, $target:ty, $member:ident) => {
+        #[derive(Debug)]
         pub struct $guard_struct<'a, T>
         where
             T: RealField,
@@ -429,6 +430,7 @@ def_ref_guard!(OptionLinkRefGuard, Option<Link<T>>, link);
 //def_ref_guard!(LinkRefGuard, Link<T>, link);
 def_ref_guard!(ChildrenRefGuard, Vec<Node<T>>, children);
 
+#[derive(Debug)]
 pub struct LinkRefGuard<'a, T>
 where
     T: RealField,

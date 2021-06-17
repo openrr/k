@@ -209,6 +209,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct LinkBuilder<T>
 where
     T: RealField,
