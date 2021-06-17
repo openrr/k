@@ -93,7 +93,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
         &self,
         node: &Node<T>,
         level: usize,
-        f: &mut fmt::Formatter,
+        f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         if self.nodes.iter().any(|joint| joint == node) {
             writeln!(f, "{}{}", "    ".repeat(level), node)?;
@@ -106,7 +106,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
 }
 
 impl<T: RealField + SubsetOf<f64>> Display for Chain<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.fmt_with_indent_level(self.iter().next().unwrap(), 0, f)
     }
 }
@@ -271,12 +271,12 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     ///
     /// Fixed joints are ignored. If you want to manipulate on Fixed,
     /// use `iter()` instead of `iter_joints()`
-    pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<T>> {
+    pub fn iter_joints(&self) -> impl Iterator<Item = JointRefGuard<'_, T>> {
         self.movable_nodes.iter().map(|node| node.joint())
     }
 
     /// Iterate for links
-    pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<T>> {
+    pub fn iter_links(&self) -> impl Iterator<Item = LinkRefGuard<'_, T>> {
         self.nodes.iter().filter_map(|node| {
             if node.link().is_some() {
                 Some(LinkRefGuard { guard: node.lock() })
@@ -616,7 +616,7 @@ impl<T> Display for SerialChain<T>
 where
     T: RealField + SubsetOf<f64>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.inner.fmt(f)
     }
 }
