@@ -52,7 +52,7 @@ fn axis_to_string<T: RealField>(axis: &Unit<Vector3<T>>) -> &str {
 }
 
 impl<T: RealField> Display for JointType<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             JointType::Fixed => write!(f, "[⚓]"),
             JointType::Rotational { axis } => write!(f, "[⚙{}]", axis_to_string(axis)),

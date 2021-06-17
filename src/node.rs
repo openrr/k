@@ -69,11 +69,11 @@ where
         })))
     }
 
-    pub(crate) fn lock(&self) -> MutexGuard<NodeImpl<T>> {
+    pub(crate) fn lock(&self) -> MutexGuard<'_, NodeImpl<T>> {
         self.0.lock().unwrap()
     }
 
-    pub fn joint(&self) -> JointRefGuard<T> {
+    pub fn joint(&self) -> JointRefGuard<'_, T> {
         JointRefGuard { guard: self.lock() }
     }
 
@@ -88,7 +88,7 @@ where
         }
     }
 
-    pub fn children(&self) -> ChildrenRefGuard<T> {
+    pub fn children(&self) -> ChildrenRefGuard<'_, T> {
         ChildrenRefGuard { guard: self.lock() }
     }
 
@@ -326,7 +326,7 @@ where
         self.lock().link = link;
     }
 
-    pub fn link(&self) -> OptionLinkRefGuard<T> {
+    pub fn link(&self) -> OptionLinkRefGuard<'_, T> {
         OptionLinkRefGuard { guard: self.lock() }
     }
 }
@@ -350,7 +350,7 @@ where
 }
 
 impl<T: RealField + SubsetOf<f64>> Display for Node<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let inner = self.lock();
         inner.joint.fmt(f)?;
 
