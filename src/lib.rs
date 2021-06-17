@@ -24,7 +24,7 @@
 //! See `Chain` as the top level interface.
 //!
 
-#![warn(rust_2018_idioms)]
+#![warn(missing_debug_implementations, rust_2018_idioms)]
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
