@@ -1,10 +1,7 @@
-// rustup run nightly cargo bench
-#![feature(test)]
-
-extern crate test;
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use k::prelude::*;
 
-fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher) {
+fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut Bencher) {
     let target_node = robot.find(target_link).unwrap();
     let arm = k::SerialChain::from_end(target_node);
     // set joint angles
@@ -20,8 +17,12 @@ fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut test::Bencher
     });
 }
 
-#[bench]
-fn bench_rctree_ik(b: &mut test::Bencher) {
+fn bench_rctree_ik(c: &mut Criterion) {
     let robot = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
-    bench_tree_ik(&robot, "l_wrist_pitch", b);
+    c.bench_function("bench_rctree_ik", |b| {
+        bench_tree_ik(&robot, "l_wrist_pitch", b);
+    });
 }
+
+criterion_group!(benches, bench_rctree_ik);
+criterion_main!(benches);
