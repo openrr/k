@@ -1,7 +1,4 @@
-// rustup run nightly cargo bench
-#![feature(test)]
-
-extern crate test;
+use criterion::{criterion_group, criterion_main, Criterion};
 use k::joint::Range;
 use na::RealField;
 use nalgebra as na;
@@ -63,30 +60,35 @@ where
         .collect()
 }
 
-#[bench]
-fn bench_rctree(b: &mut test::Bencher) {
+fn bench_rctree(c: &mut Criterion) {
     let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
     let limits = chain
         .iter_joints()
         .map(|j| j.limits)
         .collect::<Vec<Option<Range<f64>>>>();
     let angles = generate_random_joint_angles_from_limits(&limits);
-    b.iter(|| {
-        chain.set_joint_positions(&angles).unwrap();
-        let _trans = chain.update_transforms();
-        assert_eq!(_trans.len(), 13);
+    c.bench_function("bench_rctree", |b| {
+        b.iter(|| {
+            chain.set_joint_positions(&angles).unwrap();
+            let _trans = chain.update_transforms();
+            assert_eq!(_trans.len(), 13);
+        });
     });
 }
 
-#[bench]
-fn bench_rctree_set_joints(b: &mut test::Bencher) {
+fn bench_rctree_set_joints(c: &mut Criterion) {
     let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
     let limits = chain
         .iter_joints()
         .map(|j| j.limits)
         .collect::<Vec<Option<Range<f64>>>>();
     let angles = generate_random_joint_angles_from_limits(&limits);
-    b.iter(|| {
-        chain.set_joint_positions(&angles).unwrap();
+    c.bench_function("bench_rctree_set_joints", |b| {
+        b.iter(|| {
+            chain.set_joint_positions(&angles).unwrap();
+        });
     });
 }
+
+criterion_group!(benches, bench_rctree, bench_rctree_set_joints);
+criterion_main!(benches);
