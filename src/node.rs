@@ -152,7 +152,7 @@ where
     /// Get the origin transform of the joint
     #[inline]
     pub fn origin(&self) -> Isometry3<T> {
-        *self.joint().origin()
+        self.joint().origin().clone()
     }
 
     /// Set the position (angle) of the joint
@@ -205,14 +205,14 @@ where
         if node.mimic_parent.is_some() {
             return Ok(());
         }
-        node.joint.set_joint_position(position)?;
+        node.joint.set_joint_position(position.clone())?;
         for child in &node.mimic_children {
             let mut child_node = child.lock();
             let mimic = child_node.mimic.clone();
             match mimic {
                 Some(m) => child_node
                     .joint
-                    .set_joint_position(m.mimic_position(position))?,
+                    .set_joint_position(m.mimic_position(position.clone()))?,
                 None => {
                     let from = self.joint().name.to_owned();
                     let to = child.joint().name.to_owned();

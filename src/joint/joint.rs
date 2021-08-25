@@ -108,12 +108,12 @@ where
             });
         }
         if let Some(ref range) = self.limits {
-            if !range.is_valid(position) {
+            if !range.is_valid(position.clone()) {
                 return Err(Error::OutOfLimitError {
                     joint_name: self.name.to_string(),
-                    position: na::try_convert(position).unwrap_or_default(),
-                    max_limit: na::try_convert(range.max).unwrap_or_default(),
-                    min_limit: na::try_convert(range.min).unwrap_or_default(),
+                    position: na::try_convert(position.clone()).unwrap_or_default(),
+                    max_limit: na::try_convert(range.max.clone()).unwrap_or_default(),
+                    min_limit: na::try_convert(range.min.clone()).unwrap_or_default(),
                 });
             }
         }
@@ -168,7 +168,7 @@ where
     pub fn joint_position(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
-            _ => Some(self.position),
+            _ => Some(self.position.clone()),
         }
     }
 
@@ -199,7 +199,7 @@ where
     pub fn joint_velocity(&self) -> Option<T> {
         match self.joint_type {
             JointType::Fixed => None,
-            _ => Some(self.velocity),
+            _ => Some(self.velocity.clone()),
         }
     }
 
@@ -218,18 +218,18 @@ where
     /// ```
     ///
     pub fn local_transform(&self) -> Isometry3<T> {
-        let joint_transform = match self.joint_type {
+        let joint_transform = match &self.joint_type {
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => Isometry3::from_parts(
                 Translation3::new(T::zero(), T::zero(), T::zero()),
-                UnitQuaternion::from_axis_angle(&axis, self.position),
+                UnitQuaternion::from_axis_angle(&axis, self.position.clone()),
             ),
             JointType::Linear { axis } => Isometry3::from_parts(
-                Translation3::from(axis.into_inner() * self.position),
+                Translation3::from(axis.clone().into_inner() * self.position.clone()),
                 UnitQuaternion::identity(),
             ),
         };
-        self.origin * joint_transform
+        self.origin.clone() * joint_transform
     }
 
     #[inline]
@@ -246,12 +246,14 @@ where
     /// The value is updated by `Chain::update_transforms`
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
-        *self.world_transform_cache.borrow()
+        // *self.world_transform_cache.borrow()
+        self.world_transform_cache.borrow().clone()
     }
 
     #[inline]
     pub fn world_velocity(&self) -> Option<Velocity<T>> {
-        *self.world_velocity_cache.borrow()
+        // *self.world_velocity_cache.borrow()
+        self.world_velocity_cache.borrow().clone()
     }
 
     #[inline]

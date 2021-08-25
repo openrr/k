@@ -354,7 +354,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             });
         }
         for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
-            joint.set_joint_position(*position)?;
+            joint.set_joint_position(position.clone())?;
         }
         Ok(())
     }
@@ -364,7 +364,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     /// This function is safe, in contrast to `set_joint_positions_unchecked`.
     pub fn set_joint_positions_clamped(&self, positions_vec: &[T]) {
         for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
-            joint.set_joint_position_clamped(*position);
+            joint.set_joint_position_clamped(position.clone());
         }
     }
 
@@ -372,7 +372,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     #[inline]
     pub fn set_joint_positions_unchecked(&self, positions_vec: &[T]) {
         for (joint, position) in self.movable_nodes.iter().zip(positions_vec.iter()) {
-            joint.set_joint_position_unchecked(*position);
+            joint.set_joint_position_unchecked(position.clone());
         }
     }
 
@@ -382,7 +382,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             .map(|node| {
                 let parent_transform = node.parent_world_transform().expect("cache must exist");
                 let trans = parent_transform * node.joint().local_transform();
-                node.joint().set_world_transform(trans);
+                node.joint().set_world_transform(trans.clone());
                 trans
             })
             .collect()
@@ -399,11 +399,11 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                 let parent_velocity = node
                     .parent_world_velocity()
                     .expect("velocity cache must exist");
-                let velocity = match node.joint().joint_type {
+                let velocity = match &node.joint().joint_type {
                     JointType::Fixed => parent_velocity,
                     JointType::Rotational { axis } => {
                         let parent = node.parent().expect("parent must exist");
-                        let parent_vel = parent.joint().origin().translation.vector;
+                        let parent_vel = parent.joint().origin().translation.vector.clone();
                         Velocity::from_parts(
                             parent_velocity.translation
                                 + parent_velocity.rotation.cross(
@@ -415,7 +415,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                                     .expect("cache must exist")
                                     .rotation
                                     .to_rotation_matrix()
-                                    * (axis.into_inner() * node.joint().joint_velocity().unwrap()),
+                                    * (axis.clone().into_inner().clone() * node.joint().joint_velocity().unwrap()),
                         )
                     }
                     JointType::Linear { axis } => Velocity::from_parts(
@@ -425,12 +425,12 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                                 .expect("cache must exist")
                                 .rotation
                                 .to_rotation_matrix()
-                                * (axis.into_inner() * node.joint().joint_velocity().unwrap()),
+                                * (axis.clone().into_inner() * node.joint().joint_velocity().unwrap()),
                         // TODO: Is this true??
                         parent_velocity.rotation,
                     ),
                 };
-                node.joint().set_world_velocity(velocity);
+                node.joint().set_world_velocity(velocity.clone());
                 velocity
             })
             .collect()
@@ -443,14 +443,14 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
             let parent_transform = node.parent_world_transform().expect("cache must exist");
             let mut node_mut = node.lock();
             if let Some(ref mut link) = node_mut.link {
-                let inertial_trans = parent_transform * link.inertial.origin();
+                let inertial_trans = parent_transform.clone() * link.inertial.origin();
                 link.inertial.set_world_transform(inertial_trans);
                 for c in &mut link.collisions {
-                    let c_trans = parent_transform * c.origin();
+                    let c_trans = parent_transform.clone() * c.origin();
                     c.set_world_transform(c_trans);
                 }
                 for v in &mut link.visuals {
-                    let v_trans = parent_transform * v.origin();
+                    let v_trans = parent_transform.clone() * v.origin();
                     v.set_world_transform(v_trans);
                 }
             }
