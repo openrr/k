@@ -31,10 +31,10 @@ fn calc_pose_diff<T>(a: &Isometry3<T>, b: &Isometry3<T>) -> Vector6<T>
 where
     T: RealField,
 {
-    let p_diff = a.translation.vector - b.translation.vector;
+    let p_diff = a.translation.vector.clone() - b.translation.vector.clone();
     let w_diff = b.rotation.rotation_to(&a.rotation).scaled_axis();
     Vector6::new(
-        p_diff[0], p_diff[1], p_diff[2], w_diff[0], w_diff[1], w_diff[2],
+        p_diff[0].clone(), p_diff[1].clone(), p_diff[2].clone(), w_diff[0].clone(), w_diff[1].clone(), w_diff[2].clone(),
     )
 }
 
@@ -52,7 +52,7 @@ where
     let mut index = 0;
     for (i, use_i) in operational_space.iter().enumerate() {
         if *use_i {
-            diff[index] = full_diff[i];
+            diff[index] = full_diff[i].clone();
             index += 1;
         }
     }
@@ -208,7 +208,7 @@ where
         input
             .iter()
             .zip(add_values.iter())
-            .map(|(ang, add)| *ang + self.jacobian_multiplier * *add)
+            .map(|(ang, add)| ang.clone() + self.jacobian_multiplier.clone() * add.clone())
             .collect()
     }
 
@@ -340,8 +340,8 @@ where
         arm.set_joint_positions(&orig_positions)?;
         Err(Error::NotConvergedError {
             num_tried: self.num_max_try,
-            position_diff: na::try_convert(last_target_distance.unwrap().0).unwrap_or_default(),
-            rotation_diff: na::try_convert(last_target_distance.unwrap().1).unwrap_or_default(),
+            position_diff: na::try_convert(last_target_distance.as_ref().unwrap().0.clone()).unwrap_or_default(),
+            rotation_diff: na::try_convert(last_target_distance.as_ref().unwrap().1.clone()).unwrap_or_default(),
         })
     }
 }
@@ -369,14 +369,14 @@ where
     let mut index = 0;
     for i in 0..3 {
         if operational_space[i] {
-            len_diff[i] = target_diff[index];
+            len_diff[i] = target_diff[index].clone();
             index += 1;
         }
     }
     let mut rot_diff = Vector3::zeros();
     for i in 0..3 {
         if operational_space[i + 3] {
-            rot_diff[i] = target_diff[index];
+            rot_diff[i] = target_diff[index].clone();
             index += 1;
         }
     }
@@ -495,7 +495,7 @@ pub fn create_reference_positions_nullspace_function<T: RealField>(
     move |positions| {
         let mut derivative_vec = vec![na::convert(0.0); dof];
         for i in 0..dof {
-            derivative_vec[i] = weight_vector[i] * (positions[i] - reference_positions[i]);
+            derivative_vec[i] = weight_vector[i].clone() * (positions[i].clone() - reference_positions[i].clone());
         }
         derivative_vec
     }
