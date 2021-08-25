@@ -12,21 +12,21 @@ where
     let dof = arm.dof();
     let t_n = arm.end_transform();
     arm.update_transforms();
-    let p_n = t_n.translation;
+    // let p_n = t_n.translation.clone();
     let jacobi_vec = arm
         .iter_joints()
         .map(|joint| {
             let t_i = joint.world_transform().unwrap();
-            match joint.joint_type {
+            match &joint.joint_type {
                 JointType::Linear { axis } => {
                     let p_i = t_i.rotation * axis;
-                    [p_i[0], p_i[1], p_i[2], na::zero(), na::zero(), na::zero()]
+                    [p_i[0].clone(), p_i[1].clone(), p_i[2].clone(), na::zero(), na::zero(), na::zero()]
                 }
                 JointType::Rotational { axis } => {
                     let p_i = t_i.translation;
                     let a_i = t_i.rotation * axis;
-                    let dp_i = a_i.cross(&(p_n.vector - p_i.vector));
-                    [dp_i[0], dp_i[1], dp_i[2], a_i[0], a_i[1], a_i[2]]
+                    let dp_i = a_i.cross(&(t_n.translation.clone().vector - p_i.vector));
+                    [dp_i[0].clone(), dp_i[1].clone(), dp_i[2].clone(), a_i[0].clone(), a_i[1].clone(), a_i[2].clone()]
                 }
                 JointType::Fixed => panic!("impossible, bug of jacobian"),
             }
@@ -34,7 +34,7 @@ where
         .collect::<Vec<_>>();
     // Pi: a_i x (p_n - Pi)
     // wi: a_i
-    DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r])
+    DMatrix::from_fn(6, dof, |r, c| jacobi_vec[c][r].clone())
 }
 
 /// Calculate the center of mass of the chain
@@ -66,9 +66,9 @@ where
     chain.iter().for_each(|node| {
         if let Some(trans) = node.world_transform() {
             if let Some(ref link) = *node.link() {
-                let inertia_trans = trans * link.inertial.origin().translation;
-                com += inertia_trans.translation.vector * link.inertial.mass;
-                total_mass += link.inertial.mass;
+                let inertia_trans = trans * link.inertial.origin().translation.clone();
+                com += inertia_trans.translation.vector * link.inertial.mass.clone();
+                total_mass += link.inertial.mass.clone();
             }
         }
     });

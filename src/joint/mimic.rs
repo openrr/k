@@ -60,6 +60,6 @@ where
     /// assert_eq!(m.mimic_position(0.2), -0.8); // 0.2 * -2.0 - 0.4
     /// ```
     pub fn mimic_position(&self, from_position: T) -> T {
-        from_position * self.multiplier + self.origin
+        from_position * self.multiplier.clone() + self.origin.clone()
     }
 }
