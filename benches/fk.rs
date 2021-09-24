@@ -1,8 +1,8 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use k::joint::Range;
 use na::RealField;
 use nalgebra as na;
-use std::f64::consts::PI;
+use std::{f64::consts::PI, sync::Arc, thread};
 
 /*
 ## v0.10.1 on MacBook Pro (Retina, 13-inch, Early 2015, 2.9GHz - 16GB)
@@ -45,7 +45,51 @@ test bench_rctree_ik ... bench:       4,394 ns/iter (+/- 73)
 test bench_rctree            ... bench:       1,803 ns/iter (+/- 21)
 test bench_rctree_set_joints ... bench:         204 ns/iter (+/- 17)
 test bench_rctree_ik ... bench:       5,985 ns/iter (+/- 65)
+
+## v0.25.0 on MacBook Pro (Intel Core i7-9750H)
+
+Note that bench_rctree_concurrent_*_N benchmarks N get/set operations from 4 threads.
+
+bench_rctree            time:   [1.6606 us 1.6751 us 1.6907 us]
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high severe
+
+bench_rctree_get_joints time:   [260.14 ns 262.78 ns 266.16 ns]
+Found 11 outliers among 100 measurements (11.00%)
+  7 (7.00%) high mild
+  4 (4.00%) high severe
+
+bench_rctree_set_joints time:   [233.88 ns 234.96 ns 236.25 ns]
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+
+bench_rctree_concurrent_set_joints_1000
+                        time:   [2.7615 ms 2.7667 ms 2.7727 ms]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  4 (4.00%) high severe
+
+bench_rctree_concurrent_get_joints_1000
+                        time:   [2.7493 ms 2.7566 ms 2.7651 ms]
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+
+bench_rctree_concurrent_set_get_joints_1000
+                        time:   [2.7501 ms 2.7562 ms 2.7632 ms]
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+
+bench_rctree_ik         time:   [7.2494 us 7.2975 us 7.3501 us]
+Found 9 outliers among 100 measurements (9.00%)
+  6 (6.00%) high mild
+  3 (3.00%) high severe
+
 */
+
+const THREADS: usize = 4;
 
 fn generate_random_joint_angles_from_limits<T>(limits: &[Option<k::joint::Range<T>>]) -> Vec<T>
 where
@@ -90,5 +134,102 @@ fn bench_rctree_set_joints(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_rctree, bench_rctree_set_joints);
+fn bench_rctree_get_joints(c: &mut Criterion) {
+    let chain = k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap();
+    c.bench_function("bench_rctree_get_joints", |b| {
+        b.iter(|| {
+            black_box(chain.joint_positions());
+        });
+    });
+}
+
+fn bench_rctree_concurrent_set_joints(c: &mut Criterion) {
+    let chain = Arc::new(k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap());
+    let limits = chain
+        .iter_joints()
+        .map(|j| j.limits)
+        .collect::<Vec<Option<Range<f64>>>>();
+    let angles = Arc::new(generate_random_joint_angles_from_limits(&limits));
+    c.bench_function("bench_rctree_concurrent_set_joints_1000", |b| {
+        b.iter(|| {
+            let mut handles = vec![];
+            for _ in 0..THREADS {
+                let chain = chain.clone();
+                let angles = angles.clone();
+                handles.push(thread::spawn(move || {
+                    for _ in 0..1000 {
+                        chain.set_joint_positions(&angles).unwrap();
+                    }
+                }));
+            }
+            for handle in handles {
+                handle.join().unwrap();
+            }
+        });
+    });
+}
+
+fn bench_rctree_concurrent_get_joints(c: &mut Criterion) {
+    let chain = Arc::new(k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap());
+    c.bench_function("bench_rctree_concurrent_get_joints_1000", |b| {
+        b.iter(|| {
+            let mut handles = vec![];
+            for _ in 0..THREADS {
+                let chain = chain.clone();
+                handles.push(thread::spawn(move || {
+                    for _ in 0..1000 {
+                        black_box(chain.joint_positions());
+                    }
+                }));
+            }
+            for handle in handles {
+                handle.join().unwrap();
+            }
+        });
+    });
+}
+
+fn bench_rctree_concurrent_set_get_joints(c: &mut Criterion) {
+    let chain = Arc::new(k::Chain::<f64>::from_urdf_file("urdf/sample.urdf").unwrap());
+    let limits = chain
+        .iter_joints()
+        .map(|j| j.limits)
+        .collect::<Vec<Option<Range<f64>>>>();
+    let angles = Arc::new(generate_random_joint_angles_from_limits(&limits));
+    c.bench_function("bench_rctree_concurrent_set_get_joints_1000", |b| {
+        b.iter(|| {
+            let mut handles = vec![];
+            for _ in 0..THREADS / 2 {
+                let chain = chain.clone();
+                handles.push(thread::spawn(move || {
+                    for _ in 0..1000 {
+                        black_box(chain.joint_positions());
+                    }
+                }));
+            }
+            for _ in 0..THREADS / 2 {
+                let chain = chain.clone();
+                let angles = angles.clone();
+                handles.push(thread::spawn(move || {
+                    for _ in 0..1000 {
+                        chain.set_joint_positions(&angles).unwrap();
+                    }
+                }));
+            }
+            for handle in handles {
+                handle.join().unwrap();
+            }
+        });
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_rctree,
+    bench_rctree_get_joints,
+    bench_rctree_set_joints,
+    bench_rctree_concurrent_set_joints,
+    bench_rctree_concurrent_get_joints,
+    bench_rctree_concurrent_set_get_joints,
+);
 criterion_main!(benches);
