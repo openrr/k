@@ -16,10 +16,11 @@
 //! graph structure for kinematic chain
 use na::{Isometry3, RealField, Translation3, UnitQuaternion};
 use nalgebra as na;
+use parking_lot::{Mutex, MutexGuard};
 use simba::scalar::SubsetOf;
 use std::fmt::{self, Display};
 use std::ops::Deref;
-use std::sync::{Arc, Mutex, MutexGuard, Weak};
+use std::sync::{Arc, Weak};
 
 use super::errors::*;
 use super::iterator::*;
@@ -70,7 +71,7 @@ where
     }
 
     pub(crate) fn lock(&self) -> MutexGuard<'_, NodeImpl<T>> {
-        self.0.lock().unwrap()
+        self.0.lock()
     }
 
     pub fn joint(&self) -> JointRefGuard<'_, T> {
@@ -106,13 +107,13 @@ where
     /// Set parent and child relations at same time
     pub fn set_parent(&self, parent: &Node<T>) {
         self.lock().parent = Some(Arc::downgrade(&parent.0));
-        parent.0.lock().unwrap().children.push(self.clone());
+        parent.0.lock().children.push(self.clone());
     }
 
     /// Remove parent and child relations at same time
     pub fn remove_parent(&self, parent: &Node<T>) {
         self.lock().parent = None;
-        parent.0.lock().unwrap().children.retain(|x| *x != *self);
+        parent.0.lock().children.retain(|x| *x != *self);
     }
 
     /// # Examples
@@ -140,7 +141,7 @@ where
     /// assert!(l1.is_end());
     /// ```
     pub fn is_end(&self) -> bool {
-        self.0.lock().unwrap().children.is_empty()
+        self.0.lock().children.is_empty()
     }
 
     /// Set the origin transform of the joint
@@ -241,20 +242,12 @@ where
     /// assert_eq!(l0.joint().joint_position(), Some(-1.0));
     /// ```
     pub fn set_joint_position_clamped(&self, position: T) {
-        self.0
-            .lock()
-            .unwrap()
-            .joint
-            .set_joint_position_clamped(position);
+        self.0.lock().joint.set_joint_position_clamped(position);
     }
 
     #[inline]
     pub fn set_joint_position_unchecked(&self, position: T) {
-        self.0
-            .lock()
-            .unwrap()
-            .joint
-            .set_joint_position_unchecked(position);
+        self.0.lock().joint.set_joint_position_unchecked(position);
     }
 
     pub(crate) fn parent_world_transform(&self) -> Option<Isometry3<T>> {
