@@ -68,9 +68,9 @@ where
     /// ```
     pub fn clamp(&self, val: T) -> T {
         if val < self.min {
-            self.min
+            self.min.clone()
         } else if val > self.max {
-            self.max
+            self.max.clone()
         } else {
             val
         }
