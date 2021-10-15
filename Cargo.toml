@@ -7,7 +7,6 @@ license = "Apache-2.0"
 keywords = ["kinematics", "robotics", "ik"]
 categories = ["algorithms"]
 repository = "https://github.com/openrr/k"
-documentation = "http://docs.rs/k"
 edition = "2018"
 
 [features]
