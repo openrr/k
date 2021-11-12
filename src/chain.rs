@@ -415,7 +415,8 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                                     .expect("cache must exist")
                                     .rotation
                                     .to_rotation_matrix()
-                                    * (axis.clone().into_inner().clone() * node.joint().joint_velocity().unwrap()),
+                                    * (axis.clone().into_inner()
+                                        * node.joint().joint_velocity().unwrap()),
                         )
                     }
                     JointType::Linear { axis } => Velocity::from_parts(
@@ -425,7 +426,8 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                                 .expect("cache must exist")
                                 .rotation
                                 .to_rotation_matrix()
-                                * (axis.clone().into_inner() * node.joint().joint_velocity().unwrap()),
+                                * (axis.clone().into_inner()
+                                    * node.joint().joint_velocity().unwrap()),
                         // TODO: Is this true??
                         parent_velocity.rotation,
                     ),
