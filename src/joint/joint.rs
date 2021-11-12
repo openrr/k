@@ -246,13 +246,11 @@ where
     /// The value is updated by `Chain::update_transforms`
     #[inline]
     pub fn world_transform(&self) -> Option<Isometry3<T>> {
-        // *self.world_transform_cache.borrow()
         self.world_transform_cache.borrow().clone()
     }
 
     #[inline]
     pub fn world_velocity(&self) -> Option<Velocity<T>> {
-        // *self.world_velocity_cache.borrow()
         self.world_velocity_cache.borrow().clone()
     }
 
