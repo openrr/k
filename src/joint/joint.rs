@@ -111,7 +111,7 @@ where
             if !range.is_valid(position.clone()) {
                 return Err(Error::OutOfLimitError {
                     joint_name: self.name.to_string(),
-                    position: na::try_convert(position.clone()).unwrap_or_default(),
+                    position: na::try_convert(position).unwrap_or_default(),
                     max_limit: na::try_convert(range.max.clone()).unwrap_or_default(),
                     min_limit: na::try_convert(range.min.clone()).unwrap_or_default(),
                 });
@@ -222,7 +222,7 @@ where
             JointType::Fixed => Isometry3::identity(),
             JointType::Rotational { axis } => Isometry3::from_parts(
                 Translation3::new(T::zero(), T::zero(), T::zero()),
-                UnitQuaternion::from_axis_angle(&axis, self.position.clone()),
+                UnitQuaternion::from_axis_angle(axis, self.position.clone()),
             ),
             JointType::Linear { axis } => Isometry3::from_parts(
                 Translation3::from(axis.clone().into_inner() * self.position.clone()),
