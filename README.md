@@ -26,7 +26,7 @@ sudo apt install g++ cmake xorg-dev libglu1-mesa-dev
 cargo run --release --example interactive_ik
 ```
 
-![ik_sample](img/screenshot.png)
+![ik_sample](https://github.com/openrr/k/raw/main/img/screenshot.png)
 
 Push below keys to move the end of the manipulator.
 
@@ -84,8 +84,8 @@ fn main() {
 Top level interface is `Chain` struct. It contains `Node`s and they have the relations between nodes (parent/children).
 Actual data (joint angle(position), transform between nodes) is stored in `Joint` object inside nodes.
 
-![ik_sample](img/chain.png)
+![ik_sample](https://github.com/openrr/k/raw/main/img/chain.png)
 
 You can get local/world transform of nodes. See below figure to understand what is the node's `local_transform()` and `world_transform()`.
 
-![ik_sample](img/transform.png)
+![ik_sample](https://github.com/openrr/k/raw/main/img/transform.png)
