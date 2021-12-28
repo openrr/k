@@ -71,3 +71,17 @@ jobs:
         with:
           command: clippy
           args: --all-targets
+
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: cargo doc
+        env:
+          RUSTDOCFLAGS: -D warnings

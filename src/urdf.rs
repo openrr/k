@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//! Load [URDF](http://wiki.ros.org/urdf) format and create `k::Chain`
+//! Load [URDF](https://wiki.ros.org/urdf) format and create `k::Chain`
 //!
 
 use super::chain::*;

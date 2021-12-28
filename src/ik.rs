@@ -491,7 +491,7 @@ where
 /// H(q) = 1/2(q-q^)T W (q-q^)
 /// dH(q) / dq = W (q-q^)
 ///
-/// https://minus9d.hatenablog.com/entry/20120912/1347460308
+/// <https://minus9d.hatenablog.com/entry/20120912/1347460308>
 pub fn create_reference_positions_nullspace_function<T: RealField>(
     reference_positions: Vec<T>,
     weight_vector: Vec<T>,
