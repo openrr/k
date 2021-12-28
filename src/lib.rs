@@ -21,7 +21,7 @@ mod chain;
 mod errors;
 mod funcs;
 mod ik;
-use nalgebra as na;
+
 pub mod iterator;
 pub mod joint;
 pub mod link;
@@ -29,19 +29,25 @@ pub mod node;
 pub mod prelude;
 pub mod urdf;
 
-pub use self::chain::*;
-pub use self::errors::*;
-pub use self::funcs::*;
-pub use self::ik::*;
-pub use self::joint::{Joint, JointType};
-pub use self::link::Link;
-pub use self::node::{Node, NodeBuilder};
+pub use crate::{
+    chain::*,
+    errors::*,
+    funcs::*,
+    ik::*,
+    joint::{Joint, JointType},
+    link::Link,
+    node::{Node, NodeBuilder},
+};
 
 // re-export from nalgebra
 // include Real for backwards compatibility purposes
 // (na::Real used to be the name, so we used to re-export k::Real)
-pub use na::{Isometry3, RealField as Real, RealField, Translation3, UnitQuaternion, Vector3};
+#[doc(no_inline)]
+pub use nalgebra::{
+    Isometry3, RealField as Real, RealField, Translation3, UnitQuaternion, Vector3,
+};
 // export everything
 pub use nalgebra;
 pub use simba;
+#[doc(no_inline)]
 pub use simba::scalar::{SubsetOf, SupersetOf};

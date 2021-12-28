@@ -92,12 +92,12 @@ where
         ChildrenRefGuard { guard: self.lock() }
     }
 
-    /// iter from the end to root, it contains nodes[id] itself
+    /// iter from the end to root, it contains `nodes[id]` itself
     #[inline]
     pub fn iter_ancestors(&self) -> Ancestors<T> {
         Ancestors::new(Some(self.clone()))
     }
-    /// iter to the end, it contains nodes[id] itself
+    /// iter to the end, it contains `nodes[id]` itself
     #[inline]
     pub fn iter_descendants(&self) -> Descendants<T> {
         Descendants::new(vec![self.clone()])

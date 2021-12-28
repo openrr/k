@@ -21,7 +21,7 @@ use std::fmt::{self, Display};
 pub enum JointType<T: RealField> {
     /// Fixed joint. It has no `joint_position` and axis.
     Fixed,
-    /// Rotational joint around axis. It has an position [rad].
+    /// Rotational joint around axis. It has an position `[rad]`.
     Rotational {
         /// axis of the joint
         axis: Unit<Vector3<T>>,

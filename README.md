@@ -8,11 +8,9 @@
 1. Inverse kinematics
 1. URDF Loader
 
-`k` uses [nalgebra](http://nalgebra.org) as math library.
+`k` uses [nalgebra](https://nalgebra.org) as math library.
 
-See [Document](http://docs.rs/k) and examples/ for more details.
-
-API is unstable.
+See [Document](https://docs.rs/k) and examples/ for more details.
 
 ## Requirements to build examples
 
