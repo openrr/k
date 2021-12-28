@@ -13,21 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-//! # Kinematics (forward/inverse) library using [nalgebra](http://nalgebra.org).
-//!
-//! `k` has below functionalities
-//!
-//! 1. Forward kinematics
-//! 1. Inverse kinematics
-//! 1. URDF Loader
-//!
-//! See `Chain` as the top level interface.
-//!
 
+#![doc = include_str!("../README.md")]
 #![warn(missing_debug_implementations, rust_2018_idioms)]
-
-#[cfg(doctest)]
-doc_comment::doctest!("../README.md");
 
 mod chain;
 mod errors;
