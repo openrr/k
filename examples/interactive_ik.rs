@@ -15,6 +15,7 @@
 */
 use nalgebra as na;
 
+use clap::Parser;
 use k::prelude::*;
 use k::{connect, JacobianIkSolver, JointType, NodeBuilder};
 use kiss3d::camera::ArcBall;
@@ -23,11 +24,10 @@ use kiss3d::light::Light;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
 use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct Opt {
-    #[structopt(short = "i", long = "ignored-joint-names")]
+    #[clap(short, long)]
     ignored_joint_names: Vec<String>,
 }
 
@@ -143,7 +143,7 @@ fn create_cubes(window: &mut Window) -> Vec<SceneNode> {
 }
 
 fn main() {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     let root = create_joint_with_link_array();
     let arm = k::SerialChain::new_unchecked(k::Chain::from_root(root));
 
