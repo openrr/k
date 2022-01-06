@@ -17,6 +17,7 @@ serde-serialize = ["nalgebra/serde-serialize", "serde"]
 [dependencies]
 log = "0.4"
 nalgebra = "0.29"
+parking_lot = "0.11"
 simba = "0.6"
 thiserror = "1.0"
 urdf-rs = "0.6"
