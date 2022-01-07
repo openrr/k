@@ -20,12 +20,12 @@ use super::chain::*;
 use super::joint::*;
 use super::link::*;
 use super::node::*;
-use log::*;
 use na::{Isometry3, Matrix3, RealField};
 use nalgebra as na;
 use simba::scalar::SubsetOf;
 use std::collections::HashMap;
 use std::path::Path;
+use tracing::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
 
