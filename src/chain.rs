@@ -380,10 +380,21 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     pub fn update_transforms(&self) -> Vec<Isometry3<T>> {
         self.iter()
             .map(|node| {
-                let parent_transform = node.parent_world_transform().expect("cache must exist");
-                let trans = parent_transform * node.joint().local_transform();
-                node.joint().set_world_transform(trans.clone());
-                trans
+                // copy the cache once to resolve a deadlock of 'node' guards
+                let cached_world_transform = node.joint().world_transform();
+                cached_world_transform.unwrap_or_else(|| {
+                    // clear child caches
+                    // recursive clearing is not necessary thanks to the order of Chain::iter()
+                    for child in node.children().iter() {
+                        child.joint().clear_caches();
+                    }
+
+                    // calculate the transformation
+                    let parent_transform = node.parent_world_transform().expect("cache must exist");
+                    let trans = parent_transform * node.joint().local_transform();
+                    node.joint().set_world_transform(trans.clone());
+                    trans
+                })
             })
             .collect()
     }
@@ -393,23 +404,38 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
         self.update_transforms();
         self.iter()
             .map(|node| {
-                let parent_transform = node
-                    .parent_world_transform()
-                    .expect("transform cache must exist");
-                let parent_velocity = node
-                    .parent_world_velocity()
-                    .expect("velocity cache must exist");
-                let velocity = match &node.joint().joint_type {
-                    JointType::Fixed => parent_velocity,
-                    JointType::Rotational { axis } => {
-                        let parent = node.parent().expect("parent must exist");
-                        let parent_vel = parent.joint().origin().translation.vector.clone();
-                        Velocity::from_parts(
+                // copy the cache to resolve a deadlock of 'node' guards
+                let cached_world_velocity = node.joint().world_velocity();
+                cached_world_velocity.unwrap_or_else(|| {
+                    let parent_transform = node
+                        .parent_world_transform()
+                        .expect("transform cache must exist");
+                    let parent_velocity = node
+                        .parent_world_velocity()
+                        .expect("velocity cache must exist");
+                    let velocity = match &node.joint().joint_type {
+                        JointType::Fixed => parent_velocity,
+                        JointType::Rotational { axis } => {
+                            let parent = node.parent().expect("parent must exist");
+                            let parent_vel = parent.joint().origin().translation.vector.clone();
+                            Velocity::from_parts(
+                                parent_velocity.translation
+                                    + parent_velocity.rotation.cross(
+                                        &(parent_transform.rotation.to_rotation_matrix()
+                                            * parent_vel),
+                                    ),
+                                parent_velocity.rotation
+                                    + node
+                                        .world_transform()
+                                        .expect("cache must exist")
+                                        .rotation
+                                        .to_rotation_matrix()
+                                        * (axis.clone().into_inner()
+                                            * node.joint().joint_velocity().unwrap()),
+                            )
+                        }
+                        JointType::Linear { axis } => Velocity::from_parts(
                             parent_velocity.translation
-                                + parent_velocity.rotation.cross(
-                                    &(parent_transform.rotation.to_rotation_matrix() * parent_vel),
-                                ),
-                            parent_velocity.rotation
                                 + node
                                     .world_transform()
                                     .expect("cache must exist")
@@ -417,23 +443,13 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
                                     .to_rotation_matrix()
                                     * (axis.clone().into_inner()
                                         * node.joint().joint_velocity().unwrap()),
-                        )
-                    }
-                    JointType::Linear { axis } => Velocity::from_parts(
-                        parent_velocity.translation
-                            + node
-                                .world_transform()
-                                .expect("cache must exist")
-                                .rotation
-                                .to_rotation_matrix()
-                                * (axis.clone().into_inner()
-                                    * node.joint().joint_velocity().unwrap()),
-                        // TODO: Is this true??
-                        parent_velocity.rotation,
-                    ),
-                };
-                node.joint().set_world_velocity(velocity.clone());
-                velocity
+                            // TODO: Is this true??
+                            parent_velocity.rotation,
+                        ),
+                    };
+                    node.joint().set_world_velocity(velocity.clone());
+                    velocity
+                })
             })
             .collect()
     }

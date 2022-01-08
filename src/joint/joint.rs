@@ -118,9 +118,7 @@ where
             }
         }
         self.position = position;
-        // TODO: have to reset descendent `world_transform_cache`
-        self.world_transform_cache.replace(None);
-        self.world_velocity_cache.replace(None);
+        self.clear_caches();
         Ok(())
     }
     /// Set the clamped position of the joint
@@ -159,9 +157,7 @@ where
     }
     pub fn set_joint_position_unchecked(&mut self, position: T) {
         self.position = position;
-        // TODO: have to reset descendent `world_transform_cache`
-        self.world_transform_cache.replace(None);
-        self.world_velocity_cache.replace(None);
+        self.clear_caches();
     }
     /// Returns the position (angle)
     #[inline]
@@ -180,7 +176,7 @@ where
     #[inline]
     pub fn set_origin(&mut self, origin: Isometry3<T>) {
         self.origin = origin;
-        self.world_transform_cache.replace(None);
+        self.clear_caches();
     }
 
     pub fn set_joint_velocity(&mut self, velocity: T) -> Result<(), Error> {
@@ -257,6 +253,13 @@ where
     #[inline]
     pub fn is_movable(&self) -> bool {
         !matches!(self.joint_type, JointType::Fixed)
+    }
+
+    /// Clear caches defined in the world coordinate
+    #[inline]
+    pub fn clear_caches(&self) {
+        self.world_transform_cache.replace(None);
+        self.world_velocity_cache.replace(None);
     }
 }
 
