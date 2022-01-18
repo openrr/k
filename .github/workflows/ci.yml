@@ -70,7 +70,9 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          # NOTE: clippy::disallowed_method/clippy::disallowed_type has been renamed to clippy::disallowed_methods/clippy::disallowed_types in Rust 1.58.
+          # NOTE: clippy::disallowed_method/clippy::disallowed_type has been renamed
+          # to clippy::disallowed_methods/clippy::disallowed_types in Rust 1.59.
+          # And warned-by-default in Rust 1.60.
           args: --all-targets -- -D clippy::disallowed_type
 
   docs:
