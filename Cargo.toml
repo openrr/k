@@ -16,7 +16,7 @@ serde-serialize = ["nalgebra/serde-serialize", "serde"]
 # Note: nalgebra, simba, urdf-rs, and serde are public dependencies.
 [dependencies]
 nalgebra = "0.29"
-parking_lot = "0.11"
+parking_lot = "0.12"
 simba = "0.6"
 thiserror = "1.0"
 tracing = "0.1"
