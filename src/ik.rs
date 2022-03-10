@@ -406,7 +406,7 @@ where
     /// let target_joint_name = "r_wrist_pitch";
     /// let r_wrist = chain.find(target_joint_name).unwrap();
     /// let mut arm = k::SerialChain::from_end(r_wrist);
-    /// println!("arm: {}", arm);
+    /// println!("arm: {arm}");
     ///
     /// // Set joint positions of `arm`
     /// let positions = vec![0.1, 0.2, 0.0, -0.5, 0.0, -0.3];
@@ -458,7 +458,7 @@ where
     /// solver
     ///    .solve_with_constraints(&arm, &target, &constraints)
     ///    .unwrap_or_else(|err| {
-    ///        println!("Err: {}", err);
+    ///        println!("Err: {err}");
     ///    });
     /// ```
     fn solve_with_constraints(

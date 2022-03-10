@@ -488,7 +488,7 @@ where
 ///     .translation(Translation3::new(0.0, 0.1, 0.0))
 ///     .joint_type( JointType::Rotational{axis: Vector3::y_axis()})
 ///     .finalize();
-/// println!("{:?}", l0);
+/// println!("{l0:?}");
 /// ```
 #[derive(Debug, Clone)]
 pub struct NodeBuilder<T: RealField> {

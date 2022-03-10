@@ -187,7 +187,7 @@ fn main() {
             solver
                 .solve_with_constraints(&arm, &target, &constraints)
                 .unwrap_or_else(|err| {
-                    println!("Err: {}", err);
+                    println!("Err: {err}");
                 });
         }
         c_t.set_local_transformation(target);

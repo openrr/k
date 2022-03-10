@@ -287,7 +287,7 @@ where
             if let Some(parent_node) = child_link_name_to_node.get_mut(&l.name) {
                 if let Some(child_nodes) = parent_link_name_to_node.get(&l.name) {
                     for child_node in child_nodes.iter() {
-                        info!("set parent = {}, child = {}", parent_node, child_node);
+                        info!("set parent = {parent_node}, child = {child_node}");
                         child_node.set_parent(parent_node);
                     }
                 }
@@ -313,7 +313,7 @@ where
             .iter()
             .filter(|ref_node| ref_node.parent().is_none());
         for rjn in root_nodes {
-            info!("set parent = {}, child = {}", root_node, rjn);
+            info!("set parent = {root_node}, child = {rjn}");
             rjn.set_parent(&root_node);
         }
         Chain::from_root(root_node)
