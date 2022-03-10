@@ -2,12 +2,12 @@
 name = "k"
 version = "0.27.1"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
+edition = "2021"
 description = "k is for kinematics"
 license = "Apache-2.0"
 keywords = ["kinematics", "robotics", "ik"]
 categories = ["algorithms"]
 repository = "https://github.com/openrr/k"
-edition = "2018"
 
 [features]
 default = []
