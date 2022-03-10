@@ -65,7 +65,7 @@ use std::ops::Deref;
 /// assert_eq!(transforms[1].translation.vector.z, 0.6);
 /// assert_eq!(transforms[2].translation.vector.z, 1.1);
 /// for t in transforms {
-///     println!("before: {}", t);
+///     println!("before: {t}");
 /// }
 ///
 /// // Set joint positions
@@ -78,7 +78,7 @@ use std::ops::Deref;
 /// let transforms = tree.update_transforms();
 /// assert_eq!(transforms.len(), 3);
 /// for t in transforms {
-///     println!("after: {}", t);
+///     println!("after: {t}");
 /// }
 /// ```
 #[derive(Debug)]
@@ -96,7 +96,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         if self.nodes.iter().any(|joint| joint == node) {
-            writeln!(f, "{}{}", "    ".repeat(level), node)?;
+            writeln!(f, "{}{node}", "    ".repeat(level))?;
         }
         for c in node.children().iter() {
             self.fmt_with_indent_level(c, level + 1, f)?
@@ -706,14 +706,14 @@ fn test_chain0() {
         .iter_descendants()
         .map(|joint| joint.joint().name.clone())
         .collect::<Vec<_>>();
-    println!("{}", joint0);
+    println!("{joint0}");
     assert_eq!(names.len(), 6);
-    println!("names = {:?}", names);
+    println!("names = {names:?}");
     let positions = joint0
         .iter_descendants()
         .map(|node| node.joint().joint_position())
         .collect::<Vec<_>>();
-    println!("positions = {:?}", positions);
+    println!("positions = {positions:?}");
 
     fn get_z(joint: &Node<f32>) -> f32 {
         match joint.parent_world_transform() {
@@ -726,7 +726,7 @@ fn test_chain0() {
         .iter_descendants()
         .map(|joint| get_z(&joint))
         .collect::<Vec<_>>();
-    println!("poses = {:?}", poses);
+    println!("poses = {poses:?}");
 
     let _ = joint0
         .iter_ancestors()
@@ -736,13 +736,13 @@ fn test_chain0() {
         .iter_descendants()
         .map(|node| node.joint().joint_position())
         .collect::<Vec<_>>();
-    println!("positions = {:?}", positions);
+    println!("positions = {positions:?}");
 
     let poses = joint0
         .iter_descendants()
         .map(|joint| get_z(&joint))
         .collect::<Vec<_>>();
-    println!("poses = {:?}", poses);
+    println!("poses = {poses:?}");
 
     let arm = Chain::from_end(&joint3);
     assert_eq!(arm.joint_positions().len(), 4);

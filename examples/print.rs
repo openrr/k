@@ -43,5 +43,5 @@ fn main() {
     l3.set_parent(&l0);
 
     let tree = k::Chain::from_root(l0);
-    println!("{}", tree);
+    println!("{tree}");
 }
