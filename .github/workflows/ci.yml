@@ -54,7 +54,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: --all --check
 
   clippy:
     name: Clippy
@@ -70,9 +70,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          # NOTE: clippy::disallowed_methods/clippy::disallowed_types has been changed
-          # to warned-by-default in Rust 1.60.
-          args: --all-targets -- -D clippy::disallowed_types
+          args: --all-targets
 
   docs:
     name: Docs
