@@ -330,6 +330,37 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     pub fn find(&self, joint_name: &str) -> Option<&Node<T>> {
         self.iter().find(|joint| joint.joint().name == joint_name)
     }
+    /// Find the joint by link name
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use k::*;
+    ///
+    /// let l0 = Node::new(NodeBuilder::new()
+    ///     .name("fixed")
+    ///     .finalize());
+    /// l0.set_link(Some(link::LinkBuilder::new().name("link0").finalize()));
+    /// let mut l1 = Node::new(NodeBuilder::new()
+    ///     .name("pitch1")
+    ///     .translation(Translation3::new(0.0, 0.1, 0.0))
+    ///     .joint_type(JointType::Rotational{axis: Vector3::y_axis()})
+    ///     .finalize());
+    /// l1.set_parent(&l0);
+    /// l1.set_link(Some(link::LinkBuilder::new().name("link1").finalize()));
+    /// let tree = Chain::from_root(l0);
+    /// let joint_name = tree.find_link("link1").unwrap()
+    /// .joint().name.clone();
+    /// assert_eq!(joint_name, "pitch1");
+    /// ```
+    pub fn find_link(&self, link_name: &str) -> Option<&Node<T>> {
+        self.iter()
+            .find(|node| match &(*node).clone().link().as_ref() {
+                Some(link) => link.name == link_name,
+                None => false,
+            })
+    }
+
     /// Get the positions of the joints
     ///
     /// `FixedJoint` is ignored. the length is the same with `dof()`
