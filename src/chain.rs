@@ -649,144 +649,145 @@ where
     }
 }
 
-#[test]
-fn test_chain0() {
-    use super::joint::*;
-    use super::node::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    let joint0 = NodeBuilder::new()
-        .name("j0")
-        .translation(na::Translation3::new(0.0, 0.1, 0.0))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint1 = NodeBuilder::new()
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .name("j1")
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint2 = NodeBuilder::new()
-        .name("j2")
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint3 = NodeBuilder::new()
-        .name("j3")
-        .translation(na::Translation3::new(0.0, 0.1, 0.2))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint4 = NodeBuilder::new()
-        .name("j4")
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint5 = NodeBuilder::new()
-        .name("j5")
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    joint1.set_parent(&joint0);
-    joint2.set_parent(&joint1);
-    joint3.set_parent(&joint2);
-    joint4.set_parent(&joint0);
-    joint5.set_parent(&joint4);
+    #[test]
+    fn test_chain0() {
+        let joint0 = NodeBuilder::new()
+            .name("j0")
+            .translation(na::Translation3::new(0.0, 0.1, 0.0))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint1 = NodeBuilder::new()
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .name("j1")
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint2 = NodeBuilder::new()
+            .name("j2")
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint3 = NodeBuilder::new()
+            .name("j3")
+            .translation(na::Translation3::new(0.0, 0.1, 0.2))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint4 = NodeBuilder::new()
+            .name("j4")
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint5 = NodeBuilder::new()
+            .name("j5")
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        joint1.set_parent(&joint0);
+        joint2.set_parent(&joint1);
+        joint3.set_parent(&joint2);
+        joint4.set_parent(&joint0);
+        joint5.set_parent(&joint4);
 
-    let names = joint0
-        .iter_descendants()
-        .map(|joint| joint.joint().name.clone())
-        .collect::<Vec<_>>();
-    println!("{joint0}");
-    assert_eq!(names.len(), 6);
-    println!("names = {names:?}");
-    let positions = joint0
-        .iter_descendants()
-        .map(|node| node.joint().joint_position())
-        .collect::<Vec<_>>();
-    println!("positions = {positions:?}");
+        let names = joint0
+            .iter_descendants()
+            .map(|joint| joint.joint().name.clone())
+            .collect::<Vec<_>>();
+        println!("{joint0}");
+        assert_eq!(names.len(), 6);
+        println!("names = {names:?}");
+        let positions = joint0
+            .iter_descendants()
+            .map(|node| node.joint().joint_position())
+            .collect::<Vec<_>>();
+        println!("positions = {positions:?}");
 
-    fn get_z(joint: &Node<f32>) -> f32 {
-        match joint.parent_world_transform() {
-            Some(iso) => iso.translation.vector.z,
-            None => 0.0f32,
+        fn get_z(joint: &Node<f32>) -> f32 {
+            match joint.parent_world_transform() {
+                Some(iso) => iso.translation.vector.z,
+                None => 0.0f32,
+            }
         }
+
+        let poses = joint0
+            .iter_descendants()
+            .map(|joint| get_z(&joint))
+            .collect::<Vec<_>>();
+        println!("poses = {poses:?}");
+
+        let _ = joint0
+            .iter_ancestors()
+            .map(|joint| joint.set_joint_position(-0.5))
+            .collect::<Vec<_>>();
+        let positions = joint0
+            .iter_descendants()
+            .map(|node| node.joint().joint_position())
+            .collect::<Vec<_>>();
+        println!("positions = {positions:?}");
+
+        let poses = joint0
+            .iter_descendants()
+            .map(|joint| get_z(&joint))
+            .collect::<Vec<_>>();
+        println!("poses = {poses:?}");
+
+        let arm = Chain::from_end(&joint3);
+        assert_eq!(arm.joint_positions().len(), 4);
+        println!("{:?}", arm.joint_positions());
     }
 
-    let poses = joint0
-        .iter_descendants()
-        .map(|joint| get_z(&joint))
-        .collect::<Vec<_>>();
-    println!("poses = {poses:?}");
+    #[test]
+    fn test_mimic() {
+        let joint0 = NodeBuilder::new()
+            .name("j0")
+            .translation(na::Translation3::new(0.0, 0.1, 0.0))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint1 = NodeBuilder::new()
+            .name("joint1")
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        let joint2 = NodeBuilder::new()
+            .name("joint2")
+            .translation(na::Translation3::new(0.0, 0.1, 0.1))
+            .joint_type(JointType::Rotational {
+                axis: na::Vector3::y_axis(),
+            })
+            .into_node();
+        joint1.set_parent(&joint0);
+        joint2.set_parent(&joint1);
+        joint2.set_mimic_parent(&joint1, Mimic::new(2.0, 0.5));
 
-    let _ = joint0
-        .iter_ancestors()
-        .map(|joint| joint.set_joint_position(-0.5))
-        .collect::<Vec<_>>();
-    let positions = joint0
-        .iter_descendants()
-        .map(|node| node.joint().joint_position())
-        .collect::<Vec<_>>();
-    println!("positions = {positions:?}");
+        let arm = Chain::from_root(joint0);
 
-    let poses = joint0
-        .iter_descendants()
-        .map(|joint| get_z(&joint))
-        .collect::<Vec<_>>();
-    println!("poses = {poses:?}");
-
-    let arm = Chain::from_end(&joint3);
-    assert_eq!(arm.joint_positions().len(), 4);
-    println!("{:?}", arm.joint_positions());
-}
-
-#[test]
-fn test_mimic() {
-    use super::joint::*;
-    use super::node::*;
-
-    let joint0 = NodeBuilder::new()
-        .name("j0")
-        .translation(na::Translation3::new(0.0, 0.1, 0.0))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint1 = NodeBuilder::new()
-        .name("joint1")
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    let joint2 = NodeBuilder::new()
-        .name("joint2")
-        .translation(na::Translation3::new(0.0, 0.1, 0.1))
-        .joint_type(JointType::Rotational {
-            axis: na::Vector3::y_axis(),
-        })
-        .into_node();
-    joint1.set_parent(&joint0);
-    joint2.set_parent(&joint1);
-    joint2.set_mimic_parent(&joint1, Mimic::new(2.0, 0.5));
-
-    let arm = Chain::from_root(joint0);
-
-    assert_eq!(arm.joint_positions().len(), 3);
-    println!("{:?}", arm.joint_positions());
-    let positions = vec![0.1, 0.2, 0.3];
-    arm.set_joint_positions(&positions).unwrap();
-    let positions = arm.joint_positions();
-    assert!((positions[0] - 0.1f64).abs() < f64::EPSILON);
-    assert!((positions[1] - 0.2f64).abs() < f64::EPSILON);
-    assert!((positions[2] - 0.9f64).abs() < f64::EPSILON);
+        assert_eq!(arm.joint_positions().len(), 3);
+        println!("{:?}", arm.joint_positions());
+        let positions = vec![0.1, 0.2, 0.3];
+        arm.set_joint_positions(&positions).unwrap();
+        let positions = arm.joint_positions();
+        assert!((positions[0] - 0.1f64).abs() < f64::EPSILON);
+        assert!((positions[1] - 0.2f64).abs() < f64::EPSILON);
+        assert!((positions[2] - 0.9f64).abs() < f64::EPSILON);
+    }
 }

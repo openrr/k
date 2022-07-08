@@ -89,42 +89,48 @@ where
     com / total_mass
 }
 
-#[test]
-fn test_update_center_of_mass() {
-    use super::joint::*;
-    use super::link::*;
-    use super::node::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::link::*;
+    use crate::node::*;
     use na::*;
-    let j0 = NodeBuilder::new()
-        .translation(Translation3::new(0.0, 1.0, 0.0))
-        .into_node();
-    let j1 = NodeBuilder::new()
-        .translation(Translation3::new(0.0, 0.0, 1.0))
-        .joint_type(JointType::Rotational {
-            axis: Vector3::y_axis(),
-        })
-        .into_node();
-    j0.set_link(Some(
-        LinkBuilder::new()
-            .name("l0")
-            .inertial(Inertial::new(Isometry3::identity(), 1.0, Matrix3::zeros()))
-            .finalize(),
-    ));
-    let mut i1 = Inertial::new(Isometry3::identity(), 4.0, Matrix3::zeros());
-    i1.set_origin(Isometry3::from_parts(
-        Translation3::new(0.0, 0.0, 1.0),
-        UnitQuaternion::identity(),
-    ));
-    j1.set_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
-    j1.set_parent(&j0);
-    let tree = Chain::from_root(j0);
-    let com1 = center_of_mass(&tree);
-    assert!((com1.x - 0.0f64).abs() < f64::EPSILON);
-    assert!((com1.y - 1.0f64).abs() < f64::EPSILON);
-    assert!((com1.z - 1.6f64).abs() < f64::EPSILON);
-    j1.set_joint_position(0.5).unwrap();
-    let com2 = center_of_mass(&tree);
-    assert!((com2.x - 0.383540).abs() < 0.0001);
-    assert!((com2.y - 1.0f64).abs() < f64::EPSILON);
-    assert!((com2.z - 1.502066).abs() < 0.0001);
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    #[test]
+    fn test_update_center_of_mass() {
+        let j0 = NodeBuilder::new()
+            .translation(Translation3::new(0.0, 1.0, 0.0))
+            .into_node();
+        let j1 = NodeBuilder::new()
+            .translation(Translation3::new(0.0, 0.0, 1.0))
+            .joint_type(JointType::Rotational {
+                axis: Vector3::y_axis(),
+            })
+            .into_node();
+        j0.set_link(Some(
+            LinkBuilder::new()
+                .name("l0")
+                .inertial(Inertial::new(Isometry3::identity(), 1.0, Matrix3::zeros()))
+                .finalize(),
+        ));
+        let mut i1 = Inertial::new(Isometry3::identity(), 4.0, Matrix3::zeros());
+        i1.set_origin(Isometry3::from_parts(
+            Translation3::new(0.0, 0.0, 1.0),
+            UnitQuaternion::identity(),
+        ));
+        j1.set_link(Some(LinkBuilder::new().name("l1").inertial(i1).finalize()));
+        j1.set_parent(&j0);
+        let tree = Chain::from_root(j0);
+        let com1 = center_of_mass(&tree);
+        assert!((com1.x - 0.0f64).abs() < f64::EPSILON);
+        assert!((com1.y - 1.0f64).abs() < f64::EPSILON);
+        assert!((com1.z - 1.6f64).abs() < f64::EPSILON);
+        j1.set_joint_position(0.5).unwrap();
+        let com2 = center_of_mass(&tree);
+        assert!((com2.x - 0.383540).abs() < 0.0001);
+        assert!((com2.y - 1.0f64).abs() < f64::EPSILON);
+        assert!((com2.z - 1.502066).abs() < 0.0001);
+    }
 }
