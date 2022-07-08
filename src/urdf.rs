@@ -385,26 +385,41 @@ pub fn joint_to_link_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
 // https://github.com/openrr/urdf-rs/pull/3/files#diff-0fb2eeea3273a4c9b3de69ee949567f546dc8c06b1e190336870d00b54ea0979L36-L38
 const DEFAULT_MESH_SCALE: [f64; 3] = [1.0f64; 3];
 
-#[test]
-fn test_tree() {
-    let robot = urdf_rs::read_file("urdf/sample.urdf").unwrap();
-    assert_eq!(robot.name, "robo");
-    assert_eq!(robot.links.len(), 1 + 6 + 6);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    let tree = Chain::<f32>::from(&robot);
-    assert_eq!(tree.iter().count(), 13);
-}
+    #[cfg(target_arch = "wasm32")]
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
-#[test]
-fn test_tree_from_file() {
-    let tree = Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-    assert_eq!(tree.dof(), 12);
-    let names = tree
-        .iter()
-        .map(|joint| joint.joint().name.clone())
-        .collect::<Vec<_>>();
-    assert_eq!(names.len(), 13);
-    println!("{}", names[0]);
-    assert_eq!(names[0], "root");
-    assert_eq!(names[1], "r_shoulder_yaw");
+    #[test]
+    fn test_tree() {
+        let robot = urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap();
+        assert_eq!(robot.name, "robo");
+        assert_eq!(robot.links.len(), 1 + 6 + 6);
+
+        let tree = Chain::<f32>::from(&robot);
+        assert_eq!(tree.iter().count(), 13);
+    }
+
+    #[test]
+    fn test_tree_from_file() {
+        #[cfg(not(target_arch = "wasm32"))]
+        let tree = Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
+        #[cfg(target_arch = "wasm32")]
+        let tree = Chain::<f32>::from(
+            urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap(),
+        );
+        assert_eq!(tree.dof(), 12);
+        let names = tree
+            .iter()
+            .map(|joint| joint.joint().name.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(names.len(), 13);
+        println!("{}", names[0]);
+        assert_eq!(names[0], "root");
+        assert_eq!(names[1], "r_shoulder_yaw");
+    }
 }
