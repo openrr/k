@@ -354,11 +354,10 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     /// assert_eq!(joint_name, "pitch1");
     /// ```
     pub fn find_link(&self, link_name: &str) -> Option<&Node<T>> {
-        self.iter()
-            .find(|node| match &(*node).clone().link().as_ref() {
-                Some(link) => link.name == link_name,
-                None => false,
-            })
+        self.iter().find(|node| match node.link().as_ref() {
+            Some(link) => link.name == link_name,
+            None => false,
+        })
     }
 
     /// Get the positions of the joints
