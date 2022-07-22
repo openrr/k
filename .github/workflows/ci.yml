@@ -24,9 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
+      - run: cargo build
 
   test:
     name: Test
@@ -34,9 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+      - run: cargo test
 
   wasm:
     runs-on: ubuntu-latest
@@ -58,10 +54,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all --check
+      - run: cargo fmt --all --check
 
   clippy:
     name: Clippy
@@ -71,10 +64,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-targets
+      - run: cargo clippy --all-targets
 
   docs:
     name: Docs
