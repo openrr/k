@@ -95,7 +95,7 @@ mod tests {
     use crate::link::*;
     use crate::node::*;
     use na::*;
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     #[test]

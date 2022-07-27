@@ -388,10 +388,10 @@ const DEFAULT_MESH_SCALE: [f64; 3] = [1.0f64; 3];
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
     #[test]
@@ -406,9 +406,9 @@ mod tests {
 
     #[test]
     fn test_tree_from_file() {
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(not(target_family = "wasm"))]
         let tree = Chain::<f32>::from_urdf_file("urdf/sample.urdf").unwrap();
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(target_family = "wasm")]
         let tree = Chain::<f32>::from(
             urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap(),
         );

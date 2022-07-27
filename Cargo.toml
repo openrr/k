@@ -24,13 +24,13 @@ urdf-rs = "0.6"
 
 serde = { version = "1.0", features = ["derive"], optional = true }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 clap = { version = "3", features = ["derive"] }
 criterion = "0.3"
 kiss3d = "0.35"
 rand = "0.8"
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+[target.'cfg(target_family = "wasm")'.dev-dependencies]
 wasm-bindgen-test = "0.3"
 
 [[bench]]
