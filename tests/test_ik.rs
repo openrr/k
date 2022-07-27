@@ -2,10 +2,10 @@ use k::connect;
 use k::prelude::*;
 use na::{Translation3, Vector3};
 use nalgebra as na;
-#[cfg(target_arch = "wasm32")]
+#[cfg(target_family = "wasm")]
 use wasm_bindgen_test::wasm_bindgen_test as test;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(target_family = "wasm")]
 wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
 fn create_joint_with_link_array6() -> k::SerialChain<f64> {

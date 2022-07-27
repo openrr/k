@@ -512,7 +512,7 @@ pub fn create_reference_positions_nullspace_function<T: RealField>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(target_family = "wasm")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
     #[test]

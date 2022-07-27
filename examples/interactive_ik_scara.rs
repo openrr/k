@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(target_family = "wasm"))]
 fn main() {
     use nalgebra as na;
 
@@ -199,5 +199,5 @@ fn main() {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(target_family = "wasm")]
 fn main() {}
