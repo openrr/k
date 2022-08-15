@@ -200,6 +200,7 @@ where
     ///    ),
     /// ));
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T> + Send + Sync>) {
         self.nullspace_function = Some(func);
     }
