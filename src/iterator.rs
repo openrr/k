@@ -17,6 +17,7 @@
 use super::node::*;
 use nalgebra::RealField;
 use simba::scalar::SubsetOf;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 /// Iterator for parents
@@ -58,7 +59,7 @@ pub struct Descendants<T>
 where
     T: RealField,
 {
-    stack: Vec<Node<T>>,
+    stack: VecDeque<Node<T>>,
 }
 
 impl<T> Descendants<T>
@@ -66,7 +67,9 @@ where
     T: RealField,
 {
     pub fn new(stack: Vec<Node<T>>) -> Self {
-        Self { stack }
+        Self {
+            stack: stack.into(),
+        }
     }
 }
 
@@ -77,7 +80,7 @@ where
     type Item = Node<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let node = match self.stack.pop() {
+        let node = match self.stack.pop_front() {
             Some(node) => node,
             None => {
                 return None;

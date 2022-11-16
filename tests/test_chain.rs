@@ -17,7 +17,7 @@ fn test_tree() {
     assert!(all_names.len() == 13);
     println!("{}", all_names[0]);
     assert!(all_names[0] == "root");
-    assert!(all_names[1] == "r_shoulder_yaw");
+    assert!(all_names[1] == "l_shoulder_yaw");
 
     let names = tree
         .iter_joints()
@@ -25,7 +25,7 @@ fn test_tree() {
         .collect::<Vec<_>>();
     assert!(names.len() == 12);
     println!("{}", names[0]);
-    assert!(names[0] == "r_shoulder_yaw");
+    assert!(names[0] == "l_shoulder_yaw");
 }
 
 #[test]
