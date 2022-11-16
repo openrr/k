@@ -420,6 +420,6 @@ mod tests {
         assert_eq!(names.len(), 13);
         println!("{}", names[0]);
         assert_eq!(names[0], "root");
-        assert_eq!(names[1], "r_shoulder_yaw");
+        assert_eq!(names[1], "l_shoulder_yaw");
     }
 }
