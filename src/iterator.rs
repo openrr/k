@@ -86,7 +86,12 @@ where
                 return None;
             }
         };
-        self.stack.extend(node.children().clone());
+
+        // procedure for prepending (no prepending function exists)
+        let mut new_stack: VecDeque<Node<T>> = node.children().clone().into();
+        new_stack.append(&mut (self.stack.clone()));
+        self.stack = new_stack;
+
         Some(node)
     }
 }
