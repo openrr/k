@@ -59,16 +59,16 @@ pub struct Descendants<T>
 where
     T: RealField,
 {
-    stack: VecDeque<Node<T>>,
+    queue: VecDeque<Node<T>>,
 }
 
 impl<T> Descendants<T>
 where
     T: RealField,
 {
-    pub fn new(stack: Vec<Node<T>>) -> Self {
+    pub fn new(queue: Vec<Node<T>>) -> Self {
         Self {
-            stack: stack.into(),
+            queue: queue.into(),
         }
     }
 }
@@ -80,7 +80,7 @@ where
     type Item = Node<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let node = match self.stack.pop_front() {
+        let node = match self.queue.pop_front() {
             Some(node) => node,
             None => {
                 return None;
@@ -88,9 +88,9 @@ where
         };
 
         // procedure for prepending (no prepending function exists)
-        let mut new_stack: VecDeque<Node<T>> = node.children().clone().into();
-        new_stack.append(&mut (self.stack.clone()));
-        self.stack = new_stack;
+        let mut new_queue: VecDeque<Node<T>> = node.children().clone().into();
+        new_queue.append(&mut (self.queue.clone()));
+        self.queue = new_queue;
 
         Some(node)
     }
