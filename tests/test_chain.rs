@@ -14,18 +14,32 @@ fn test_tree() {
         .iter()
         .map(|link| link.joint().name.clone())
         .collect::<Vec<_>>();
-    assert!(all_names.len() == 13);
-    println!("{}", all_names[0]);
-    assert!(all_names[0] == "root");
-    assert!(all_names[1] == "l_shoulder_yaw");
+    assert_eq!(all_names.len(), 13);
+    assert_eq!(
+        all_names,
+        [
+            "root",
+            "l_shoulder_yaw",
+            "l_shoulder_pitch",
+            "l_shoulder_roll",
+            "l_elbow_pitch",
+            "l_wrist_yaw",
+            "l_wrist_pitch",
+            "r_shoulder_yaw",
+            "r_shoulder_pitch",
+            "r_shoulder_roll",
+            "r_elbow_pitch",
+            "r_wrist_yaw",
+            "r_wrist_pitch"
+        ]
+    );
 
     let names = tree
         .iter_joints()
         .map(|j| j.name.clone())
         .collect::<Vec<_>>();
-    assert!(names.len() == 12);
-    println!("{}", names[0]);
-    assert!(names[0] == "l_shoulder_yaw");
+    assert_eq!(names.len(), 12);
+    assert_eq!(names[0], "l_shoulder_yaw");
 }
 
 #[test]
