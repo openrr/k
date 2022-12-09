@@ -397,7 +397,7 @@ mod tests {
     #[test]
     fn test_tree() {
         let robot = urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap();
-        assert_eq!(robot.name, "robo");
+        assert_eq!(robot.name, "robot");
         assert_eq!(robot.links.len(), 1 + 6 + 6);
 
         let tree = Chain::<f32>::from(&robot);
