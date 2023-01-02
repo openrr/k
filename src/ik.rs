@@ -200,6 +200,7 @@ where
     ///    ),
     /// ));
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn set_nullspace_function(&mut self, func: Box<dyn Fn(&[T]) -> Vec<T> + Send + Sync>) {
         self.nullspace_function = Some(func);
     }
@@ -509,12 +510,19 @@ pub fn create_reference_positions_nullspace_function<T: RealField>(
     }
 }
 
-#[test]
-fn test_nullspace_func() {
-    let f = create_reference_positions_nullspace_function(vec![0.0, 1.0], vec![0.5, 0.1]);
-    let pos1 = vec![0.5, 0.5];
-    let values = f(&pos1);
-    assert_eq!(values.len(), 2);
-    assert!((values[0] - 0.25f64).abs() < f64::EPSILON);
-    assert!((values[1] - (-0.05f64)).abs() < f64::EPSILON);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[cfg(target_family = "wasm")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
+
+    #[test]
+    fn test_nullspace_func() {
+        let f = create_reference_positions_nullspace_function(vec![0.0, 1.0], vec![0.5, 0.1]);
+        let pos1 = vec![0.5, 0.5];
+        let values = f(&pos1);
+        assert_eq!(values.len(), 2);
+        assert!((values[0] - 0.25f64).abs() < f64::EPSILON);
+        assert!((values[1] - (-0.05f64)).abs() < f64::EPSILON);
+    }
 }
