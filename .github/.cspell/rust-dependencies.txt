@@ -2,16 +2,6 @@
 // It is not intended for manual editing.
 
 bindgen
-clap
-criterion
-kiss
 nalgebra
-parking
-rand
-serde
-simba
-test
 thiserror
-tracing
 urdf
-wasm
