@@ -1,6 +1,6 @@
 # `k`: Kinematics library for rust-lang
 
-[![Build and Test](https://github.com/openrr/k/workflows/Rust/badge.svg)](https://github.com/openrr/k/actions) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/main/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k)
+[![Build and Test](https://github.com/openrr/k/workflows/Rust/badge.svg)](https://github.com/openrr/k/actions) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/main/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k) [![discord](https://dcbadge.vercel.app/api/server/8DAFFKc88B?style=flat)](https://discord.gg/8DAFFKc88B)
 
 `k` has below functionalities.
 
@@ -87,3 +87,7 @@ Actual data (joint angle(position), transform between nodes) is stored in `Joint
 You can get local/world transform of nodes. See below figure to understand what is the node's `local_transform()` and `world_transform()`.
 
 ![ik_sample](https://github.com/openrr/k/raw/main/img/transform.png)
+
+## `OpenRR` Community
+
+[Here](https://discord.gg/8DAFFKc88B) is a discord server for `OpenRR` users and developers.
