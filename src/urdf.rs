@@ -112,7 +112,7 @@ where
         Visual::new(
             urdf_visual.name.unwrap_or_default(),
             isometry_from(&urdf_visual.origin),
-            urdf_visual.geometry.into(),
+            urdf_rs::Geometry::from(&urdf_visual.geometry).into(),
             urdf_visual.material.unwrap_or_default().into(),
         )
     }
@@ -126,7 +126,7 @@ where
         Collision::new(
             urdf_collision.name.unwrap_or_default(),
             isometry_from(&urdf_collision.origin),
-            urdf_collision.geometry.into(),
+            urdf_rs::Geometry::from(&urdf_collision.geometry).into(),
         )
     }
 }
@@ -137,24 +137,28 @@ where
 {
     fn from(urdf_geometry: urdf_rs::Geometry) -> Self {
         match urdf_geometry {
-            urdf_rs::Geometry::Box { size } => Geometry::Box {
+            urdf_rs::Geometry::Box(urdf_rs::BoxGeometry { size }) => Geometry::Box {
                 depth: na::convert(size[0]),
                 width: na::convert(size[1]),
                 height: na::convert(size[2]),
             },
-            urdf_rs::Geometry::Cylinder { radius, length } => Geometry::Cylinder {
+            urdf_rs::Geometry::Cylinder(urdf_rs::CylinderGeometry { radius, length }) => {
+                Geometry::Cylinder {
+                    radius: na::convert(radius),
+                    length: na::convert(length),
+                }
+            }
+            urdf_rs::Geometry::Capsule(urdf_rs::CapsuleGeometry { radius, length }) => {
+                Geometry::Capsule {
+                    radius: na::convert(radius),
+                    length: na::convert(length),
+                }
+            }
+            urdf_rs::Geometry::Sphere(urdf_rs::SphereGeometry { radius }) => Geometry::Sphere {
                 radius: na::convert(radius),
-                length: na::convert(length),
             },
-            urdf_rs::Geometry::Capsule { radius, length } => Geometry::Capsule {
-                radius: na::convert(radius),
-                length: na::convert(length),
-            },
-            urdf_rs::Geometry::Sphere { radius } => Geometry::Sphere {
-                radius: na::convert(radius),
-            },
-            urdf_rs::Geometry::Mesh { filename, scale } => {
-                let scale = scale.unwrap_or(DEFAULT_MESH_SCALE);
+            urdf_rs::Geometry::Mesh(urdf_rs::MeshGeometry { filename, scale }) => {
+                let scale = scale.and_then(|s| Some(*s)).unwrap_or(DEFAULT_MESH_SCALE);
                 Geometry::Mesh {
                     filename,
                     scale: na::Vector3::new(
@@ -243,11 +247,11 @@ where
             .joint_type(match joint.joint_type {
                 urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
                     JointType::Rotational {
-                        axis: axis_from(joint.axis.xyz),
+                        axis: axis_from(*joint.axis.xyz),
                     }
                 }
                 urdf_rs::JointType::Prismatic => JointType::Linear {
-                    axis: axis_from(joint.axis.xyz),
+                    axis: axis_from(*joint.axis.xyz),
                 },
                 _ => JointType::Fixed,
             })
@@ -412,6 +416,7 @@ mod tests {
         let tree = Chain::<f32>::from(
             urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap(),
         );
+        dbg!(&tree);
         assert_eq!(tree.dof(), 12);
         let names = tree
             .iter()
