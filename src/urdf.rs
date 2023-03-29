@@ -416,7 +416,6 @@ mod tests {
         let tree = Chain::<f32>::from(
             urdf_rs::read_from_string(include_str!("../urdf/sample.urdf")).unwrap(),
         );
-        dbg!(&tree);
         assert_eq!(tree.dof(), 12);
         let names = tree
             .iter()
