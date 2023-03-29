@@ -158,7 +158,7 @@ where
                 radius: na::convert(radius),
             },
             urdf_rs::Geometry::Mesh(urdf_rs::MeshGeometry { filename, scale }) => {
-                let scale = scale.and_then(|s| Some(*s)).unwrap_or(DEFAULT_MESH_SCALE);
+                let scale = scale.unwrap_or(urdf_rs::Vec3(DEFAULT_MESH_SCALE));
                 Geometry::Mesh {
                     filename,
                     scale: na::Vector3::new(
