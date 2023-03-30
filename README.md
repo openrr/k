@@ -1,6 +1,6 @@
 # `k`: Kinematics library for rust-lang
 
-[![Build and Test](https://github.com/openrr/k/workflows/Rust/badge.svg)](https://github.com/openrr/k/actions) [![crates.io](https://img.shields.io/crates/v/k.svg)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/main/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k) [![discord](https://dcbadge.vercel.app/api/server/8DAFFKc88B?style=flat)](https://discord.gg/8DAFFKc88B)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/openrr/k/ci.yml?branch=main&logo=github)](https://github.com/openrr/k/actions) [![crates.io](https://img.shields.io/crates/v/k.svg?logo=rust)](https://crates.io/crates/k) [![codecov](https://codecov.io/gh/openrr/k/branch/main/graph/badge.svg?token=A0MGJ1V6US)](https://codecov.io/gh/openrr/k) [![docs](https://docs.rs/k/badge.svg)](https://docs.rs/k) [![discord](https://dcbadge.vercel.app/api/server/8DAFFKc88B?style=flat)](https://discord.gg/8DAFFKc88B)
 
 `k` has below functionalities.
 
