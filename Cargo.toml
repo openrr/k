@@ -20,7 +20,7 @@ parking_lot = "0.12"
 simba = "0.7"
 thiserror = "1.0"
 tracing = "0.1"
-urdf-rs = { git = "https://github.com/luca-della-vedova/urdf-rs", branch = "luca/serialize_urdf" }
+urdf-rs = "0.7"
 
 serde = { version = "1.0", features = ["derive"], optional = true }
 
