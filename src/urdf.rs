@@ -154,7 +154,7 @@ where
                 radius: na::convert(radius),
             },
             urdf_rs::Geometry::Mesh { filename, scale } => {
-                let scale = scale.unwrap_or(DEFAULT_MESH_SCALE);
+                let scale = scale.unwrap_or(urdf_rs::Vec3(DEFAULT_MESH_SCALE));
                 Geometry::Mesh {
                     filename,
                     scale: na::Vector3::new(
@@ -243,11 +243,11 @@ where
             .joint_type(match joint.joint_type {
                 urdf_rs::JointType::Revolute | urdf_rs::JointType::Continuous => {
                     JointType::Rotational {
-                        axis: axis_from(joint.axis.xyz),
+                        axis: axis_from(*joint.axis.xyz),
                     }
                 }
                 urdf_rs::JointType::Prismatic => JointType::Linear {
-                    axis: axis_from(joint.axis.xyz),
+                    axis: axis_from(*joint.axis.xyz),
                 },
                 _ => JointType::Fixed,
             })
