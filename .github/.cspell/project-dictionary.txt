@@ -1,4 +1,3 @@
-clippy
 codecov
 condvar
 consts
@@ -16,5 +15,6 @@ rustflags
 rustfmt
 rustup
 ryzen
+SIGINT
 xacro
 xorg
