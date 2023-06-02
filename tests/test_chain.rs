@@ -42,6 +42,7 @@ fn test_tree() {
     assert_eq!(names[0], "l_shoulder_yaw");
 }
 
+#[allow(clippy::redundant_clone)] // This is intentional.
 #[test]
 fn test_clone() {
     let tree = k::Chain::<f32>::from(
