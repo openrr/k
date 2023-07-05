@@ -15,6 +15,5 @@ rustflags
 rustfmt
 rustup
 ryzen
-SIGINT
 xacro
 xorg
