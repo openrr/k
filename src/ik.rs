@@ -18,7 +18,7 @@ use std::fmt;
 
 use na::{DVector, Isometry3, RealField, Vector3, Vector6};
 use nalgebra as na;
-#[cfg(feature = "serde-serialize")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use simba::scalar::SubsetOf;
 
@@ -66,23 +66,23 @@ where
 
 /// A bundle of flags determining which coordinates are constrained for a target
 #[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Constraints {
     /// true means the constraint is used.
     ///  The coordinates is the world, not the end of the arm.
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub position_x: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub position_y: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub position_z: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub rotation_x: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub rotation_y: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default = "default_true"))]
+    #[cfg_attr(feature = "serde", serde(default = "default_true"))]
     pub rotation_z: bool,
-    #[cfg_attr(feature = "serde-serialize", serde(default))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub ignored_joint_names: Vec<String>,
 }
 
