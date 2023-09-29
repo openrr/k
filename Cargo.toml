@@ -11,7 +11,7 @@ repository = "https://github.com/openrr/k"
 
 [features]
 default = []
-serde-serialize = ["nalgebra/serde-serialize", "serde"]
+serde = ["nalgebra/serde-serialize", "dep:serde"]
 
 # Note: nalgebra, simba, urdf-rs, and serde are public dependencies.
 [dependencies]
