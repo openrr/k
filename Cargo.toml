@@ -1,6 +1,6 @@
 [package]
 name = "k"
-version = "0.30.0"
+version = "0.31.0"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
 edition = "2021"
 description = "k is for kinematics"
