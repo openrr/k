@@ -1,8 +1,6 @@
 codecov
 condvar
-consts
 deque
-drawio
 funcs
 kajita
 libglu
