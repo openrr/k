@@ -45,3 +45,12 @@ harness = false
 
 #[profile.bench]
 #debug = true
+
+[lints]
+workspace = true
+
+[workspace.lints.rust]
+missing_debug_implementations = "warn"
+# missing_docs = "warn" # TODO
+rust_2018_idioms = "warn"
+unreachable_pub = "warn"
