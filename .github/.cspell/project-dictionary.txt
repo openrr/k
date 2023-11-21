@@ -1,4 +1,3 @@
-codecov
 deque
 funcs
 kajita
