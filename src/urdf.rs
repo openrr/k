@@ -29,7 +29,7 @@ use tracing::*;
 
 pub const ROOT_JOINT_NAME: &str = "root";
 
-impl<'a, T> From<&'a urdf_rs::Color> for Color<T>
+impl<T> From<&urdf_rs::Color> for Color<T>
 where
     T: RealField,
 {
@@ -182,7 +182,7 @@ where
     }
 }
 
-impl<'a, T> From<&'a urdf_rs::Mimic> for Mimic<T>
+impl<T> From<&urdf_rs::Mimic> for Mimic<T>
 where
     T: RealField,
 {
@@ -225,7 +225,7 @@ where
     na::convert(na::Translation3::new(array3[0], array3[1], array3[2]))
 }
 
-impl<'a, T> From<&'a urdf_rs::Joint> for Joint<T>
+impl<T> From<&urdf_rs::Joint> for Joint<T>
 where
     T: RealField + SubsetOf<f64>,
 {
@@ -258,7 +258,7 @@ where
     }
 }
 
-impl<'a, T> From<&'a urdf_rs::Robot> for Chain<T>
+impl<T> From<&urdf_rs::Robot> for Chain<T>
 where
     T: RealField + SubsetOf<f64>,
 {
