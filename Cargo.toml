@@ -53,4 +53,5 @@ workspace = true
 missing_debug_implementations = "warn"
 # missing_docs = "warn" # TODO
 rust_2018_idioms = "warn"
+single_use_lifetimes = "warn"
 unreachable_pub = "warn"

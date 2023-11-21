@@ -380,7 +380,7 @@ macro_rules! def_ref_guard {
             guard: MutexGuard<'a, NodeImpl<T>>,
         }
 
-        impl<'a, T> Deref for $guard_struct<'a, T>
+        impl<T> Deref for $guard_struct<'_, T>
         where
             T: RealField,
         {
@@ -403,7 +403,7 @@ macro_rules! def_ref_guard_mut {
             guard: RefMut<'a, NodeImpl<T>>,
         }
 
-        impl<'a, T> Deref for $guard_struct<'a, T>
+        impl<T> Deref for $guard_struct<'_, T>
         where
             T: RealField,
         {
@@ -413,7 +413,7 @@ macro_rules! def_ref_guard_mut {
             }
         }
 
-        impl<'a, T> DerefMut for $guard_struct<'a, T>
+        impl<T> DerefMut for $guard_struct<'_, T>
         where
             T: RealField,
         {
@@ -438,7 +438,7 @@ where
     pub(crate) guard: MutexGuard<'a, NodeImpl<T>>,
 }
 
-impl<'a, T> Deref for LinkRefGuard<'a, T>
+impl<T> Deref for LinkRefGuard<'_, T>
 where
     T: RealField,
 {

@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use k::prelude::*;
 
-fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut Bencher) {
+fn bench_tree_ik(robot: &k::Chain<f64>, target_link: &str, b: &mut Bencher<'_>) {
     let target_node = robot.find(target_link).unwrap();
     let arm = k::SerialChain::from_end(target_node);
     // set joint angles
