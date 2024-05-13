@@ -233,7 +233,7 @@ where
         }
     }
     pub fn name(mut self, name: &str) -> Self {
-        self.name = name.to_owned();
+        name.clone_into(&mut self.name);
         self
     }
     pub fn inertial(mut self, inertial: Inertial<T>) -> Self {
