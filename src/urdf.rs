@@ -271,7 +271,7 @@ where
         for j in &robot.joints {
             let node = Node::<T>::new(j.into());
             child_link_name_to_node.insert(&j.child.link, node.clone());
-            if parent_link_name_to_node.get(&j.parent.link).is_some() {
+            if parent_link_name_to_node.contains_key(&j.parent.link) {
                 parent_link_name_to_node
                     .get_mut(&j.parent.link)
                     .unwrap()
@@ -362,7 +362,7 @@ pub fn link_to_joint_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
         map.insert(j.child.link.to_owned(), j.name.to_owned());
     }
     for l in &urdf_robot.links {
-        if map.get(&l.name).is_none() {
+        if !map.contains_key(&l.name) {
             map.insert(l.name.to_owned(), ROOT_JOINT_NAME.to_owned());
         }
     }
@@ -375,7 +375,7 @@ pub fn joint_to_link_map(urdf_robot: &urdf_rs::Robot) -> HashMap<String, String>
         map.insert(j.name.to_owned(), j.child.link.to_owned());
     }
     for l in &urdf_robot.links {
-        if map.get(&l.name).is_none() {
+        if !map.contains_key(&l.name) {
             map.insert(ROOT_JOINT_NAME.to_owned(), l.name.to_owned());
         }
     }
