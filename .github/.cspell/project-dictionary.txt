@@ -1,4 +1,5 @@
 deque
+doctest
 funcs
 kajita
 libglu
