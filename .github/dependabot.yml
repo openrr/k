@@ -11,3 +11,10 @@ updates:
       - dependency-name: nalgebra
       - dependency-name: simba
     labels: []
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: ''
+    labels: []
