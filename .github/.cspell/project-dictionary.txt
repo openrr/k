@@ -8,7 +8,6 @@ rctree
 rgba
 rustdocflags
 rustflags
-rustup
 ryzen
 xacro
 xorg
