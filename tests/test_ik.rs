@@ -1,6 +1,6 @@
-use k::connect;
-use k::prelude::*;
-use na::{Translation3, Vector3};
+use approx::assert_abs_diff_eq;
+use k::{connect, joint::Range, prelude::*};
+use na::{Translation3, UnitQuaternion, Vector3};
 use nalgebra as na;
 #[cfg(target_family = "wasm")]
 use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -175,4 +175,148 @@ fn ik_fk7_with_constraints() {
         assert!((init - end).abs() < 0.001);
         assert!((angles[6] - end_angles[6]).abs() < f32::EPSILON);
     }
+}
+
+#[test]
+fn test_roc_x_chain() {
+    let base: k::Node<f64> = k::NodeBuilder::new()
+        .name("base")
+        .joint_type(k::JointType::Fixed)
+        .rotation(UnitQuaternion::from_euler_angles(
+            0.0,
+            0.0,
+            90.0_f64.to_radians(),
+        ))
+        .finalize()
+        .into();
+
+    let linear_z: k::Node<f64> = k::NodeBuilder::new()
+        .name("linear_1")
+        .joint_type(k::JointType::Linear {
+            axis: Vector3::z_axis(),
+        })
+        .translation(Translation3::new(0.0, 0.0, 1.2))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .finalize()
+        .into();
+
+    let shoulder: k::Node<f64> = k::NodeBuilder::new()
+        .name("shoulder")
+        .joint_type(k::JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
+        .translation(Translation3::new(0.2, 0.0, 0.1))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .limits(Some(Range::new(
+            -90.0_f64.to_radians(),
+            90.0_f64.to_radians(),
+        )))
+        .finalize()
+        .into();
+
+    let elbow: k::Node<f64> = k::NodeBuilder::new()
+        .name("elbow")
+        .joint_type(k::JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
+        .translation(Translation3::new(0.5, 0.0, -0.1))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 180.0))
+        .limits(Some(Range::new(
+            -90.0_f64.to_radians(),
+            90.0_f64.to_radians(),
+        )))
+        .finalize()
+        .into();
+
+    let yaw: k::Node<f64> = k::NodeBuilder::new()
+        .name("yaw")
+        .joint_type(k::JointType::Rotational {
+            axis: Vector3::z_axis(),
+        })
+        .translation(Translation3::new(0.5, 0.0, 0.02))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .limits(Some(Range::new(
+            -90.0_f64.to_radians(),
+            90.0_f64.to_radians(),
+        )))
+        .finalize()
+        .into();
+
+    let pitch: k::Node<f64> = k::NodeBuilder::new()
+        .name("pitch")
+        .joint_type(k::JointType::Rotational {
+            axis: Vector3::y_axis(),
+        })
+        .translation(Translation3::new(0.2, 0.0, -0.3))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .limits(Some(Range::new(
+            -45.0_f64.to_radians(),
+            45.0_f64.to_radians(),
+        )))
+        .finalize()
+        .into();
+
+    let linear_x: k::Node<f64> = k::NodeBuilder::new()
+        .name("linear_x")
+        .joint_type(k::JointType::Linear {
+            axis: Vector3::x_axis(),
+        })
+        .translation(Translation3::new(0.1, 0.0, -0.1))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .finalize()
+        .into();
+
+    let roll: k::Node<f64> = k::NodeBuilder::new()
+        .name("roll")
+        .joint_type(k::JointType::Rotational {
+            axis: Vector3::x_axis(),
+        })
+        .translation(Translation3::new(0.1, 0.0, 0.1))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .limits(Some(Range::new(
+            -30.0_f64.to_radians(),
+            30.0_f64.to_radians(),
+        )))
+        .finalize()
+        .into();
+
+    let tool: k::Node<f64> = k::NodeBuilder::new()
+        .name("tool")
+        .joint_type(k::JointType::Fixed)
+        .translation(Translation3::new(0.1, 0.0, 0.0))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .finalize()
+        .into();
+
+    connect![base => linear_z => shoulder => elbow => yaw => pitch => linear_x => roll => tool];
+
+    let chain = k::SerialChain::from_end(&roll);
+
+    let _result = chain.set_joint_positions(&[
+        0.5,                   // linear_z
+        60.0_f64.to_radians(), // shoulder
+        30.0_f64.to_radians(), // wrist
+        5.0_f64.to_radians(),  // yaw
+        5.0_f64.to_radians(),  // pitch
+        0.0,                   // linear_x
+        5.0_f64.to_radians(),  // roll
+    ]);
+
+    let tool_pose = chain.end_transform();
+
+    let solver = k::JacobianIkSolver::new(1e-6, 1e-6, 0.5, 1000);
+    let constraints = k::Constraints {
+        ignored_joint_names: vec!["linear_x".to_string()],
+        ..Default::default()
+    };
+
+    chain.set_joint_positions(&[0.0; 7]).unwrap();
+
+    solver
+        .solve_with_constraints(&chain, &tool_pose, &constraints)
+        .unwrap();
+
+    let ik_tool_pose = chain.end_transform();
+
+    assert_abs_diff_eq!(tool_pose, ik_tool_pose, epsilon = 1e-6);
 }
