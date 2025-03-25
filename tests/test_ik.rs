@@ -178,7 +178,7 @@ fn ik_fk7_with_constraints() {
 }
 
 #[test]
-fn test_roc_x_chain() {
+fn test_ik_with_ignored_joints() {
     let base: k::Node<f64> = k::NodeBuilder::new()
         .name("base")
         .joint_type(k::JointType::Fixed)
