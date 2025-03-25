@@ -283,8 +283,8 @@ where
                 .unwrap()
                 .as_slice()
                 .to_vec();
-            for (i, joint_index) in ignored_joint_indices.iter().enumerate() {
-                dq.insert(*joint_index - i, T::zero());
+            for joint_index in ignored_joint_indices.iter() {
+                dq.insert(*joint_index, T::zero());
             }
             self.add_positions_with_multiplier(&orig_positions, dq.as_slice())
         };

@@ -242,6 +242,16 @@ fn test_roc_x_chain() {
         .finalize()
         .into();
 
+    let linear_y: k::Node<f64> = k::NodeBuilder::new()
+        .name("linear_y")
+        .joint_type(k::JointType::Linear {
+            axis: Vector3::x_axis(),
+        })
+        .translation(Translation3::new(0.1, 0.0, -0.1))
+        .rotation(UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0))
+        .finalize()
+        .into();
+
     let pitch: k::Node<f64> = k::NodeBuilder::new()
         .name("pitch")
         .joint_type(k::JointType::Rotational {
@@ -288,7 +298,7 @@ fn test_roc_x_chain() {
         .finalize()
         .into();
 
-    connect![base => linear_z => shoulder => elbow => yaw => pitch => linear_x => roll => tool];
+    connect![base => linear_z => shoulder => elbow => yaw => linear_y => pitch => linear_x => roll => tool];
 
     let chain = k::SerialChain::from_end(&roll);
 
@@ -297,6 +307,7 @@ fn test_roc_x_chain() {
         60.0_f64.to_radians(), // shoulder
         30.0_f64.to_radians(), // wrist
         5.0_f64.to_radians(),  // yaw
+        0.0,                   // linear_y
         5.0_f64.to_radians(),  // pitch
         0.0,                   // linear_x
         5.0_f64.to_radians(),  // roll
@@ -306,11 +317,11 @@ fn test_roc_x_chain() {
 
     let solver = k::JacobianIkSolver::new(1e-6, 1e-6, 0.5, 1000);
     let constraints = k::Constraints {
-        ignored_joint_names: vec!["linear_x".to_string()],
+        ignored_joint_names: vec!["linear_x".to_string(), "linear_y".to_string()],
         ..Default::default()
     };
 
-    chain.set_joint_positions(&[0.0; 7]).unwrap();
+    chain.set_joint_positions(&[0.0; 8]).unwrap();
 
     solver
         .solve_with_constraints(&chain, &tool_pose, &constraints)
