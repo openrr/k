@@ -1,8 +1,8 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use k::joint::Range;
 use na::RealField;
 use nalgebra as na;
-use std::{f64::consts::PI, sync::Arc, thread};
+use std::{f64::consts::PI, hint::black_box, sync::Arc, thread};
 
 /*
 ## v0.10.1 on MacBook Pro (Retina, 13-inch, Early 2015, 2.9GHz - 16GB)
