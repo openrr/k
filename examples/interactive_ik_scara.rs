@@ -108,14 +108,22 @@ fn main() {
         vec![c_fixed, c0, c1, c2, c3]
     }
 
-    fn to_kiss3d_transform(transform: &nalgebra::Isometry3<f32>) -> kiss3d::nalgebra::Isometry3<f32> {
-        let target_translation = kiss3d::nalgebra::Translation3::new(transform.translation.x, transform.translation.y, transform.translation.z);
-        let target_rotation = kiss3d::nalgebra::Quaternion::new(transform.rotation.w, transform.rotation.i, transform.rotation.j, transform.rotation.k);
+    fn to_kiss3d_transform(
+        transform: &nalgebra::Isometry3<f32>,
+    ) -> kiss3d::nalgebra::Isometry3<f32> {
+        let target_translation = kiss3d::nalgebra::Translation3::new(
+            transform.translation.x,
+            transform.translation.y,
+            transform.translation.z,
+        );
+        let target_rotation = kiss3d::nalgebra::Quaternion::new(
+            transform.rotation.w,
+            transform.rotation.i,
+            transform.rotation.j,
+            transform.rotation.k,
+        );
         let target_rotation = kiss3d::nalgebra::UnitQuaternion::from_quaternion(target_rotation);
-        kiss3d::nalgebra::Isometry3::from_parts(
-            target_translation,
-            target_rotation
-        )
+        kiss3d::nalgebra::Isometry3::from_parts(target_translation, target_rotation)
     }
 
     let root = create_joint_with_link_array();
@@ -143,7 +151,7 @@ fn main() {
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
     let eye = kiss3d::nalgebra::Point3::new(0.5f32, 1.0, 2.0);
-    let at =  kiss3d::nalgebra::Point3::new(0.0f32, 0.0, 0.0);
+    let at = kiss3d::nalgebra::Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
 
     let solver = JacobianIkSolver::default();
