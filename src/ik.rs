@@ -244,8 +244,8 @@ where
             jacobi = jacobi.remove_column(*joint_index - i);
         }
 
+        const EPS: f64 = 0.0001;
         let positions_vec = if available_dof > required_dof {
-            const EPS: f64 = 0.0001;
             // redundant: pseudo inverse
             match self.nullspace_function {
                 Some(ref f) => {
@@ -277,14 +277,16 @@ where
             }
         } else {
             // normal inverse matrix
-            self.add_positions_with_multiplier(
-                &orig_positions,
-                jacobi
-                    .lu()
-                    .solve(&err)
-                    .ok_or(Error::InverseMatrixError)?
-                    .as_slice(),
-            )
+            let mut dq = jacobi
+                .svd(true, true)
+                .solve(&err, na::convert(EPS))
+                .unwrap()
+                .as_slice()
+                .to_vec();
+            for joint_index in ignored_joint_indices.iter() {
+                dq.insert(*joint_index, T::zero());
+            }
+            self.add_positions_with_multiplier(&orig_positions, dq.as_slice())
         };
         arm.set_joint_positions_clamped(&positions_vec);
         Ok(calc_pose_diff_with_constraints(
