@@ -834,19 +834,20 @@ mod tests {
             .name("j1")
             .joint_type(JointType::Fixed)
             .into_node();
-	joint1.set_parent(&joint0);
-	let link1 = LinkBuilder::new()
-	    .name("l1")
-	    .finalize();
-	joint1.set_link(Some(link1));
+        joint1.set_parent(&joint0);
+        let link1 = LinkBuilder::new().name("l1").finalize();
+        joint1.set_link(Some(link1));
 
-	let chain = Chain::from_root(joint0);
+        let chain = Chain::from_root(joint0);
 
-	chain.update_link_transforms();
+        chain.update_link_transforms();
 
-	for link in chain.iter_links() {
-	    println!("{:?}", link.inertial.world_transform());
-	    assert!((link.inertial.world_transform().unwrap().translation.x - 1.0f64).abs() < f64::EPSILON);
-	}
+        for link in chain.iter_links() {
+            println!("{:?}", link.inertial.world_transform());
+            assert!(
+                (link.inertial.world_transform().unwrap().translation.x - 1.0f64).abs()
+                    < f64::EPSILON
+            );
+        }
     }
 }
