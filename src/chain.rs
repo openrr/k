@@ -488,7 +488,7 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     pub fn update_link_transforms(&self) {
         self.update_transforms();
         self.iter().for_each(|node| {
-            let parent_transform = node.parent_world_transform().expect("cache must exist");
+            let parent_transform = node.world_transform().expect("cache must exist");
             let mut node_mut = node.lock();
             if let Some(ref mut link) = node_mut.link {
                 let inertial_trans = parent_transform.clone() * link.inertial.origin();
@@ -681,6 +681,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::link::LinkBuilder;
+
     use super::*;
     #[cfg(target_family = "wasm")]
     use wasm_bindgen_test::wasm_bindgen_test as test;
@@ -819,5 +821,33 @@ mod tests {
         assert!((positions[0] - 0.1f64).abs() < f64::EPSILON);
         assert!((positions[1] - 0.2f64).abs() < f64::EPSILON);
         assert!((positions[2] - 0.9f64).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_update_link_transforms() {
+        let joint0 = NodeBuilder::new()
+            .name("j0")
+            .joint_type(JointType::Fixed)
+            .into_node();
+        let joint1 = NodeBuilder::new()
+            .translation(na::Translation3::new(1.0, 0.0, 0.0))
+            .name("j1")
+            .joint_type(JointType::Fixed)
+            .into_node();
+        joint1.set_parent(&joint0);
+        let link1 = LinkBuilder::new().name("l1").finalize();
+        joint1.set_link(Some(link1));
+
+        let chain = Chain::from_root(joint0);
+
+        chain.update_link_transforms();
+
+        for link in chain.iter_links() {
+            println!("{:?}", link.inertial.world_transform());
+            assert!(
+                (link.inertial.world_transform().unwrap().translation.x - 1.0f64).abs()
+                    < f64::EPSILON
+            );
+        }
     }
 }
