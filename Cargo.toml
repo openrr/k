@@ -30,7 +30,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 clap = { version = "4", features = ["derive"] }
 criterion = "0.7"
-kiss3d = "0.35"
+kiss3d = "0.37"
 rand = "0.9"
 
 [target.'cfg(target_family = "wasm")'.dev-dependencies]
