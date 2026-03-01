@@ -26,7 +26,7 @@ fn main() {
     use kiss3d::light::Light;
     use kiss3d::scene::SceneNode;
     use kiss3d::window::Window;
-    use na::{Isometry3, Point3, Translation3, UnitQuaternion, Vector3};
+    use na::{Isometry3, Translation3, UnitQuaternion, Vector3};
 
     #[derive(Debug, Parser)]
     struct Opt {
@@ -114,9 +114,9 @@ fn main() {
                 }
                 let x_ind = j as f32 - 2.5;
                 let y_ind = i as f32 - 2.5;
-                let trans = Isometry3::from_parts(
-                    Translation3::new(size * x_ind, 0.0, size * y_ind),
-                    UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
+                let trans = kiss3d::nalgebra::Isometry3::from_parts(
+                    kiss3d::nalgebra::Translation3::new(size * x_ind, 0.0, size * y_ind),
+                    kiss3d::nalgebra::UnitQuaternion::from_euler_angles(0.0, -1.57, -1.57),
                 );
                 c0.set_local_transformation(trans);
                 panels.push(c0);
@@ -145,6 +145,24 @@ fn main() {
         vec![c_fixed, c0, c1, c2, c3, c4, c5, c6]
     }
 
+    fn to_kiss3d_transform(
+        transform: &nalgebra::Isometry3<f32>,
+    ) -> kiss3d::nalgebra::Isometry3<f32> {
+        let target_translation = kiss3d::nalgebra::Translation3::new(
+            transform.translation.x,
+            transform.translation.y,
+            transform.translation.z,
+        );
+        let target_rotation = kiss3d::nalgebra::Quaternion::new(
+            transform.rotation.w,
+            transform.rotation.i,
+            transform.rotation.j,
+            transform.rotation.k,
+        );
+        let target_rotation = kiss3d::nalgebra::UnitQuaternion::from_quaternion(target_rotation);
+        kiss3d::nalgebra::Isometry3::from_parts(target_translation, target_rotation)
+    }
+
     let opt = Opt::parse();
     let root = create_joint_with_link_array();
     let arm = k::SerialChain::new_unchecked(k::Chain::from_root(root));
@@ -170,8 +188,8 @@ fn main() {
     let mut target = end.world_transform().unwrap();
     let mut c_t = window.add_sphere(0.05);
     c_t.set_color(1.0, 0.2, 0.2);
-    let eye = Point3::new(0.5f32, 1.0, 2.0);
-    let at = Point3::new(0.0f32, 0.0, 0.0);
+    let eye = kiss3d::nalgebra::Point3::new(0.5f32, 1.0, 2.0);
+    let at = kiss3d::nalgebra::Point3::new(0.0f32, 0.0, 0.0);
     let mut arc_ball = ArcBall::new(eye, at);
     let mut solver = JacobianIkSolver::default();
     //solver.set_nullspace_function(Box::new(|vec| vec.iter().map(|x| -x).collect()));
@@ -216,9 +234,9 @@ fn main() {
             .unwrap_or_else(|err| {
                 println!("Err: {err}");
             });
-        c_t.set_local_transformation(target);
+        c_t.set_local_transformation(to_kiss3d_transform(&target));
         for (i, trans) in arm.update_transforms().iter().enumerate() {
-            cubes[i].set_local_transformation(*trans);
+            cubes[i].set_local_transformation(to_kiss3d_transform(trans));
         }
     }
 }

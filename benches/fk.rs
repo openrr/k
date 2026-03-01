@@ -99,7 +99,7 @@ where
         .iter()
         .map(|range| match range {
             Some(range) => {
-                (range.max.clone() - range.min.clone()) * na::convert(rand::random())
+                (range.max.clone() - range.min.clone()) * na::convert(rand::random::<f32>())
                     + range.min.clone()
             }
             None => na::convert::<f64, T>(rand::random::<f64>() - 0.5) * na::convert(2.0 * PI),
