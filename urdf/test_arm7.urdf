@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!-- Redundant 7-DOF serial arm for IK tests: full 6-DOF IK is redundant (n=7 > m=6) without
+     relaxing any constraint. Axes alternate z,y,z,y,z,y,z and links are short, so the all-zero
+     pose is straight and near-singular. Every joint is limited; joint4 has a deliberately tight,
+     asymmetric range [0.0, 2.6] so a target can drive it toward a boundary. Minimal (no meshes). -->
+<robot name="test_arm7">
+  <link name="base_link"/>
+  <link name="link1"/>
+  <link name="link2"/>
+  <link name="link3"/>
+  <link name="link4"/>
+  <link name="link5"/>
+  <link name="link6"/>
+  <link name="link7"/>
+
+  <joint name="joint1" type="revolute">
+    <origin xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint2" type="revolute">
+    <origin xyz="0 0 -0.2"/>
+    <parent link="link1"/>
+    <child link="link2"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint3" type="revolute">
+    <origin xyz="0 0 -0.2"/>
+    <parent link="link2"/>
+    <child link="link3"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint4" type="revolute">
+    <origin xyz="0 0 -0.2"/>
+    <parent link="link3"/>
+    <child link="link4"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0.0" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint5" type="revolute">
+    <origin xyz="0 0 -0.15"/>
+    <parent link="link4"/>
+    <child link="link5"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint6" type="revolute">
+    <origin xyz="0 0 -0.15"/>
+    <parent link="link5"/>
+    <child link="link6"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+  <joint name="joint7" type="revolute">
+    <origin xyz="0 0 -0.1"/>
+    <parent link="link6"/>
+    <child link="link7"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.6" upper="2.6" effort="0" velocity="1.0"/>
+  </joint>
+</robot>

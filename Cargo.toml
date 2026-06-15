@@ -4,7 +4,7 @@ name = "k"
 # - Create "v0.x.y" git tag
 # - Push the above tag (run `git push origin --tags`)
 # Then, CI will publish to crates.io and create a GitHub release.
-version = "0.32.0"
+version = "0.33.0"
 authors = ["Takashi Ogura <t.ogura@gmail.com>"]
 edition = "2021"
 description = "k is for kinematics"
@@ -26,6 +26,11 @@ tracing = "0.1"
 urdf-rs = "0.9"
 
 serde = { version = "1.0", features = ["derive"], optional = true }
+
+# `urdf-rs` is also a normal dependency above; it is repeated here so integration tests and the
+# wasm test build can parse the `urdf/test_arm7.urdf` fixture via `urdf_rs::read_from_string`.
+[dev-dependencies]
+urdf-rs = "0.9"
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 clap = { version = "4", features = ["derive"] }
