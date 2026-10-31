@@ -488,17 +488,19 @@ impl<T: RealField + SubsetOf<f64>> Chain<T> {
     pub fn update_link_transforms(&self) {
         self.update_transforms();
         self.iter().for_each(|node| {
-            let parent_transform = node.parent_world_transform().expect("cache must exist");
+            // The link attached to a node is the child link of its joint, so its
+            // frame is the joint's world frame.
+            let link_transform = node.world_transform().expect("cache must exist");
             let mut node_mut = node.lock();
             if let Some(ref mut link) = node_mut.link {
-                let inertial_trans = parent_transform.clone() * link.inertial.origin();
+                let inertial_trans = link_transform.clone() * link.inertial.origin();
                 link.inertial.set_world_transform(inertial_trans);
                 for c in &mut link.collisions {
-                    let c_trans = parent_transform.clone() * c.origin();
+                    let c_trans = link_transform.clone() * c.origin();
                     c.set_world_transform(c_trans);
                 }
                 for v in &mut link.visuals {
-                    let v_trans = parent_transform.clone() * v.origin();
+                    let v_trans = link_transform.clone() * v.origin();
                     v.set_world_transform(v_trans);
                 }
             }
